@@ -39,6 +39,38 @@ function Convert-FromColor {
         return "#$($hexval)" # .Substring(2)
     } else { '' }
 }
+
+function Add-TeamsMessageButtons {
+    param(
+        $buttons
+    )
+    $PotentialAction = @()
+    foreach ($button in $buttons) {
+        $PotentialAction += @{
+            '@context' = 'http://schema.org'
+            '@type'    = 'ViewAction'
+            name       = $($button.Name)
+            target     = @("$($button.Value)")
+        }
+    }
+    return $Action
+}
+function Add-TeamsSection {
+    param(
+        $buttons
+    )
+    $PotentialAction = @()
+    foreach ($button in $buttons) {
+        $PotentialAction += @{
+            '@context' = 'http://schema.org'
+            '@type'    = 'ViewAction'
+            name       = $($button.Name)
+            target     = @("$($button.Value)")
+        }
+    }
+    return $PotentialAction
+}
+
 function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
@@ -50,7 +82,7 @@ function Send-TeamsMessage {
         [array]$details = $null,
         [string]$detailTitle,
         [nullable[System.Drawing.Color]]$Color,
-        [array]$buttons = $null,
+        [array]$Buttons = $null,
         [Parameter(Mandatory = $true)][string]$URI,
         [ImageType]$ImageType = [ImageType]::None,
         [switch]$ImageLink,
@@ -65,18 +97,9 @@ function Send-TeamsMessage {
     Write-Verbose "Send-TeamsMessage - Color $Color"
     Write-Verbose "Send-TeamsMessage - Color HEX $ThemeColor"
 
-    $potentialActions = @()
+    $PotentialAction = Add-TeamsMessageButtons $Buttons
 
-    foreach ($button in $buttons) {
-        $potentialActions += @{
-            '@context' = 'http://schema.org'
-            '@type'    = 'ViewAction'
-            name       = $($button.Name)
-            target     = @("$($button.Value)")
-        }
-    }
-
-    $body = ConvertTo-Json -Depth 6 @{
+    $Body = ConvertTo-Json -Depth 6 @{
         title             = $MessageTitle
         themeColor        = $ThemeColor
         $([string] $Type)	= Repair-Text $($Text)
@@ -90,7 +113,7 @@ function Send-TeamsMessage {
                 title           = $detailTitle
                 facts           = $details
                 potentialAction = @(
-                    $potentialActions
+                    $PotentialAction
                 )
             }
         )
