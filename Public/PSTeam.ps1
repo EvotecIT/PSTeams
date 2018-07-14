@@ -53,22 +53,35 @@ function Add-TeamsMessageButtons {
             target     = @("$($button.Value)")
         }
     }
-    return $Action
+    return $PotentialAction
 }
 function Add-TeamsSection {
     param(
-        $buttons
+        $Sections
     )
-    $PotentialAction = @()
-    foreach ($button in $buttons) {
-        $PotentialAction += @{
-            '@context' = 'http://schema.org'
-            '@type'    = 'ViewAction'
-            name       = $($button.Name)
-            target     = @("$($button.Value)")
-        }
+    $PreparedSections = @()
+    foreach ($section in $Sections) {
+        $PreparedSections += $section
     }
-    return $PotentialAction
+    return $PreparedSections
+}
+
+function Add-TeamsBody {
+    param (
+        $MessageTitle,
+        $ThemeColor,
+        $Text,
+        $Sections
+    )
+
+    $Body = ConvertTo-Json -Depth 6 @{
+        title             = $MessageTitle
+        themeColor        = $ThemeColor
+        $([string] $Type)	= Repair-Text $($Text)
+        sections          = $Sections
+
+    }
+    return $Body
 }
 
 function Send-TeamsMessage {
@@ -99,30 +112,24 @@ function Send-TeamsMessage {
 
     $PotentialAction = Add-TeamsMessageButtons $Buttons
 
-    $Body = ConvertTo-Json -Depth 6 @{
-        title             = $MessageTitle
-        themeColor        = $ThemeColor
-        $([string] $Type)	= Repair-Text $($Text)
-        sections          = @(
-            @{
-                activityTitle    = $ActivityTitle
-                activitySubtitle = $ActivitySubtitle
-                activityImage    = $Image
-            },
-            @{
-                title           = $detailTitle
-                facts           = $details
-                potentialAction = @(
-                    $PotentialAction
-                )
-            }
-        )
-
+    $Section1 = @{
+        activityTitle    = $ActivityTitle
+        activitySubtitle = $ActivitySubtitle
+        activityImage    = $Image
     }
-    $Execute = Invoke-RestMethod -uri $uri -Method Post -body $body -ContentType 'application/json'
+    $Section2 = @{
+        title           = $detailTitle
+        facts           = $details
+        potentialAction = @(
+            $PotentialAction
+        )
+    }
+    $Sections = Add-TeamsSection $Section1, $Section2
+    $Body = Add-TeamsBody -MessageTitle $MessageTitle -ThemeColor $ThemeColor -Text $Text -Sections $Sections
+    $Execute = Invoke-RestMethod -uri $uri -Method Post -body $Body -ContentType 'application/json'
+    Write-Verbose "Send-TeamChannelMessage - Body $Body"
     Write-Verbose "Send-TeamChannelMessage - Execute $Execute"
-    Write-Verbose "Send-TeamChannelMessage - Body $body"
-    if ($Supress) { } else { return $body }
+    if ($Supress) { } else { return $Body }
 
 }
 
