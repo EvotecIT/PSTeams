@@ -17,10 +17,13 @@ function Get-Image {
         [string] $FileName,
         [string] $FileExtension
     )
+    Write-Verbose "Get-Image - PathToImages $PathToImages FileName $FileName FileExtension $FileExtension"
     if ($ImageType -ne [ImageType]::None) {
-        $ImagePath = "$PathToImages\$($MessageType)$FileExtension"
+        $ImagePath = "$PathToImages\$($FileName)$FileExtension"
+        Write-Verbose "Get-Image - ImagePath $ImagePath"
         if (Test-Path $ImagePath) {
             $Image = [convert]::ToBase64String((Get-Content $ImagePath -Encoding byte))
+            Write-Verbose "Get-Image - Image Type: $($Image.GetType())"
             return "data:image/png;base64,$Image"
         }
     }
@@ -71,12 +74,13 @@ function Add-TeamsBody {
         $MessageTitle,
         $ThemeColor,
         $Text,
-        $Sections
+        $Sections,
+        $Type
     )
 
     $Body = ConvertTo-Json -Depth 6 @{
-        title             = $MessageTitle
-        themeColor        = $ThemeColor
+        title             = "$MessageTitle"
+        themeColor        = "$ThemeColor"
         $([string] $Type)	= Repair-Text $($Text)
         sections          = $Sections
 
@@ -87,22 +91,51 @@ function Add-TeamsBody {
 function New-TeamsSection {
     [CmdletBinding()]
     param (
-        $Title,
-        $ActivityTitle,
-        $ActivitySubtitle,
-        $ActivityImageLink,
-        $ActivityImage,
-        $ActivityText,
-        $ActivityDetails,
-        $Buttons
+        [string[]] $Title = @(),
+        [string[]] $ActivityTitle = @(),
+        [string[]] $ActivitySubtitle = @(),
+        [string[]] $ActivityImageLink = @(),
+        $ActivityImage = @(),
+        [string[]] $ActivityText = @(),
+        [hashtable[]] $ActivityDetails = @(),
+        [hashtable[]] $Buttons = @()
     )
 
+    $Sections = @()
+    for ($i = 0; $i -lt $ActivityTitle.Length; $i++) {
+        $Sections += @{
+            title            = $Title[$i]
+            activityTitle    = "$($ActivityTitle[$i])"
+            activitySubtitle = "$($ActivitySubtitle[$i])"
+            activityImage    = "$($ActivityImageLink[$i])"
+            activityText     = "$($ActivityText[$i])"
+            #facts            = $ActivityDetails[$i]
+            #  potentialAction  = @(
+            #    $Buttons
+            # )
+        }
+    }
+    return $Sections
+}
+
+function New-TeamsButton {
+    [CmdletBinding()]
+    param (
+        [string[]] $Name,
+        [string[]] $Link
+    )
+    $Buttons = @()
+    for ($i = 0; $i -lt $Name.Length; $i++) {
+        $Buttons += @{ name = "$($Name[$i])" ; value = "$($Link[$i])" }
+    }
+    return $Buttons
 }
 
 function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $true)][string]$URI,
+        [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
+        [hashtable[]]$Sections,
         [TeamsType]$Type = [TeamsType]::Summary,
         [string]$Text,
         [string]$MessageTitle,
@@ -117,7 +150,42 @@ function Send-TeamsMessage {
         [bool] $Supress = $true
     )
     $StoredImages = "$(Split-Path -Path $PSScriptRoot -Parent)\Images"
-    $Image = Get-Image -PathToImages $StoredImages -FileName $ImageType -FileExtension '.jpg'
+    Write-Verbose "Send-TeamsMessage - Get-Image()"
+    $Image = Get-Image -PathToImages $StoredImages -FileName $ImageType -FileExtension '.jpg' -Verbose
+    $ThemeColor = Convert-FromColor -Color $Color
+    Write-Verbose "Send-TeamsMessage - Color $Color"
+    Write-Verbose "Send-TeamsMessage - Color HEX $ThemeColor"
+
+
+    $Body = Add-TeamsBody -MessageTitle $MessageTitle -ThemeColor $ThemeColor -Text $Text -Sections $Sections -Type $Type
+    $Execute = Invoke-RestMethod -uri $uri -Method Post -body $Body -ContentType 'application/json'
+    Write-Verbose "Send-TeamChannelMessage - Body $Body"
+    Write-Verbose "Send-TeamChannelMessage - Execute $Execute"
+    if ($Supress) { } else { return $Body }
+
+}
+
+
+function Send-TeamsMessage1 {
+    [CmdletBinding()]
+    Param (
+        [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
+        [TeamsType]$Type = [TeamsType]::Summary,
+        [string]$Text,
+        [string]$MessageTitle,
+        [string]$ActivityTitle,
+        [string]$ActivitySubtitle,
+        [array]$details = $null,
+        [string]$detailTitle,
+        [nullable[System.Drawing.Color]]$Color,
+        [array]$Buttons = $null,
+        [ImageType]$ImageType = [ImageType]::None,
+        [switch]$ImageLink,
+        [bool] $Supress = $true,
+        $Sections
+    )
+    $StoredImages = "$(Split-Path -Path $PSScriptRoot -Parent)\Images"
+    $Image = Get-Image -PathToImages $StoredImages -FileName $ImageType -FileExtension '.jpg' -Verbose
     $ThemeColor = Convert-FromColor -Color $Color
     Write-Verbose "Send-TeamsMessage - Color $Color"
     Write-Verbose "Send-TeamsMessage - Color HEX $ThemeColor"
@@ -138,23 +206,28 @@ function Send-TeamsMessage {
     }
     $Section3 = @{
         title            = "something new"
+        potentialAction  = @(
+            $PotentialAction
+        )
         activityTitle    = "**Elon Musk**"
         activitySubtitle = "@elonmusk - 9/12/2016 at 5:33pm"
         activityImage    = "https://pbs.twimg.com/profile_images/782474226020200448/zDo-gAo0.jpg"
         activityText     = "Climate change explained in comic book form by xkcd xkcd.com/1732"
         facts            = $details
+
     }
     $Section4 = @{
-
         activityTitle    = "**Mark Knopfler**"
         activitySubtitle = "@MarkKnopfler - 9/12/2016 at 1:12pm"
         activityImage    = "https://pbs.twimg.com/profile_images/378800000221985528/b2ebfafca6fd7b565fdf3bf4ccdb4dc9.jpeg"
         activityText     = "Mark Knopfler features on B.B King's all-star album of Blues greats, released on this day in 2005..."
     }
+    #  $Section3
 
 
-    $Sections = Add-TeamsSection $Section1, $Section2, $Section3, $Section4, $Section4
-    $Body = Add-TeamsBody -MessageTitle $MessageTitle -ThemeColor $ThemeColor -Text $Text -Sections $Sections
+    #  $Sections = Add-TeamsSection $Section1, $Section2, $Section3, $Section4, $Section4
+    $Sections = Add-TeamsSection $Section1, $Section4
+    $Body = Add-TeamsBody -MessageTitle $MessageTitle -ThemeColor $ThemeColor -Text $Text -Sections $Sections -Type $Type
     $Execute = Invoke-RestMethod -uri $uri -Method Post -body $Body -ContentType 'application/json'
     Write-Verbose "Send-TeamChannelMessage - Body $Body"
     Write-Verbose "Send-TeamChannelMessage - Execute $Execute"
