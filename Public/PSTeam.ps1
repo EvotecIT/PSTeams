@@ -91,44 +91,59 @@ function Add-TeamsBody {
 function New-TeamsSection {
     [CmdletBinding()]
     param (
-        [string[]] $Title = @(),
-        [string[]] $ActivityTitle = @(),
-        [string[]] $ActivitySubtitle = @(),
-        [string[]] $ActivityImageLink = @(),
-        $ActivityImage = @(),
-        [string[]] $ActivityText = @(),
-        [hashtable[]] $ActivityDetails = @(),
-        [hashtable[]] $Buttons = @()
+        [string] $Title,
+        [string] $ActivityTitle,
+        [string] $ActivitySubtitle ,
+        [string] $ActivityImageLink,
+        $ActivityImage ,
+        [string] $ActivityText,
+        [hashtable[]]$ActivityDetails,
+        $Buttons
     )
 
-    $Sections = @()
-    for ($i = 0; $i -lt $ActivityTitle.Length; $i++) {
-        $Sections += @{
-            title            = $Title[$i]
-            activityTitle    = "$($ActivityTitle[$i])"
-            activitySubtitle = "$($ActivitySubtitle[$i])"
-            activityImage    = "$($ActivityImageLink[$i])"
-            activityText     = "$($ActivityText[$i])"
-            #facts            = $ActivityDetails[$i]
-            #  potentialAction  = @(
-            #    $Buttons
-            # )
-        }
+
+    $Section = [ordered] @{
+        title            = $Title
+        activityTitle    = "$($ActivityTitle)"
+        activitySubtitle = "$($ActivitySubtitle)"
+        activityImage    = "$($ActivityImageLink)"
+        activityText     = "$($ActivityText)"
+        facts            = @(
+            $ActivityDetails
+        )
+        potentialAction  = @(
+            $Buttons
+        )
     }
-    return $Sections
+    return $Section
+}
+
+function New-TeamsFact {
+    [CmdletBinding()]
+    param (
+        [string] $Name,
+        [string] $Value
+    )
+    $Fact = [ordered] @{
+        name  = "$Name"
+        value = "$Value"
+    }
+    return $Fact
 }
 
 function New-TeamsButton {
     [CmdletBinding()]
     param (
-        [string[]] $Name,
-        [string[]] $Link
+        [string] $Name,
+        [string] $Link
     )
-    $Buttons = @()
-    for ($i = 0; $i -lt $Name.Length; $i++) {
-        $Buttons += @{ name = "$($Name[$i])" ; value = "$($Link[$i])" }
+    $Button = [ordered] @{
+        '@context' = 'http://schema.org'
+        '@type'    = 'ViewAction'
+        name       = "$Name"
+        target     = @("$Link")
     }
-    return $Buttons
+    return $Button
 }
 
 function Send-TeamsMessage {
