@@ -71,20 +71,19 @@ function Add-TeamsSection {
 
 function Add-TeamsBody {
     param (
-        $MessageTitle,
-        $ThemeColor,
-        $Text,
-        $Sections,
-        $Type
+        [string] $MessageTitle,
+        [string] $ThemeColor,
+        [string] $MessageText,
+        [hashtable[]] $Sections
     )
+    if ($MessageText -ne '') { $Type = 'Text' } else { $Type = 'Summary' }
+    $Body = ConvertTo-Json -Depth 6 $([ordered] @{
+            title      = "$MessageTitle"
+            themeColor = "$ThemeColor"
+            $Type      = Repair-Text $($Text)
+            sections   = $Sections
 
-    $Body = ConvertTo-Json -Depth 6 @{
-        title             = "$MessageTitle"
-        themeColor        = "$ThemeColor"
-        $([string] $Type)	= Repair-Text $($Text)
-        sections          = $Sections
-
-    }
+        })
     return $Body
 }
 
@@ -95,12 +94,15 @@ function New-TeamsSection {
         [string] $ActivityTitle,
         [string] $ActivitySubtitle ,
         [string] $ActivityImageLink,
-        $ActivityImage ,
+        [ImageType] $ActivityImage = [ImageType]::None,
         [string] $ActivityText,
         [hashtable[]]$ActivityDetails,
-        $Buttons
+        [hashtable[]]$Buttons
     )
-
+    if ($ActivityImage -ne [ImageType]::None) {
+        $StoredImages = "$(Split-Path -Path $PSScriptRoot -Parent)\Images"
+        $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' -Verbose
+    }
 
     $Section = [ordered] @{
         title            = $Title
@@ -150,32 +152,20 @@ function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
         [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
-        [hashtable[]]$Sections,
-        [TeamsType]$Type = [TeamsType]::Summary,
-        [string]$Text,
         [string]$MessageTitle,
-        [string]$ActivityTitle,
-        [string]$ActivitySubtitle,
-        [array]$details = $null,
-        [string]$detailTitle,
+        [string]$MessageText,
         [nullable[System.Drawing.Color]]$Color,
-        [array]$Buttons = $null,
-        [ImageType]$ImageType = [ImageType]::None,
-        [switch]$ImageLink,
+        [hashtable[]]$Sections,
         [bool] $Supress = $true
     )
-    $StoredImages = "$(Split-Path -Path $PSScriptRoot -Parent)\Images"
-    Write-Verbose "Send-TeamsMessage - Get-Image()"
-    $Image = Get-Image -PathToImages $StoredImages -FileName $ImageType -FileExtension '.jpg' -Verbose
     $ThemeColor = Convert-FromColor -Color $Color
-    Write-Verbose "Send-TeamsMessage - Color $Color"
-    Write-Verbose "Send-TeamsMessage - Color HEX $ThemeColor"
-
-
-    $Body = Add-TeamsBody -MessageTitle $MessageTitle -ThemeColor $ThemeColor -Text $Text -Sections $Sections -Type $Type
-    $Execute = Invoke-RestMethod -uri $uri -Method Post -body $Body -ContentType 'application/json'
-    Write-Verbose "Send-TeamChannelMessage - Body $Body"
-    Write-Verbose "Send-TeamChannelMessage - Execute $Execute"
+    $Body = Add-TeamsBody -MessageTitle $MessageTitle `
+        -MessageText $MessageText `
+        -ThemeColor $ThemeColor `
+        -Sections $Sections
+    $Execute = Invoke-RestMethod -Uri $uri -Method Post -Body $Body -ContentType 'application/json'
+    Write-Verbose "Send-TeamsMessage - Color $Color Color HEX $ThemeColor"
+    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if ($Supress) { } else { return $Body }
 
 }
