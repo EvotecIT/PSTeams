@@ -15,7 +15,7 @@ Foreach ($import in @($Public + $Private + $Enums)) {
 
 Add-Type -Assembly 'System.Drawing'
 
-Export-ModuleMember -Function '*'
+Export-ModuleMember -Function 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsSection', 'Send-TeamsMessage'
 
 <#
 As per: https://d-fens.ch/2014/11/26/bug-powershell-scripts-in-scriptstoprocess-attribute-appear-as-loaded-modules/
