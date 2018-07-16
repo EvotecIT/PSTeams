@@ -12,14 +12,6 @@ Add-Type -TypeDefinition @"
    }
 "@
 
-Add-Type -TypeDefinition @"
-   public enum TeamsType
-   {
-    Text,
-    Summary
-   }
-"@
-
 <#
 enum MessageType {
     Alert
