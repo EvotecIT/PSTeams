@@ -4,16 +4,18 @@ function Send-TeamsMessage {
         [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
         [string]$MessageTitle,
         [string]$MessageText,
-        [Object] $Color,
+        [RGBColors] $Color,
         [hashtable[]]$Sections,
         [bool] $Supress = $true
     )
     try {
         $ThemeColor = Convert-FromColor -Color $Color
     } catch {
+        $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
+        Write-Warning "Send-TeamsMessage - Color conversion for $Color failed. Error message: $ErrorMessage"
         $ThemeColor = $null
     }
-    Write-Verbose "Send-TeamsMessage - Color $Color vs $ThemeColor"
+    Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `

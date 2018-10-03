@@ -12,8 +12,9 @@ Foreach ($import in @($Public + $Private + $Enums)) {
 
     }
 }
-
-Add-Type -Assembly 'System.Drawing'
+if ($PSEdition -eq 'Desktop') {
+    Add-Type -Assembly 'System.Drawing'
+}
 
 #As per: https://d-fens.ch/2014/11/26/bug-powershell-scripts-in-scriptstoprocess-attribute-appear-as-loaded-modules/
 [string] $ManifestFile = '{0}.psd1' -f (Get-Item $PSCommandPath).BaseName;

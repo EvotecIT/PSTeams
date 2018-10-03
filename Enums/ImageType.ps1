@@ -11,16 +11,3 @@ Add-Type -TypeDefinition @"
     None
    }
 "@
-
-<#
-enum MessageType {
-    Alert
-    Cancel
-    Disable
-    Download
-    Minus
-    Check
-    Add
-    None
-}
-#>
