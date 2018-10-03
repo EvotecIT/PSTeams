@@ -4,11 +4,16 @@ function Send-TeamsMessage {
         [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
         [string]$MessageTitle,
         [string]$MessageText,
-        [nullable[System.Drawing.Color]]$Color,
+        [Object] $Color,
         [hashtable[]]$Sections,
         [bool] $Supress = $true
     )
-    $ThemeColor = Convert-FromColor -Color $Color
+    try {
+        $ThemeColor = Convert-FromColor -Color $Color
+    } catch {
+        $ThemeColor = $null
+    }
+    Write-Verbose "Send-TeamsMessage - Color $Color vs $ThemeColor"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `

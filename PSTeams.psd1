@@ -9,31 +9,31 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule        = 'PSTeams.psm1'
+    RootModule           = 'PSTeams.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.0'
+    ModuleVersion        = '0.2.0'
 
     # Supported PSEditions
-    # CompatiblePSEditions = @()
+    CompatiblePSEditions = @('Desktop', 'Core')
 
     # ID used to uniquely identify this module
-    GUID              = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
+    GUID                 = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
 
     # Author of this module
-    Author            = 'Przemyslaw Klys'
+    Author               = 'Przemyslaw Klys'
 
     # Company or vendor of this module
-    CompanyName       = 'Evotec'
+    CompanyName          = 'Evotec'
 
     # Copyright statement for this module
-    Copyright         = 'Evotec (c) 2018. All rights reserved.'
+    Copyright            = 'Evotec (c) 2018. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description       = 'Simple project to send messages to Teams Channel.'
+    Description          = 'Simple project to send messages to Teams Channel.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    # PowerShellVersion = ''
+    PowerShellVersion    = '5.1'
 
     # Name of the Windows PowerShell host required by this module
     # PowerShellHostName = ''
@@ -57,7 +57,7 @@
     # RequiredAssemblies = @()
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-    ScriptsToProcess  = "Enums\Enums.ps1"
+    ScriptsToProcess     = "Enums\Enums.ps1"
 
     # Type files (.ps1xml) to be loaded when importing this module
     # TypesToProcess = @()
@@ -69,16 +69,16 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('New-TeamsButton', 'New-TeamsFact', 'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody')
+    FunctionsToExport    = @('New-TeamsButton', 'New-TeamsFact', 'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-    CmdletsToExport   = @()
+    CmdletsToExport      = @()
 
     # Variables to export from this module
-    VariablesToExport = @()
+    VariablesToExport    = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @()
+    AliasesToExport      = @()
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -87,10 +87,10 @@
     # ModuleList = @()
 
     # List of all files packaged with this module
-    FileList          = 'PSTeams.psm1', 'PSTeams.psd1'
+    FileList             = 'PSTeams.psm1', 'PSTeams.psd1'
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData       = @{
+    PrivateData          = @{
 
         PSData = @{
 
