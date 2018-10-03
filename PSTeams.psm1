@@ -28,4 +28,4 @@ if ( Test-Path -Path $ManifestPathAndFile) {
     }
 }
 
-Export-ModuleMember -Function 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsSection', 'Send-TeamsMessage'
+Export-ModuleMember -Function 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody'
