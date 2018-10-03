@@ -19,10 +19,14 @@ function Get-Image {
     )
     Write-Verbose "Get-Image - PathToImages $PathToImages FileName $FileName FileExtension $FileExtension"
     if ($ImageType -ne [ImageType]::None) {
-        $ImagePath = "$PathToImages\$($FileName)$FileExtension"
+        $ImagePath = [IO.Path]::Combine( $PathToImages, "$($FileName)$FileExtension")
         Write-Verbose "Get-Image - ImagePath $ImagePath"
         if (Test-Path $ImagePath) {
-            $Image = [convert]::ToBase64String((Get-Content $ImagePath -Encoding byte))
+            if ($PSEdition -eq 'Core') {
+                $Image = [convert]::ToBase64String((Get-Content $ImagePath -AsByteStream))
+            } else {
+                $Image = [convert]::ToBase64String((Get-Content $ImagePath -Encoding byte))
+            }
             Write-Verbose "Get-Image - Image Type: $($Image.GetType())"
             return "data:image/png;base64,$Image"
         }
@@ -100,7 +104,7 @@ function New-TeamsSection {
         [hashtable[]]$Buttons
     )
     if ($ActivityImage -ne [ImageType]::None) {
-        $StoredImages = "$(Split-Path -Path $PSScriptRoot -Parent)\Images"
+        $StoredImages = [IO.Path]::Combine("$(Split-Path -Path $PSScriptRoot -Parent)", "Images")
         $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' -Verbose
     }
 
