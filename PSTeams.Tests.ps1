@@ -1,5 +1,5 @@
 param (
-    $TeamsID = $Env:TEAMSAND_NAME
+    $TeamsID = $Env:TEAMSPESTERID
 )
 $PSVersionTable.PSVersion
 
@@ -19,7 +19,6 @@ if ((Get-Module -ListAvailable PSSharedGoods) -eq $null) {
     Install-Module -Name PSSharedGoods -Repository PSGallery -Force -Scope CurrentUser
 }
 
-#$Files = (get-childitem $PSScriptRoot\Tests -File).FullName
 #$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
 $result = Invoke-Pester -Script @{ Path = "$($PSScriptRoot)\Tests"; Parameters = @{ TeamsID = $TeamsID }; }
 
