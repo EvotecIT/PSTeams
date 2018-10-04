@@ -1,3 +1,6 @@
+param (
+    $TeamsID = $Env:TEAMSAND_NAME
+)
 $PSVersionTable.PSVersion
 
 $ModuleName = (Get-ChildItem $PSScriptRoot\*.psd1).BaseName
@@ -16,7 +19,9 @@ if ((Get-Module -ListAvailable PSSharedGoods) -eq $null) {
     Install-Module -Name PSSharedGoods -Repository PSGallery -Force -Scope CurrentUser
 }
 
-$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
+#$Files = (get-childitem $PSScriptRoot\Tests -File).FullName
+#$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
+$result = Invoke-Pester -Script @{ Path = "$($PSScriptRoot)\Tests"; Parameters = @{ TeamsID = $TeamsID }; }
 
 if ($result.FailedCount -gt 0) {
     throw "$($result.FailedCount) tests failed."
