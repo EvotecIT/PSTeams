@@ -1,6 +1,14 @@
 #Requires -Modules Pester
 Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
 
+Write-Host "My TEAMSNAME: $($ENV:TEAMSNAME)"
+Write-Host "My TEAMSNAME: $($ENV:TEAMS_NAME)"
+Write-Host "My TEAM.NAME: $($ENV:TEAM_NAME)"
+Write-Host "My secret TEAMSAND_NAME: $($ENV:TEAMSAND_NAME)"
+Write-Host "My secret TEAMSELO.NAME: $($ENV:TEAMSELO_NAME)"
+
+return
+
 $TeamsID = $Env:TEAMSPESTERID
 Describe 'Send-TeamsMessage - Should send messages properly' {
     It 'Given 1 button, 3 facts, 1 section should not throw' {
