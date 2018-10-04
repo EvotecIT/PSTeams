@@ -12,7 +12,7 @@ function New-TeamsSection {
     )
     if ($ActivityImage -ne [ImageType]::None) {
         $StoredImages = [IO.Path]::Combine("$(Split-Path -Path $PSScriptRoot -Parent)", "Images")
-        $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' -Verbose
+        $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' # -Verbose
     }
 
     $Section = [ordered] @{
