@@ -5,7 +5,7 @@ jobs:
     steps:
     - powershell: |
         Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
-        .\PSTeams.Tests.ps1
+        .\PSTeams.Tests.ps1 $(TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
   - job: Build_PSCore_Ubuntu1604
@@ -22,7 +22,7 @@ jobs:
       displayName: 'Install PowerShell Core'
 
     - script: |
-        pwsh -c '.\PSTeams.Tests.ps1'
+        pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
   - job: Build_PSCore_MacOS1013
@@ -37,5 +37,5 @@ jobs:
       displayName: 'Install PowerShell Core'
 
     - script: |
-        pwsh -c '.\PSTeams.Tests.ps1'
+        pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
       displayName: 'Run Pester Tests'
