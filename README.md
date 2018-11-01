@@ -20,7 +20,7 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 ```powershell
 Install-Module PSTeams
 #Install-Module PSTeams -Scope CurrentUser
-#Update-Module PSWriteExcel
+#Update-Module PSTeams
 ```
 
 ## Usage
