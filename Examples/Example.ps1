@@ -6,7 +6,7 @@ Import-Module PSTeams -Force #-Verbose
 
 $TeamsID = 'https://outlook.office.com/webhook/a5c7c95a....'
 
-$Color = [System.Drawing.Color]::Chocolate
+$Color = [RGBColors]::Chocolate
 
 $Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
 $Button2 = New-TeamsButton -Name 'Visit Polish Evotec Website' -Link "https://evotec.pl"
