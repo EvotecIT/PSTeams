@@ -21,10 +21,14 @@ function New-TeamsSection {
         activitySubtitle = "$($ActivitySubtitle)"
         activityImage    = "$($ActivityImageLink)"
         activityText     = "$($ActivityText)"
-        facts            = @(
+    }
+    if ($null -ne $ActivityDetails) {
+        $Section.facts = @(
             $ActivityDetails
         )
-        potentialAction  = @(
+    }
+    if ($null -ne $Buttons) {
+        $Section.potentialAction = @(
             $Buttons
         )
     }
