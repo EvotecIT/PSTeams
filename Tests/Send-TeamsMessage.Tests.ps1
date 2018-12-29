@@ -29,4 +29,25 @@ Describe 'Send-TeamsMessage - Should send messages properly' {
             -Color DodgerBlue `
             -Sections $Section
     }
+    It 'Given 3 facts, 1 section should not throw' {
+        $Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
+        $Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
+        $Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
+
+        $CurrentDate = Get-Date
+
+        $Section = New-TeamsSection `
+            -ActivityTitle "**PSTeams**" `
+            -ActivitySubtitle "@PSTeams - $CurrentDate" `
+            -ActivityImage Add `
+            -ActivityText "This message proves PSTeams Pester test passed properly." `
+            -ActivityDetails $Fact1, $Fact2, $Fact3
+
+        Send-TeamsMessage `
+            -URI $TeamsID `
+            -MessageTitle 'PSTeams - Pester Test' `
+            -MessageText "This text won't show up" `
+            -Color DodgerBlue `
+            -Sections $Section
+    }
 }
