@@ -9,7 +9,7 @@ function Send-TeamsMessage {
         [bool] $Supress = $true
     )
     try {
-        $ThemeColor = Convert-FromColor -Color $Color
+        $ThemeColor = ConvertFrom-Color -Color $Color
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         Write-Warning "Send-TeamsMessage - Color conversion for $Color failed. Error message: $ErrorMessage"
