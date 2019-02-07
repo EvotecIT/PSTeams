@@ -9,7 +9,7 @@ function Add-TeamsBody {
     $Body = ConvertTo-Json -Depth 6 $([ordered] @{
             title      = "$MessageTitle"
             themeColor = "$ThemeColor"
-            $Type      = Repair-Text $($Text)
+            $Type      = Repair-Text $($MessageText)
             sections   = $Sections
 
         })

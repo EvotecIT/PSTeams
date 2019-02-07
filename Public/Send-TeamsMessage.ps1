@@ -8,12 +8,14 @@ function Send-TeamsMessage {
         [hashtable[]]$Sections,
         [bool] $Supress = $true
     )
-    try {
-        $ThemeColor = ConvertFrom-Color -Color $Color
-    } catch {
-        $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
-        Write-Warning "Send-TeamsMessage - Color conversion for $Color failed. Error message: $ErrorMessage"
-        $ThemeColor = $null
+    if ($null -ne $Color) {
+        try {
+            $ThemeColor = ConvertFrom-Color -Color $Color
+        } catch {
+            $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
+            Write-Warning "Send-TeamsMessage - Color conversion for $Color failed. Error message: $ErrorMessage"
+            $ThemeColor = $null
+        }
     }
     Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
