@@ -7,9 +7,10 @@
 
 [![Build Status Windows/Linux/Mac](https://img.shields.io/azure-devops/build/evotecpl/50de6197-c7ea-433e-b6a6-689968cabe05/2.svg?label=builds%20on%20windows/macOs/linux&style=for-the-badge)](https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=2)
 [![PowerShellGallery Version](https://img.shields.io/powershellgallery/v/PSTeams.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
-[![PowerShellGallery Preview Version](https://img.shields.io/powershellgallery/vpre/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
 
 [![PowerShellGallery Platform](https://img.shields.io/powershellgallery/p/PSTeams.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
+[![PowerShellGallery Preview Version](https://img.shields.io/powershellgallery/vpre/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
+
 
 ![Top Language](https://img.shields.io/github/languages/top/evotecit/psteams.svg?style=for-the-badge)
 ![Code](https://img.shields.io/github/languages/code-size/evotecit/psteams.svg?style=for-the-badge)
