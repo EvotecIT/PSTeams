@@ -27,7 +27,7 @@ Describe 'Send-TeamsMessage - Should send messages properly' {
             -MessageTitle 'PSTeams - Pester Test' `
             -MessageText "This text won't show up" `
             -Color DodgerBlue `
-            -Sections $Section
+            -Sections $Section -ShowErrors
     }
     It 'Given 3 facts, 1 section should not throw' {
         $Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
@@ -48,6 +48,6 @@ Describe 'Send-TeamsMessage - Should send messages properly' {
             -MessageTitle 'PSTeams - Pester Test' `
             -MessageText "This text won't show up" `
             -Color DodgerBlue `
-            -Sections $Section
+            -Sections $Section -ShowErrors
     }
 }

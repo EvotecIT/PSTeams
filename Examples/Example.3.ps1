@@ -8,4 +8,4 @@ Send-TeamsMessage `
     -URI $TeamsID `
     -Color DodgerBlue `
     -MessageSummary 'Test' `
-    -Sections $Section -Verbose
+    -Sections $Section -Verbose -ShowErrors

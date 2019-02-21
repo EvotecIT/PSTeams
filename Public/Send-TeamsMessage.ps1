@@ -7,7 +7,8 @@ function Send-TeamsMessage {
         [string]$MessageSummary,
         [RGBColors] $Color,
         [System.Collections.IDictionary[]]$Sections,
-        [bool] $Supress = $true
+        [bool] $Supress = $true,
+        [switch] $ShowErrors
     )
     if ($null -ne $Color) {
         try {
@@ -19,6 +20,8 @@ function Send-TeamsMessage {
         }
     }
     Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
+    Write-Verbose "Send-TeamsMessage - Color: $Color Color HEX $ThemeColor"
+    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
@@ -28,10 +31,12 @@ function Send-TeamsMessage {
         $Execute = Invoke-RestMethod -Uri $uri -Method Post -Body $Body -ContentType 'application/json'
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
-        Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
+        if ($ShowErrors) {
+            Write-Error "Couldn't send message. Error $ErrorMessage"
+        } else {
+            Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
+        }
     }
-    Write-Verbose "Send-TeamsMessage - Color $Color Color HEX $ThemeColor"
-    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if ($Supress) { } else { return $Body }
 
 }
