@@ -3,15 +3,26 @@ function Add-TeamsBody {
         [string] $MessageTitle,
         [string] $ThemeColor,
         [string] $MessageText,
-        [hashtable[]] $Sections
+        [string] $MessageSummary,
+        [System.Collections.IDictionary[]] $Sections
     )
-    if ($MessageText -ne '') { $Type = 'Text' } else { $Type = 'Summary' }
-    $Body = ConvertTo-Json -Depth 6 $([ordered] @{
-            title      = "$MessageTitle"
-            themeColor = "$ThemeColor"
-            $Type      = Repair-Text $($MessageText)
-            sections   = $Sections
-
-        })
-    return $Body
+    
+    $Body = [ordered] @{
+        title      = $MessageTitle
+        themeColor = $ThemeColor
+        sections   = $Sections
+    }
+    if ($MessageSummary -ne '') {
+        $Body.summary = $MessageSummary
+    } else {
+        if ($MessageTitle -ne '') {
+            $Body.summary = $MessageTitle
+        } elseif ($MessageText -ne '') {
+            $Body.summary = $MessageText
+        }
+    }
+    if ($MessageText -ne '') { 
+        $Body.text = $MessageText
+    }
+    return $Body | ConvertTo-Json -Depth 6
 }

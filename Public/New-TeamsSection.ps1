@@ -7,8 +7,8 @@ function New-TeamsSection {
         [string] $ActivityImageLink,
         [ImageType] $ActivityImage = [ImageType]::None,
         [string] $ActivityText,
-        [hashtable[]]$ActivityDetails,
-        [hashtable[]]$Buttons
+        [System.Collections.IDictionary[]]$ActivityDetails,
+        [System.Collections.IDictionary[]]$Buttons
     )
     if ($ActivityImage -ne [ImageType]::None) {
         $StoredImages = [IO.Path]::Combine("$(Split-Path -Path $PSScriptRoot -Parent)", "Images")

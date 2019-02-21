@@ -15,7 +15,7 @@ schema: 2.0.0
 ```
 New-TeamsSection [[-Title] <String>] [[-ActivityTitle] <String>] [[-ActivitySubtitle] <String>]
  [[-ActivityImageLink] <String>] [[-ActivityImage] <ImageType>] [[-ActivityText] <String>]
- [[-ActivityDetails] <Hashtable[]>] [[-Buttons] <Hashtable[]>] [<CommonParameters>]
+ [[-ActivityDetails] <IDictionary[]>] [[-Buttons] <IDictionary[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -36,7 +36,7 @@ PS C:\> {{ Add example code here }}
 {{Fill ActivityDetails Description}}
 
 ```yaml
-Type: Hashtable[]
+Type: IDictionary[]
 Parameter Sets: (All)
 Aliases:
 
@@ -127,7 +127,7 @@ Accept wildcard characters: False
 {{Fill Buttons Description}}
 
 ```yaml
-Type: Hashtable[]
+Type: IDictionary[]
 Parameter Sets: (All)
 Aliases:
 

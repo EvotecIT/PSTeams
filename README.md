@@ -26,6 +26,9 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 
 ## Updates
 
+-   0.3.x / 2019.02.21
+    -   added summary for message that is visible in Activity pane
+
 -   0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
 
     -   added cross-platform (works on linux, mac os, windows)
