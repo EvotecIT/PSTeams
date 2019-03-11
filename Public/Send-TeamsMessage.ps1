@@ -21,7 +21,6 @@ function Send-TeamsMessage {
     }
     Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
     Write-Verbose "Send-TeamsMessage - Color: $Color Color HEX $ThemeColor"
-    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
@@ -37,6 +36,7 @@ function Send-TeamsMessage {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
         }
     }
+    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if ($Supress) { } else { return $Body }
 
 }
