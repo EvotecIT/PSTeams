@@ -27,7 +27,7 @@ function Send-TeamsMessage {
         -Sections $Sections `
         -MessageSummary $MessageSummary
     try {
-        $Execute = Invoke-RestMethod -Uri $uri -Method Post -Body $Body -ContentType 'application/json'
+        $Execute = Invoke-RestMethod -Uri $uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         if ($ShowErrors) {
