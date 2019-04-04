@@ -26,6 +26,10 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 
 ## Updates
 
+-   0.4.0 / 2019.04.03
+    -   fix for UTF-8 charset - (provided by hjorslev)
+    -   emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
+
 -   0.3.x / 2019.02.21
     -   added summary for message that is visible in Activity pane
 
