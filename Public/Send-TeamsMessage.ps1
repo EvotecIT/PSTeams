@@ -1,7 +1,7 @@
 function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
-        [alias("TeamsID")][Parameter(Mandatory = $true)][string]$URI,
+        [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string]$MessageTitle,
         [string]$MessageText,
         [string]$MessageSummary,
@@ -27,7 +27,7 @@ function Send-TeamsMessage {
         -Sections $Sections `
         -MessageSummary $MessageSummary
     try {
-        $Execute = Invoke-RestMethod -Uri $uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
+        $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         if ($ShowErrors) {
@@ -37,6 +37,5 @@ function Send-TeamsMessage {
         }
     }
     Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
-    if ($Supress) { } else { return $Body }
-
+    if (-not $Supress) { return $Body }
 }
