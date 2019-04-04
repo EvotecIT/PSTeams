@@ -1,4 +1,4 @@
-function Add-TeamsBody {
+﻿function Add-TeamsBody {
     param (
         [string] $MessageTitle,
         [string] $ThemeColor,
@@ -6,7 +6,7 @@ function Add-TeamsBody {
         [string] $MessageSummary,
         [System.Collections.IDictionary[]] $Sections
     )
-    
+
     $Body = [ordered] @{
         title      = $MessageTitle
         themeColor = $ThemeColor
@@ -21,7 +21,7 @@ function Add-TeamsBody {
             $Body.summary = $MessageText
         }
     }
-    if ($MessageText -ne '') { 
+    if ($MessageText -ne '') {
         $Body.text = $MessageText
     }
     return $Body | ConvertTo-Json -Depth 6
