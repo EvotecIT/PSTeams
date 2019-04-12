@@ -1,4 +1,5 @@
 $Script:RGBColors = @{
+    "None"                 = $null
     "Black"                = 0, 0, 0
     "Navy"                 = 0, 0, 128
     "DarkBlue"             = 0, 0, 139

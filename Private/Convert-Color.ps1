@@ -28,7 +28,7 @@ function Convert-Color {
     )
     switch ($PsCmdlet.ParameterSetName) {
         "RGB" {
-            if ($RGB[2] -eq $null) {
+            if ($null -eq $RGB[2]) {
                 Write-error "Value missing. Please enter all three values seperated by comma."
             }
             $red = [convert]::Tostring($RGB[0], 16)

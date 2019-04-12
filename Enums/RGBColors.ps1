@@ -1,5 +1,6 @@
 Add-Type -TypeDefinition @"
 public enum RGBColors {
+    None,
     Black,
     Navy,
     DarkBlue,

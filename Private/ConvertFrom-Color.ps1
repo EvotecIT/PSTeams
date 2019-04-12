@@ -2,21 +2,21 @@ function ConvertFrom-Color {
     [alias('Convert-FromColor')]
     [CmdletBinding()]
     param (
-        [RGBColors] $Color,
+        [alias('Colors')][RGBColors[]] $Color,
         [switch] $AsDecimal
     )
-    $Value = $Script:RGBColors."$Color"
-    $HexValue = Convert-Color -RGB $Value
-    Write-Verbose "Convert-FromColor - Color Name: $Color Value: $Value HexValue: $HexValue"
-    <#
-    [string] $HexVal = ''
-    foreach ($arg in $Value) {
-        $hexval = $hexval + [Convert]::ToString($arg, 16).ToUpper()
+    $Colors = foreach ($C in $Color) {
+        $Value = $Script:RGBColors."$C"
+        if ($null -eq $Value) {
+            return
+        }
+        $HexValue = Convert-Color -RGB $Value
+        Write-Verbose "Convert-FromColor - Color Name: $C Value: $Value HexValue: $HexValue"
+        if ($AsDecimal) {
+            [Convert]::ToInt64($HexValue, 16)
+        } else {
+            "#$($HexValue)"
+        }
     }
-    #>
-    if ($AsDecimal) {
-        return  [Convert]::ToInt64($HexValue, 16)
-    } else {
-        return "#$($HexValue)"
-    }
+    $Colors
 }
