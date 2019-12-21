@@ -1,6 +1,7 @@
 function New-TeamsSection {
     [CmdletBinding()]
     param (
+        [scriptblock] $SectionInput,
         [string] $Title,
         [string] $ActivityTitle,
         [string] $ActivitySubtitle ,
@@ -15,6 +16,20 @@ function New-TeamsSection {
         $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' # -Verbose
     }
 
+    $ButtonsList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
+    $FactList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
+
+    if ($SectionInput) {
+        $SectionOutput = & $SectionInput
+        foreach ($_ in $SectionOutput) {
+            if ($_.Type -eq 'button') {
+                $ButtonsList.Add($_)
+            } elseif ($_.Type -eq 'fact') {
+                $FactList.Add($_)
+            }
+        }
+    }
+
     $Section = [ordered] @{
         title            = $Title
         activityTitle    = "$($ActivityTitle)"
@@ -22,14 +37,22 @@ function New-TeamsSection {
         activityImage    = "$($ActivityImageLink)"
         activityText     = "$($ActivityText)"
     }
-    if ($null -ne $ActivityDetails) {
+    if ($null -ne $ActivityDetails -or $FactList.Count -gt 0) {
         $Section.facts = @(
-            $ActivityDetails
+            if ($SectionInput) {
+                $FactList
+            } else {
+                $ActivityDetails
+            }
         )
     }
-    if ($null -ne $Buttons) {
+    if ($null -ne $Buttons -or $ButtonsList.Count -gt 0) {
         $Section.potentialAction = @(
-            $Buttons
+            if ($SectionInput) {
+                $ButtonsList
+            } else {
+                $Buttons
+            }
         )
     }
     return $Section

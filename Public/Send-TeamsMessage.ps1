@@ -1,6 +1,7 @@
 function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
+        [scriptblock] $SectionsInput,
         [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string]$MessageTitle,
         [string]$MessageText,
@@ -10,6 +11,17 @@ function Send-TeamsMessage {
         [bool] $Supress = $true,
         [switch] $ShowErrors
     )
+    if (-not $MessageText -and -not $MessageTitle -and -not $MessageSummary) {
+        Write-Warning 'Send-TeamsMessage - MessageText or MessageTitle or MessageSummary is required.'
+        return
+    }
+
+    if ($SectionsInput) {
+        $Output = & $SectionsInput
+    } else {
+        $Output = $Sections
+    }
+
     if ($null -ne $Color) {
         try {
             $ThemeColor = ConvertFrom-Color -Color $Color
@@ -24,7 +36,7 @@ function Send-TeamsMessage {
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
-        -Sections $Sections `
+        -Sections $Output `
         -MessageSummary $MessageSummary
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
