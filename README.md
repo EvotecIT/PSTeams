@@ -1,22 +1,22 @@
+<p align="center">
+  <a href="https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=3"><img src="https://dev.azure.com/evotecpl/PSTeams/_apis/build/status/EvotecIT.PSTeams"></a>
+  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/v/PSTeams.svg"></a>
+  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/vpre/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow"></a>
+  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/license/EvotecIT/PSTeams.svg"></a>
+</p>
 
- <!---
-[![Build Status Windows/Linux/Mac](https://dev.azure.com/evotecpl/PSTeams/_apis/build/status/EvotecIT.PSTeams)](https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=2)
---->
+<p align="center">
+  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/p/PSTeams.svg"></a>
+  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/top/evotecit/PSTeams.svg"></a>
+  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/code-size/evotecit/PSTeams.svg"></a>
+  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/powershellgallery/dt/PSTeams.svg"></a>
+</p>
 
-<center>
-
-[![Build Status Windows/Linux/Mac](https://img.shields.io/azure-devops/build/evotecpl/50de6197-c7ea-433e-b6a6-689968cabe05/2.svg?label=builds%20on%20windows/macOs/linux&style=for-the-badge)](https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=2)
-[![PowerShellGallery Version](https://img.shields.io/powershellgallery/v/PSTeams.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
-
-[![PowerShellGallery Platform](https://img.shields.io/powershellgallery/p/PSTeams.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
-[![PowerShellGallery Preview Version](https://img.shields.io/powershellgallery/vpre/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
-
-
-![Top Language](https://img.shields.io/github/languages/top/evotecit/psteams.svg?style=for-the-badge)
-![Code](https://img.shields.io/github/languages/code-size/evotecit/psteams.svg?style=for-the-badge)
-[![PowerShellGallery Downloads](https://img.shields.io/powershellgallery/dt/PSTeams.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/PSTeams)
-
-</center>
+<p align="center">
+  <a href="https://twitter.com/PrzemyslawKlys"><img src="https://img.shields.io/twitter/follow/PrzemyslawKlys.svg?label=Twitter%20%40PrzemyslawKlys&style=social"></a>
+  <a href="https://evotec.xyz/hub"><img src="https://img.shields.io/badge/Blog-evotec.xyz-2A6496.svg"></a>
+  <a href="https://www.linkedin.com/in/pklys"><img src="https://img.shields.io/badge/LinkedIn-pklys-0077B5.svg?logo=LinkedIn"></a>
+</p>
 
 # PSTeams - PowerShell Module
 
@@ -26,21 +26,22 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 
 ## Updates
 
--   0.4.0 / 2019.04.03
-    -   fix for UTF-8 charset - (provided by hjorslev)
-    -   emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
+- 1.0.0 / Unreleased
+  - [x] New way of sending to Teams, old way still works
+- 0.6.0 / 2019.04.12
+  - [x] Stability issues
+- 0.4.0 / 2019.04.03
+  - [x] fix for UTF-8 charset - (provided by hjorslev)
+  - [x] emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
+- 0.3.x / 2019.02.21
+  -[x] added summary for message that is visible in Activity pane
+- 0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
+  - [x] added cross-platform (works on linux, mac os, windows)
+  - [x] added azure pipelines
+  - [x] added some pester tests
 
--   0.3.x / 2019.02.21
-    -   added summary for message that is visible in Activity pane
-
--   0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
-
-    -   added cross-platform (works on linux, mac os, windows)
-    -   added azure pipelines
-    -   added some pester tests
-
--   0.1.x / 2018.07.12
-    -   first release
+- 0.1.x / 2018.07.12
+  [x] first release
 
 ## Installing on Windows / Linux / MacOS
 
@@ -74,20 +75,20 @@ Send-TeamsMessage `
     -Sections $Section
 ```
 
-## How does it look like?
+## How does it look like
 
--   When executed from Linux
+- When executed from Linux
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
 
--   When executed from Windows
+- When executed from Windows
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
 
--   When executed from MacOS
+- When executed from MacOS
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
 
--   And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
+- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
