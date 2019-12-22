@@ -28,8 +28,8 @@ function Send-TeamsMessage {
             $ThemeColor = $null
         }
     }
-    Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
-    Write-Verbose "Send-TeamsMessage - Color: $Color Color HEX $ThemeColor"
+    # Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
+    #Write-Verbose "Send-TeamsMessage - Color: $Color Color HEX $ThemeColor"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
