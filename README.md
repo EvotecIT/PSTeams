@@ -51,6 +51,11 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 
 This module uses Message Cards to send information to Teams. You can find out what is supported in [Legacy actionable message card reference](https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference) just in case you would like to help out with development of this module.
 
+Additional links:
+
+- https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/cards/cards-format
+- https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
+
 ![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation1.png)
 
 ![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation2.png)

@@ -1,9 +1,6 @@
 Clear-Host
 Import-Module PSTeams -Force #-Verbose
 
-## https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/cards/cards-format
-## https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
-
 $TeamsID = 'https://outlook.office.com/webhook/a5c7c95a....'
 
 $Color = [RGBColors]::Chocolate
