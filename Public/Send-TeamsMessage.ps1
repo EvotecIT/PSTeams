@@ -8,6 +8,7 @@ function Send-TeamsMessage {
         [string]$MessageText,
         [string]$MessageSummary,
         [string]$Color,
+        [switch]$HideOriginalBody,
         [System.Collections.IDictionary[]]$Sections,
         [bool] $Supress = $true,
         [switch] $ShowErrors
@@ -33,7 +34,8 @@ function Send-TeamsMessage {
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
         -Sections $Output `
-        -MessageSummary $MessageSummary
+        -MessageSummary $MessageSummary `
+        -HideOriginalBody:$HideOriginalBody.IsPresent
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
     } catch {

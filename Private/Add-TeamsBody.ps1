@@ -5,7 +5,8 @@
         [string] $ThemeColor,
         [string] $MessageText,
         [string] $MessageSummary,
-        [System.Collections.IDictionary[]] $Sections
+        [System.Collections.IDictionary[]] $Sections,
+        [switch] $HideOriginalBody
     )
 
     $Body = [ordered] @{
@@ -16,6 +17,9 @@
     }
     if ($MessageTitle) {
         $Body.title = $MessageTitle
+    }
+    if ($HideOriginalBody.IsPresent) {
+        $Body.hideOriginalBody = $HideOriginalBody.IsPresent
     }
     if ($MessageSummary -ne '') {
         $Body.summary = $MessageSummary

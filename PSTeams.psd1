@@ -12,7 +12,7 @@
     RootModule           = 'PSTeams.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.7'
+    ModuleVersion        = '1.0'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -69,9 +69,9 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport    = 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsList', 
-    'New-TeamsListItem', 'New-TeamsSection', 'Send-TeamsMessage', 
-    'Send-TeamsMessageBody'
+    FunctionsToExport    = 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsBigImage', 
+    'New-TeamsImage', 'New-TeamsList', 'New-TeamsListItem', 
+    'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport      = @()
@@ -80,8 +80,8 @@
     # VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport      = 'TeamsButton', 'TeamsFact', 'TeamsList', 'TeamsListItem', 'TeamsSection', 
-    'TeamsMessage', 'TeamsMessageBody'
+    AliasesToExport      = 'TeamsButton', 'TeamsFact', 'TeamsBigImage', 'TeamsImage', 'TeamsList', 
+    'TeamsListItem', 'TeamsSection', 'TeamsMessage', 'TeamsMessageBody'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

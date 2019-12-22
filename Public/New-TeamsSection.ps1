@@ -9,6 +9,7 @@ function New-TeamsSection {
         [string] $ActivityImageLink,
         [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Minus', 'Check', 'Add', 'None')] $ActivityImage = 'None',
         [string] $ActivityText,
+        [string] $Text,
         [System.Collections.IDictionary[]]$ActivityDetails,
         [System.Collections.IDictionary[]]$Buttons,
         [switch] $StartGroup
@@ -20,14 +21,23 @@ function New-TeamsSection {
 
     $ButtonsList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
     $FactList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
+    $ImagesList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
+    $ImageHeroList = [System.Collections.Generic.List[System.Collections.IDictionary]]::new()
 
     if ($SectionInput) {
         $SectionOutput = & $SectionInput
         foreach ($_ in $SectionOutput) {
             if ($_.Type -eq 'button') {
+                $_.Remove('Type')
                 $ButtonsList.Add($_)
             } elseif ($_.Type -eq 'fact') {
+                $_.Remove('Type')
                 $FactList.Add($_)
+            } elseif ($_.Type -eq 'image') {
+                $_.Remove('Type')
+                $ImagesList.Add($_)
+            } elseif ($_.Type -eq 'HeroImageWorkaround') {
+                $ImageHeroList.Add($_)
             }
         }
     }
@@ -49,6 +59,27 @@ function New-TeamsSection {
         $Section.activityText = "$($ActivityText)"
     }
 
+
+    # $section.heroImage = @{ image = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg" }
+
+    if ($Text -or $ImageHeroList.Count -gt 0) {
+        if ($ImageHeroList.Count -gt 0) {
+            [string] $TextBundle = @(
+                foreach ($_ in $ImageHeroList) {
+                    $_.Image
+                }
+                if ($Text) {
+                    $Text
+                }
+            )
+        } else {
+            [string] $TextBundle = $Text
+        }
+        $section.text = $TextBundle
+    }
+    if ($ImagesList.Count -gt 0) {
+        $section.images = @( $ImagesList )
+    }
     if ($StartGroup) {
         $Section.startGroup = $startGroup.IsPresent
     }
