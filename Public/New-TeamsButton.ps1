@@ -1,4 +1,5 @@
 function New-TeamsButton {
+    [alias('TeamsButton')]
     [CmdletBinding()]
     param (
         [string] $Name,

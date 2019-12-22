@@ -1,4 +1,5 @@
 function Send-TeamsMessage {
+    [alias('TeamsMessage')]
     [CmdletBinding()]
     Param (
         [scriptblock] $SectionsInput,
@@ -6,23 +7,18 @@ function Send-TeamsMessage {
         [string]$MessageTitle,
         [string]$MessageText,
         [string]$MessageSummary,
-        [RGBColors] $Color,
+        [string]$Color,
         [System.Collections.IDictionary[]]$Sections,
         [bool] $Supress = $true,
         [switch] $ShowErrors
     )
-    if (-not $MessageText -and -not $MessageTitle -and -not $MessageSummary) {
-        Write-Warning 'Send-TeamsMessage - MessageText or MessageTitle or MessageSummary is required.'
-        return
-    }
-
     if ($SectionsInput) {
         $Output = & $SectionsInput
     } else {
         $Output = $Sections
     }
 
-    if ($null -ne $Color) {
+    if ($Color -or $Color -ne 'None') {
         try {
             $ThemeColor = ConvertFrom-Color -Color $Color
         } catch {
@@ -51,3 +47,5 @@ function Send-TeamsMessage {
     Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if (-not $Supress) { return $Body }
 }
+
+Register-ArgumentCompleter -CommandName Send-TeamsMessage -ParameterName Color -ScriptBlock { $Script:RGBColors.Keys }

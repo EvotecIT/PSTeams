@@ -1,4 +1,5 @@
 ﻿function New-TeamsListItem {
+    [alias('TeamsListItem')]
     [CmdletBinding()]
     param(
         [string] $Text,

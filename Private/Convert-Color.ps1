@@ -17,19 +17,20 @@ function Convert-Color {
     Converts Red = 123 Green = 200 Blue = 255 to Hex value
 
     #>
+    [CmdletBinding()]
     param(
         [Parameter(ParameterSetName = "RGB", Position = 0)]
-        [ValidateScript( {$_ -match '^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$'})]
+        [ValidateScript( { $_ -match '^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$' })]
         $RGB,
         [Parameter(ParameterSetName = "HEX", Position = 0)]
-        [ValidateScript( {$_ -match '[A-Fa-f0-9]{6}'})]
+        [ValidateScript( { $_ -match '[A-Fa-f0-9]{6}' })]
         [string]
         $HEX
     )
     switch ($PsCmdlet.ParameterSetName) {
         "RGB" {
             if ($null -eq $RGB[2]) {
-                Write-error "Value missing. Please enter all three values seperated by comma."
+                Write-Error "Value missing. Please enter all three values seperated by comma."
             }
             $red = [convert]::Tostring($RGB[0], 16)
             $green = [convert]::Tostring($RGB[1], 16)

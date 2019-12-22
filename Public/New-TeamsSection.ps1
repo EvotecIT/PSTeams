@@ -1,4 +1,5 @@
 function New-TeamsSection {
+    [alias('TeamsSection')]
     [CmdletBinding()]
     param (
         [scriptblock] $SectionInput,
@@ -6,12 +7,13 @@ function New-TeamsSection {
         [string] $ActivityTitle,
         [string] $ActivitySubtitle ,
         [string] $ActivityImageLink,
-        [ImageType] $ActivityImage = [ImageType]::None,
+        [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Minus', 'Check', 'Add', 'None')] $ActivityImage = 'None',
         [string] $ActivityText,
         [System.Collections.IDictionary[]]$ActivityDetails,
-        [System.Collections.IDictionary[]]$Buttons
+        [System.Collections.IDictionary[]]$Buttons,
+        [switch] $StartGroup
     )
-    if ($ActivityImage -ne [ImageType]::None) {
+    if ($ActivityImage -ne 'None') {
         $StoredImages = [IO.Path]::Combine("$(Split-Path -Path $PSScriptRoot -Parent)", "Images")
         $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' # -Verbose
     }
@@ -30,12 +32,25 @@ function New-TeamsSection {
         }
     }
 
-    $Section = [ordered] @{
-        title            = $Title
-        activityTitle    = "$($ActivityTitle)"
-        activitySubtitle = "$($ActivitySubtitle)"
-        activityImage    = "$($ActivityImageLink)"
-        activityText     = "$($ActivityText)"
+    $Section = [ordered] @{ }
+    if ($Title) {
+        $Section.title = $Title
+    }
+    if ($ActivityTitle) {
+        $Section.activityTitle = "$($ActivityTitle)"
+    }
+    if ($ActivitySubtitle) {
+        $Section.activitySubtitle = "$($ActivitySubtitle)"
+    }
+    if ($ActivityImageLink) {
+        $Section.activityImage = "$($ActivityImageLink)"
+    }
+    if ($ActivityText) {
+        $Section.activityText = "$($ActivityText)"
+    }
+
+    if ($StartGroup) {
+        $Section.startGroup = $startGroup.IsPresent
     }
     if ($null -ne $ActivityDetails -or $FactList.Count -gt 0) {
         $Section.facts = @(

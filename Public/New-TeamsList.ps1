@@ -1,4 +1,5 @@
 ﻿function New-TeamsList {
+    [alias('TeamsList')]
     [CmdletBinding()]
     param(
         [scriptblock] $List,

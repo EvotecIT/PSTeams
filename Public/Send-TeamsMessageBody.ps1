@@ -1,4 +1,6 @@
 function Send-TeamsMessageBody {
+    [alias('TeamsMessageBody')]
+    [CmdletBinding()]
     param (
         [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string] $Body,

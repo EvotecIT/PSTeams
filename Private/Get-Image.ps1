@@ -6,7 +6,6 @@ function Get-Image {
         [string] $FileExtension
     )
     Write-Verbose "Get-Image - PathToImages $PathToImages FileName $FileName FileExtension $FileExtension"
-    #if ($ImageType -ne [ImageType]::None) {
     $ImagePath = [IO.Path]::Combine( $PathToImages, "$($FileName)$FileExtension")
     Write-Verbose "Get-Image - ImagePath $ImagePath"
     if (Test-Path $ImagePath) {
@@ -18,6 +17,5 @@ function Get-Image {
         Write-Verbose "Get-Image - Image Type: $($Image.GetType())"
         return "data:image/png;base64,$Image"
     }
-    # }
     return ''
 }

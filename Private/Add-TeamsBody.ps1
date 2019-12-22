@@ -1,4 +1,5 @@
 ﻿function Add-TeamsBody {
+    [CmdletBinding()]
     param (
         [string] $MessageTitle,
         [string] $ThemeColor,
@@ -8,9 +9,13 @@
     )
 
     $Body = [ordered] @{
-        title      = $MessageTitle
-        themeColor = $ThemeColor
         sections   = $Sections
+    }
+    if ($ThemeColor) {
+        $body.themeColor = $ThemeColor
+    }
+    if ($MessageTitle) {
+        $Body.title = $MessageTitle
     }
     if ($MessageSummary -ne '') {
         $Body.summary = $MessageSummary

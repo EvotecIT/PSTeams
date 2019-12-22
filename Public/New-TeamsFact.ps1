@@ -1,4 +1,5 @@
 function New-TeamsFact {
+    [alias('TeamsFact')]
     [CmdletBinding()]
     param (
         [string] $Name,
