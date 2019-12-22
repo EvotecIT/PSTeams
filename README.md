@@ -24,9 +24,17 @@
 
 For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) dedicated page.
 
+## Readme Links
+
+While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
+
+- [x] https://evotec.xyz/hub/scripts/psteams-powershell-module/
+- [x] https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/
+- [x] https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/
+
 ## Updates
 
-- 1.0.0 / Unreleased
+- 1.0.0 / 2019.12.22 - [full blog post](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
   - [x] New way of sending to Teams, old way still works
   - [x] Added new aliases
   - [x] Reworked lists/list items creation
