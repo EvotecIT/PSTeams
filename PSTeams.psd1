@@ -69,7 +69,9 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport    = 'New-TeamsBigImage', 'New-TeamsButton', 'New-TeamsFact', 
+    FunctionsToExport    = 'New-TeamsActivityImage', 'New-TeamsActivitySubtitle', 
+    'New-TeamsActivityText', 'New-TeamsActivityTitle', 
+    'New-TeamsBigImage', 'New-TeamsButton', 'New-TeamsFact', 
     'New-TeamsImage', 'New-TeamsList', 'New-TeamsListItem', 
     'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody'
 
@@ -80,7 +82,11 @@
     # VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport      = 'TeamsBigImage', 'TeamsButton', 'TeamsFact', 'TeamsImage', 'TeamsList', 
+    AliasesToExport      = 'ActivityImageLink', 'TeamsActivityImageLink', 
+    'New-TeamsActivityImageLink', 'ActivityImage', 'TeamsActivityImage', 
+    'ActivitySubtitle', 'TeamsActivitySubtitle', 'ActivityText', 
+    'TeamsActivityText', 'ActivityTitle', 'TeamsActivityTitle', 
+    'TeamsBigImage', 'TeamsButton', 'TeamsFact', 'TeamsImage', 'TeamsList', 
     'TeamsListItem', 'TeamsSection', 'TeamsMessage', 'TeamsMessageBody'
 
     # DSC resources to export from this module

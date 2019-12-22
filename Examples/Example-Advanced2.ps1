@@ -8,7 +8,7 @@ Send-TeamsMessage -Verbose -Color DimGray {
         New-TeamsFact -Name 'Bold' -Value '**Special GPO**'
         New-TeamsFact -Name 'Italic and Bold' -Value '***Other values***'
         New-TeamsFact -Name 'Italic' -Value '*2010-10-10*'
-    } #-ActivityTitle "**Przemyslaw Klys**" #-ActivitySubtitle "@przemyslawklys - 9/12/2016 at 5:33pm" -ActivityImageLink "https://github.com/EvotecIT/PSTeams/blob/master/Images/10.png?raw=true" -ActivityText "Climate change explained in comic book form by xkcd xkcd.com/1732" `
+    }
     New-TeamsSection -Title 'This is 2nd section within 1 message' {
         New-TeamsFact -Name 'Bold' -Value '**Special GPO**'
         New-TeamsFact -Name 'Italic and Bold' -Value '***Other values***'
@@ -47,5 +47,5 @@ Send-TeamsMessage -Verbose -Color DimGray {
             New-TeamsListItem -Text 'Another entry' -Level 0 -Numbered
             New-TeamsListItem -Text 'Very very long line that I want to show, hellow helow. Very very long line that I want to show, hellow helow. ' -Level 0 -Numbered
         }
-    } -Uri $TeamsID -MessageSummary 'Test1' #-MessageText 'Test2' -MessageTitle 'Test1' #
-}
+    }
+} -Uri $TeamsID -MessageSummary 'Test1' #-MessageText 'Test2' -MessageTitle 'Test1' #

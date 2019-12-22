@@ -38,6 +38,16 @@ function New-TeamsSection {
                 $ImagesList.Add($_)
             } elseif ($_.Type -eq 'HeroImageWorkaround') {
                 $ImageHeroList.Add($_)
+            } elseif ($_.Type -eq 'ActivityTitle') {
+                $ActivityTitle = $_.ActivityTitle
+            } elseif ($_.Type -eq 'ActivitySubtitle') {
+                $ActivitySubtitle = $_.ActivitySubtitle
+            } elseif ($_.Type -eq 'ActivityImageLink') {
+                $ActivityImageLink = $_.ActivityImageLink
+            } elseif ($_.Type -eq 'ActivityText') {
+                $ActivityText = $_.ActivityText
+            } elseif ($_.Type -eq 'ActivityImage') {
+                $ActivityImageLink = $_.ActivityImageLink
             }
         }
     }
