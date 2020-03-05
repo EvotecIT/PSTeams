@@ -16,18 +16,30 @@ function ConvertTo-TeamsFact {
     Ram Iyer (ram.iyer@merckgroup.com)
     #>
     
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'InputObject')]
     param (
         # The input object
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'InputObject')]
         [PSObject]
-        $InputObject
+        $InputObject,
+
+        # A dictionary input
+        [Parameter(Mandatory = $true, ParameterSetName = 'InputHash')]
+        [hashtable]
+        $InputHash
     )
 
     begin { }
     process {
-        $Facts = foreach ($Property in $InputObject.PsObject.Properties) {
-            New-TeamsFact -Name $Property.Name -Value $Property.Value
+        if ($InputObject) {
+            $Facts = foreach ($Property in $InputObject.PsObject.Properties) {
+                New-TeamsFact -Name $Property.Name -Value $Property.Value
+            }
+        }
+        elseif ($InputDictionary) {
+            $Facts = foreach ($Key in $InputDictionary.Keys) {
+                New-TeamsFact -Name $Key -Value $InputDictionary.$Key
+            }
         }
         $Facts
     }
