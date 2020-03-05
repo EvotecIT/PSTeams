@@ -1,0 +1,36 @@
+function ConvertTo-TeamsFact {
+    <#
+    .SYNOPSIS
+    Convert a PSCustomObject to Teams facts.
+    
+    .DESCRIPTION
+    Teams facts are a name-value pair. This module helps convert a PSObject to Teams facts (only string values, one level deep).
+    
+    .PARAMETER InputObject
+    The PSObject that is output by another cmdlet.
+    
+    .EXAMPLE
+    Get-ChildItem | Select-Object -First 1 | ConvertTo-TeamsFact
+    
+    .NOTES
+    Ram Iyer (https://pwsh.pro)
+    #>
+    
+    [CmdletBinding()]
+    param (
+        # The input object
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [PSObject]
+        $InputObject
+    )
+
+    begin {
+        $Facts = @()
+    }
+    process {
+        foreach ($Property in $InputObject.PsObject.Properties) {
+            $Facts += New-TeamsFact -Name $Property.Name -Value $Property.Value
+        }
+        $Facts
+    }
+}
