@@ -13,7 +13,7 @@ function ConvertTo-TeamsFact {
     Get-ChildItem | Select-Object -First 1 | ConvertTo-TeamsFact
     
     .NOTES
-    Ram Iyer (https://pwsh.pro)
+    Ram Iyer (ram.iyer@merckgroup.com)
     #>
     
     [CmdletBinding()]
@@ -24,12 +24,10 @@ function ConvertTo-TeamsFact {
         $InputObject
     )
 
-    begin {
-        $Facts = @()
-    }
+    begin { }
     process {
-        foreach ($Property in $InputObject.PsObject.Properties) {
-            $Facts += New-TeamsFact -Name $Property.Name -Value $Property.Value
+        $Facts = foreach ($Property in $InputObject.PsObject.Properties) {
+            New-TeamsFact -Name $Property.Name -Value $Property.Value
         }
         $Facts
     }
