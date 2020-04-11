@@ -9,7 +9,7 @@
   <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/p/PSTeams.svg"></a>
   <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/top/evotecit/PSTeams.svg"></a>
   <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/code-size/evotecit/PSTeams.svg"></a>
-  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/powershellgallery/dt/PSTeams.svg"></a>
+  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/dt/PSTeams.svg"></a>
 </p>
 
 <p align="center">

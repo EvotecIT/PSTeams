@@ -25,9 +25,9 @@ jobs:
         pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
-  - job: Build_PSCore_MacOS1013
+  - job: Build_PSCore_MacOS
     pool:
-      vmImage: xcode9-macos10.13
+      vmImage: macOS-latest
     steps:
     - script: |
         brew update
