@@ -20,3 +20,10 @@ Describe 'Send-TeamsMessage - Should send messages properly with new syntax' {
         }
     }
 }
+
+Describe "ConvertTo-TeamsFact - Should convert hash tables and PSObjects to Teams facts" {
+    It "Given two values, 1 section should not throw" {
+        $Files = Get-ChildItem $HOME | Sort-Object CreationTime -Descending | Select-Object Name, CreationTime -First 1
+        Send-TeamsMessage -Uri $TeamsID  -MessageTitle 'PSTeams - Pester Test for ConvertTo-TeamsFact' -Sections (New-TeamsSection -Title 'Latest file' -Text 'Here are the details about the latest file created in the specified directory' -ActivityDetails ($Files | ConvertTo-TeamsFact))
+    }
+}
