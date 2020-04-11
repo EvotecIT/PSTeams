@@ -28,16 +28,18 @@ function ConvertTo-TeamsFact {
 
     begin { }
     process {
-        if ($InputObject -is [hashtable]) {
+        if ($InputObject -is [System.Collections.IDictionary]) {
             $Facts = foreach ($Key in $InputObject.Keys) {
                 New-TeamsFact -Name $Key -Value $InputObject.$Key
             }
         }
         elseif (($InputObject -is [int]) -or ($InputObject -is [long]) -or ($InputObject -is [string]) -or ($InputObject -is [char]) -or ($InputObject -is [bool]) -or ($InputObject -is [byte]) -or ($InputObject -is [double]) -or ($InputObject -is [decimal]) -or ($InputObject -is [single]) -or ($InputObject -is [array]) -or ($InputObject -is [xml])) {
+            # Because PowerShell implicitly converts datatypes to PSObject
             Write-Error -Message 'The input is neither a PSObject nor a Hashtable. Operation aborted.' -Category InvalidData
             break
         }
-        elseif ($InputObject -is [psobject]) {
+        else {
+            # Assumes that the input is a PSObject; anyway there would be an implicit conversion if not caught in the previous block
             $Facts = foreach ($Property in $InputObject.PsObject.Properties) {
                 New-TeamsFact -Name $Property.Name -Value $Property.Value
             }
@@ -45,4 +47,3 @@ function ConvertTo-TeamsFact {
         $Facts
     }
 }
-Get-Help ConvertTo-TeamsFact
