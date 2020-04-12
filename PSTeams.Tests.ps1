@@ -18,6 +18,10 @@ if ($null -eq (Get-Module -ListAvailable PSSharedGoods)) {
     Write-Warning "$ModuleName - Downloading PSSharedGoods from PSGallery"
     Install-Module -Name PSSharedGoods -Repository PSGallery -Force -Scope CurrentUser
 }
+if ($null -eq (Get-Module -ListAvailable PesterMatchHashtable)) {
+    Write-Warning "$ModuleName - Downloading PesterMatchHashtable from PSGallery"
+    Install-Module -Name PesterMatchHashtable -Repository PSGallery -Force -Scope CurrentUser
+}
 
 #$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
 $result = Invoke-Pester -Script @{ Path = "$($PSScriptRoot)\Tests"; Parameters = @{ TeamsID = $TeamsID }; } -EnableExit
