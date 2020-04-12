@@ -1,7 +1,7 @@
 param (
     $TeamsID = $Env:TEAMSPESTERID
 )
-#Requires -Modules Pester, PesterMatchHashtable
+#Requires -Modules Pester
 Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
 
 Describe "Conversion of different objects to Teams fact" {
