@@ -14,7 +14,7 @@ Describe "Conversion of different objects to Teams fact" {
             ) | ConvertTo-TeamsFact
             $Output | Should -HaveCount 2
             $Output | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
-            $Output[0].type | Should -Be 'fact'
+            $Output[0] | Should MatchHashTable @{ name = 'Application'; value = 'Microsoft Teams'; type = 'fact' } 
         }
     }
     Context "Unordered dictionary" {
@@ -38,7 +38,7 @@ Describe "Conversion of different objects to Teams fact" {
             
             $Output | Should -HaveCount 2
             $Output | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
-            $Output[0].type | Should -Be 'fact'
+            $Output[0] | Should MatchHashTable @{ name = 'Application'; value = 'Microsoft Teams'; type = 'fact' } 
         }
     }
     Context "String" {
