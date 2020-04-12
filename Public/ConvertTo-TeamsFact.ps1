@@ -6,7 +6,7 @@ function ConvertTo-TeamsFact {
     .DESCRIPTION
     Teams facts are name-value pairs. This module helps convert a PSObject or a Hashtable to Teams facts (only one level deep).
     
-    .PARAMETER Object$Object
+    .PARAMETER InputObject
     The Hashtable or PSObject that is output by another cmdlet.
     
     .EXAMPLE
