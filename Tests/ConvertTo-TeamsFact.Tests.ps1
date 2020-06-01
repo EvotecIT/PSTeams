@@ -37,7 +37,7 @@ Describe "Conversion of different objects to Teams fact" {
             $Output[0].type | Should -Be 'fact'
         }
         It "Throw an error when a plain string is passed in" {
-            { 'My Plain String' | ConvertTo-TeamsFact } | Should Throw
+            { 'My Plain String' | ConvertTo-TeamsFact } | Should -Throw
         }
     }
 }
