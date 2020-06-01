@@ -20,7 +20,7 @@ if ($null -eq (Get-Module -ListAvailable PSSharedGoods)) {
 }
 
 #$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
-$result = Invoke-Pester -Script @{ Path = "$($PSScriptRoot)\Tests"; Parameters = @{ TeamsID = $TeamsID }; } -EnableExit
+$result = Invoke-Pester -Path "$($PSScriptRoot)\Tests" -Output Detailed
 
 if ($result.FailedCount -gt 0) {
     throw "$($result.FailedCount) tests failed."
