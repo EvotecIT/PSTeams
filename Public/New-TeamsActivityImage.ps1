@@ -1,9 +1,9 @@
 ﻿function New-TeamsActivityImage {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Link')]
     [alias('ActivityImageLink', 'TeamsActivityImageLink', 'New-TeamsActivityImageLink', 'ActivityImage', 'TeamsActivityImage')]
     param(
-        [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Info', 'Minus', 'Check', 'Add', 'None')] $Image,
-        [string] $Link
+        [Parameter(ParameterSetName = 'Image')][string][ValidateSet('Add', 'Alert', 'Cancel', 'Check', 'Disable', 'Download', 'Info', 'Minus', 'Question', 'Reload', 'None')] $Image,
+        [Parameter(ParameterSetName = 'Link')][string] $Link
     )
     if ($Image) {
         if ($Image -ne 'None') {
