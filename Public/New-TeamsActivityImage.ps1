@@ -2,7 +2,7 @@
     [CmdletBinding()]
     [alias('ActivityImageLink', 'TeamsActivityImageLink', 'New-TeamsActivityImageLink', 'ActivityImage', 'TeamsActivityImage')]
     param(
-        [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Minus', 'Check', 'Add', 'None')] $Image,
+        [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Info', 'Minus', 'Check', 'Add', 'None')] $Image,
         [string] $Link
     )
     if ($Image) {
