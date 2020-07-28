@@ -28,11 +28,18 @@ For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/sc
 
 While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
 
-- [x] https://evotec.xyz/hub/scripts/psteams-powershell-module/
-- [x] https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/
-- [x] https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/
+- [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
+- [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
+- [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
 
 ## Updates
+
+- 1.0.1 / 2020.07.28
+  - [x] Module is now signed
+  - [x] Added `ConvertTo-TeamsFact` - tnx theramiyer [#15](https://github.com/EvotecIT/PSTeams/pull/15)
+  - [x] Added `ConvertTo-TeamsSection` - tnx theramiyer [#15](https://github.com/EvotecIT/PSTeams/pull/15)
+  - [x] Fixed problem with missing image
+  - [x] Added missing image choice
 
 - 1.0.0 / 2019.12.22 - [full blog post](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
   - [x] New way of sending to Teams, old way still works
@@ -61,8 +68,8 @@ This module uses Message Cards to send information to Teams. You can find out wh
 
 Additional links:
 
-- https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/cards/cards-format
-- https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference
+- <https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/cards/cards-format>
+- <https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference>
 
 ![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation1.png)
 
