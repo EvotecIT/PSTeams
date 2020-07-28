@@ -2,16 +2,16 @@ function ConvertTo-TeamsSection {
     <#
     .SYNOPSIS
     Convert an array of PSCustomObject or a Hashtable to separate Teams sections.
-    
+
     .DESCRIPTION
     Teams sections are chunks of information that appear within a Teams message. This function helps convert an array of PSObject or an array of Hashtables to Teams sections (only one level deep).
-    
+
     .PARAMETER InputObject
     The Hashtable or PSObject that is output by another cmdlet.
-    
+
     .EXAMPLE
     Get-ChildItem -Directory | ConvertTo-TeamsSection -SectionTitleProperty Name
-    
+
     .NOTES
     Ram Iyer (https://ramiyer.me)
     #>
@@ -27,8 +27,8 @@ function ConvertTo-TeamsSection {
     )
 
     process {
-        $TotalCount = $InputObject.Count
-        $CurrentCount = 1
+        #$TotalCount = $InputObject.Count
+        #$CurrentCount = 1
 
         foreach ($Item in $InputObject) {
             $SectionParams = @{
