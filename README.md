@@ -34,6 +34,8 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
+- 1.0.2 / 2020.07.28
+  - [x] Added missing images `New-TeamsActivityImage`
 - 1.0.1 / 2020.07.28
   - [x] Module is now signed
   - [x] Added `ConvertTo-TeamsFact` - tnx theramiyer [#15](https://github.com/EvotecIT/PSTeams/pull/15)
