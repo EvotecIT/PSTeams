@@ -47,7 +47,11 @@ function Send-TeamsMessage {
         }
     }
     if ($Execute -like '*failed*' -or $Execute -like '*error*') {
-        Write-Warning "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
+        if ($ShowErrors) {
+            Write-Error "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
+        } else {
+            Write-Warning "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
+        }
     }
     Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if (-not $Suppress) { return $Body }
