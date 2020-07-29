@@ -34,6 +34,8 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
+- 1.0.4 / 2020.07.29
+  - [x] Small update to error handling
 - 1.0.3 / 2020.07.29
   - [x] Small update to `Send-TeamsMessage` to potentially display warning if cmdlet fails
   - [x] Renamed `Supress` to `Suppress` in `Send-TeamsMessage` - this will hunt me forever all over my modules (left alias in place)
