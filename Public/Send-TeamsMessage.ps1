@@ -10,7 +10,7 @@ function Send-TeamsMessage {
         [string]$Color,
         [switch]$HideOriginalBody,
         [System.Collections.IDictionary[]]$Sections,
-        [bool] $Supress = $true,
+        [alias('Supress')][bool] $Suppress = $true,
         [switch] $ShowErrors
     )
     if ($SectionsInput) {
@@ -37,7 +37,7 @@ function Send-TeamsMessage {
         -MessageSummary $MessageSummary `
         -HideOriginalBody:$HideOriginalBody.IsPresent
     try {
-        $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
+        $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         if ($ShowErrors) {
@@ -46,8 +46,11 @@ function Send-TeamsMessage {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
         }
     }
+    if ($Execute -like '*failed*' -or $Execute -like '*error*') {
+        Write-Warning "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
+    }
     Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
-    if (-not $Supress) { return $Body }
+    if (-not $Suppress) { return $Body }
 }
 
 Register-ArgumentCompleter -CommandName Send-TeamsMessage -ParameterName Color -ScriptBlock { $Script:RGBColors.Keys }
