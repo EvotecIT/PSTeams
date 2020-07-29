@@ -34,6 +34,9 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
+- 1.0.3 / 2020.07.29
+  - [x] Small update to `Send-TeamsMessage` to potentially display warning if cmdlet fails
+  - [x] Renamed `Supress` to `Suppress` in `Send-TeamsMessage` - this will hunt me forever all over my modules (left alias in place)
 - 1.0.2 / 2020.07.28
   - [x] Added missing images `New-TeamsActivityImage`
 - 1.0.1 / 2020.07.28
@@ -42,7 +45,6 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
   - [x] Added `ConvertTo-TeamsSection` - tnx theramiyer [#15](https://github.com/EvotecIT/PSTeams/pull/15)
   - [x] Fixed problem with missing image
   - [x] Added missing image choice
-
 - 1.0.0 / 2019.12.22 - [full blog post](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
   - [x] New way of sending to Teams, old way still works
   - [x] Added new aliases
@@ -55,7 +57,7 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
   - [x] fix for UTF-8 charset - (provided by hjorslev)
   - [x] emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
 - 0.3.x / 2019.02.21
-  -[x] added summary for message that is visible in Activity pane
+  - [x] added summary for message that is visible in Activity pane
 - 0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
   - [x] added cross-platform (works on linux, mac os, windows)
   - [x] added azure pipelines
