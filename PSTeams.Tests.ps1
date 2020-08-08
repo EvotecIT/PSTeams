@@ -1,26 +1,53 @@
 param (
     $TeamsID = $Env:TEAMSPESTERID
 )
-$PSVersionTable.PSVersion
 
 $ModuleName = (Get-ChildItem $PSScriptRoot\*.psd1).BaseName
-#+$ModuleVersion = (Get-Content -Raw $PSScriptRoot\*.psd1)  | Invoke-Expression | ForEach-Object ModuleVersion
-
-#$Dest = "Builds\$ModuleName-{0}-{1}.zip" -f $ModuleVersion, (Get-Date).ToString("yyyyMMddHHmmss")
-#Compress-Archive -Path . -DestinationPath .\$dest
-
-$Pester = (Get-Module -ListAvailable pester)
-if ($null -eq $Pester -or ($Pester[0].Version.Major -le 4 -and $Pester[0].Version.Minor -lt 4)) {
-    Write-Warning "$ModuleName - Downloading Pester from PSGallery"
-    Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -Scope CurrentUser
+$PrimaryModule = Get-ChildItem -Path $PSScriptRoot -Filter '*.psd1' -Recurse -ErrorAction SilentlyContinue -Depth 1
+if (-not $PrimaryModule) {
+    throw "Path $PSScriptRoot doesn't contain PSD1 files. Failing tests."
 }
-if ($null -eq (Get-Module -ListAvailable PSSharedGoods)) {
-    Write-Warning "$ModuleName - Downloading PSSharedGoods from PSGallery"
-    Install-Module -Name PSSharedGoods -Repository PSGallery -Force -Scope CurrentUser
+if ($PrimaryModule.Count -ne 1) {
+    throw 'More than one PSD1 files detected. Failing tests.'
+}
+$PSDInformation = Import-PowerShellDataFile -Path $PrimaryModule.FullName
+$RequiredModules = @(
+    'Pester'
+    'PSWriteColor'
+    if ($PSDInformation.RequiredModules) {
+        $PSDInformation.RequiredModules
+    }
+)
+foreach ($Module in $RequiredModules) {
+    if ($Module -is [System.Collections.IDictionary]) {
+        $Exists = Get-Module -ListAvailable -Name $Module.ModuleName
+        if (-not $Exists) {
+            Write-Warning "$ModuleName - Downloading $($Module.ModuleName) from PSGallery"
+            Install-Module -Name $Module.ModuleName -Force -SkipPublisherCheck
+        }
+    } else {
+        $Exists = Get-Module -ListAvailable $Module -ErrorAction SilentlyContinue
+        if (-not $Exists) {
+            Install-Module -Name $Module -Force -SkipPublisherCheck
+        }
+    }
 }
 
-#$result = Invoke-Pester -Script $PSScriptRoot\Tests -PassThru
-$result = Invoke-Pester -Path "$($PSScriptRoot)\Tests" -EnableExit
+Write-Color 'ModuleName: ', $ModuleName, ' Version: ', $PSDInformation.ModuleVersion -Color Yellow, Green, Yellow, Green -LinesBefore 2
+Write-Color 'PowerShell Version: ', $PSVersionTable.PSVersion -Color Yellow, Green
+Write-Color 'PowerShell Edition: ', $PSVersionTable.PSEdition -Color Yellow, Green
+Write-Color 'Required modules: ' -Color Yellow
+foreach ($Module in $PSDInformation.RequiredModules) {
+    if ($Module -is [System.Collections.IDictionary]) {
+        Write-Color '   [>] ', $Module.ModuleName, ' Version: ', $Module.ModuleVersion -Color Yellow, Green, Yellow, Green
+    } else {
+        Write-Color '   [>] ', $Module -Color Yellow, Green
+    }
+}
+Write-Color
+
+Import-Module $PSScriptRoot\*.psd1 -Force
+$result = Invoke-Pester -Script $PSScriptRoot\Tests -Verbose -EnableExit
 
 if ($result.FailedCount -gt 0) {
     throw "$($result.FailedCount) tests failed."
