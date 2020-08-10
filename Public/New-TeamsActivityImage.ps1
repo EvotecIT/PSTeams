@@ -7,7 +7,7 @@
     )
     if ($Image) {
         if ($Image -ne 'None') {
-            $StoredImages = [IO.Path]::Combine("$(Split-Path -Path $PSScriptRoot -Parent)", "Images")
+            $StoredImages = [IO.Path]::Combine($PSScriptRoot, '..', 'Images')
             @{
                 ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $Image -FileExtension '.jpg' # -Verbose
                 type              = 'ActivityImage'
