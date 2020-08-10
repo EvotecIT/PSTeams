@@ -34,6 +34,8 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
+- 1.0.5 / 2020.08.10
+  - [x] Fix for ActivityImage images not working correctly [#22](https://github.com/EvotecIT/PSTeams/issues/22)
 - 1.0.4 / 2020.07.29
   - [x] Small update to error handling
 - 1.0.3 / 2020.07.29
