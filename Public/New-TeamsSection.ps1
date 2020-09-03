@@ -34,7 +34,7 @@ function New-TeamsSection {
         $ActivityImageLink = Get-Image -PathToImages $FilePath -FileName $FileBaseName -FileExtension $FileExtension # -Verbose
     }
     elseif ($ActivityImage -ne 'None') {
-        $StoredImages = [IO.Path]::Combine($PSScriptRoot, 'Images')
+        $StoredImages = [IO.Path]::Combine($PSScriptRoot, '..', 'Images')
         $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' # -Verbose
     }
 
