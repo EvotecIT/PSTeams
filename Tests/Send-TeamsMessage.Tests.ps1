@@ -23,11 +23,11 @@ Describe 'Send-TeamsMessage - Should send messages properly' {
             -ActivityDetails $Fact1, $Fact2, $Fact3
 
         Send-TeamsMessage `
-            -URI $TeamsID `
+            -Uri $TeamsID `
             -MessageTitle 'PSTeams - Pester Test' `
             -MessageText "This text won't show up" `
             -Color DodgerBlue `
-            -Sections $Section -ShowErrors
+            -Sections $Section -ErrorAction Stop
     }
     It 'Given 3 facts, 1 section should not throw' {
         $Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
@@ -44,10 +44,10 @@ Describe 'Send-TeamsMessage - Should send messages properly' {
             -ActivityDetails $Fact1, $Fact2, $Fact3
 
         Send-TeamsMessage `
-            -URI $TeamsID `
+            -Uri $TeamsID `
             -MessageTitle 'PSTeams - Pester Test' `
             -MessageText "This text won't show up" `
             -Color DodgerBlue `
-            -Sections $Section -ShowErrors
+            -Sections $Section -ErrorAction Stop
     }
 }

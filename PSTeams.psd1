@@ -8,7 +8,7 @@
     Description          = 'Simple project to send messages to Microsoft Teams Channel.'
     FunctionsToExport    = @('ConvertTo-TeamsFact', 'ConvertTo-TeamsSection', 'New-TeamsActivityImage', 'New-TeamsActivitySubtitle', 'New-TeamsActivityText', 'New-TeamsActivityTitle', 'New-TeamsBigImage', 'New-TeamsButton', 'New-TeamsFact', 'New-TeamsImage', 'New-TeamsList', 'New-TeamsListItem', 'New-TeamsSection', 'Send-TeamsMessage', 'Send-TeamsMessageBody')
     GUID                 = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
-    ModuleVersion        = '1.0.6'
+    ModuleVersion        = '1.0.7'
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
