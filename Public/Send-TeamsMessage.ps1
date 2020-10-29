@@ -10,8 +10,7 @@ function Send-TeamsMessage {
         [string]$Color,
         [switch]$HideOriginalBody,
         [System.Collections.IDictionary[]]$Sections,
-        [alias('Supress')][bool] $Suppress = $true,
-        [switch] $ShowErrors
+        [alias('Supress')][bool] $Suppress = $true
     )
     if ($SectionsInput) {
         $Output = & $SectionsInput
@@ -40,14 +39,14 @@ function Send-TeamsMessage {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
-        if ($ShowErrors) {
+        if ($PSBoundParameters.ErrorAction -eq 'Stop') {
             Write-Error "Couldn't send message. Error $ErrorMessage"
         } else {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
         }
     }
     if ($Execute -like '*failed*' -or $Execute -like '*error*') {
-        if ($ShowErrors) {
+        if ($PSBoundParameters.ErrorAction -eq 'Stop') {
             Write-Error "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
         } else {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"

@@ -10,8 +10,19 @@ function Send-TeamsMessageBody {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
-        Write-Warning "Send-TeamsMessageBody - Failed with error message: $ErrorMessage"
+        if ($PSBoundParameters.ErrorAction -eq 'Stop') {
+            Write-Error "Couldn't send message. Error $ErrorMessage"
+        } else {
+            Write-Warning "Send-TeamsMessageBody - Couldn't send message. Error: $ErrorMessage"
+        }
     }
-    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
+    if ($Execute -like '*failed*' -or $Execute -like '*error*') {
+        if ($PSBoundParameters.ErrorAction -eq 'Stop') {
+            Write-Error "Send-TeamsMessageBody - Couldn't send message. Execute message: $Execute"
+        } else {
+            Write-Warning "Send-TeamsMessageBody - Couldn't send message. Execute message: $Execute"
+        }
+    }
+    Write-Verbose "Send-TeamsMessageBody - Execute $Execute Body $Body"
     if (-not $Supress) { return $Body }
 }
