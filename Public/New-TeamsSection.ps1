@@ -8,13 +8,32 @@ function New-TeamsSection {
         [string] $ActivitySubtitle ,
         [string] $ActivityImageLink,
         [string][ValidateSet('Alert', 'Cancel', 'Disable', 'Download', 'Minus', 'Check', 'Add', 'None')] $ActivityImage = 'None',
+
+        [ValidateScript({
+            if (-not ($_ | Test-Path)) {
+                throw "ActivityImagePath is inaccessible or does not exist"
+            }
+            if (-not ($_ | Test-Path -PathType Leaf) -or ($_ -notmatch "(\.jpg|\.png)")) {
+                throw "ActivityImagePath is not a file or file extension is not supported"
+            }
+            return $true
+        })]
+        [System.IO.FileInfo] $ActivityImagePath,
+
         [string] $ActivityText,
         [string] $Text,
         [System.Collections.IDictionary[]]$ActivityDetails,
         [System.Collections.IDictionary[]]$Buttons,
         [switch] $StartGroup
     )
-    if ($ActivityImage -ne 'None') {
+
+    if ($ActivityImagePath) { # ActivityImagePath takes precedence over ActivityImage
+        $FilePath = [System.IO.Path]::GetDirectoryName($ActivityImagePath)
+        $FileBaseName = [System.IO.Path]::GetFileNameWithoutExtension($ActivityImagePath)
+        $FileExtension = [System.IO.Path]::GetExtension($ActivityImagePath)
+        $ActivityImageLink = Get-Image -PathToImages $FilePath -FileName $FileBaseName -FileExtension $FileExtension # -Verbose
+    }
+    elseif ($ActivityImage -ne 'None') {
         $StoredImages = [IO.Path]::Combine($PSScriptRoot, '..', 'Images')
         $ActivityImageLink = Get-Image -PathToImages $StoredImages -FileName $ActivityImage -FileExtension '.jpg' # -Verbose
     }
