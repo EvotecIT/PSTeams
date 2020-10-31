@@ -4,7 +4,7 @@
         [string] $Text,
         [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
         [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
-        [ValidateSet("Medium", "ExtraLarge")][string] $Size,
+        [ValidateSet("Small", 'Default', "Medium", "Large", "ExtraLarge")][string] $Size,
         [ValidateSet("Lighter", 'Default', "Bolder")][string] $Weight,
         [ValidateSet("Accent", 'Default', 'Dark', 'Light', 'Good', 'Warning', 'Attention')][string] $Color,
         [ValidateSet('Stretch', 'Automatic')][string] $Height,
