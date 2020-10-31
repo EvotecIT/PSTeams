@@ -34,6 +34,8 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
+- 2.0.0 Alpha1 / PreRelease / Testing
+  - [x] Added AdaptiveCard
 - 1.0.6 / Unreleased
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
