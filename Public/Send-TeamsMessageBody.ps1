@@ -4,8 +4,20 @@ function Send-TeamsMessageBody {
     param (
         [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string] $Body,
-        [bool] $Supress = $true
+        [bool] $Supress = $true,
+        [switch] $Wrap
     )
+    if ($Wrap) {
+        $TemporaryBody = ConvertFrom-Json -InputObject $Body
+        $Wrapper = [ordered]@{
+            "type"        = "message"
+            "attachments" = @(
+                $TemporaryBody
+            )
+        }
+        $Body = $Wrapper | ConvertTo-Json -Depth 20
+    }
+    Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
     } catch {
@@ -16,6 +28,7 @@ function Send-TeamsMessageBody {
             Write-Warning "Send-TeamsMessageBody - Couldn't send message. Error: $ErrorMessage"
         }
     }
+    Write-Verbose "Send-TeamsMessageBody - Execute $Execute"
     if ($Execute -like '*failed*' -or $Execute -like '*error*') {
         if ($PSBoundParameters.ErrorAction -eq 'Stop') {
             Write-Error "Send-TeamsMessageBody - Couldn't send message. Execute message: $Execute"
@@ -23,6 +36,5 @@ function Send-TeamsMessageBody {
             Write-Warning "Send-TeamsMessageBody - Couldn't send message. Execute message: $Execute"
         }
     }
-    Write-Verbose "Send-TeamsMessageBody - Execute $Execute Body $Body"
     if (-not $Supress) { return $Body }
 }

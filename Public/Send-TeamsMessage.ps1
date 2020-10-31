@@ -3,7 +3,7 @@ function Send-TeamsMessage {
     [CmdletBinding()]
     Param (
         [scriptblock] $SectionsInput,
-        [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
+        [alias("TeamsID", 'Url')][Parameter(Mandatory)][string]$Uri,
         [string]$MessageTitle,
         [string]$MessageText,
         [string]$MessageSummary,
@@ -27,14 +27,13 @@ function Send-TeamsMessage {
             $ThemeColor = $null
         }
     }
-    # Write-Verbose "Send-TeamsMessage - Color: $Color ColorConverted: $ThemeColor"
-    #Write-Verbose "Send-TeamsMessage - Color: $Color Color HEX $ThemeColor"
     $Body = Add-TeamsBody -MessageTitle $MessageTitle `
         -MessageText $MessageText `
         -ThemeColor $ThemeColor `
         -Sections $Output `
         -MessageSummary $MessageSummary `
         -HideOriginalBody:$HideOriginalBody.IsPresent
+    Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop
     } catch {
@@ -45,6 +44,7 @@ function Send-TeamsMessage {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Error: $ErrorMessage"
         }
     }
+    Write-Verbose "Send-TeamsMessage - Execute $Execute"
     if ($Execute -like '*failed*' -or $Execute -like '*error*') {
         if ($PSBoundParameters.ErrorAction -eq 'Stop') {
             Write-Error "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
@@ -52,7 +52,6 @@ function Send-TeamsMessage {
             Write-Warning "Send-TeamsMessage - Couldn't send message. Execute message: $Execute"
         }
     }
-    Write-Verbose "Send-TeamsMessage - Execute $Execute Body $Body"
     if (-not $Suppress) { return $Body }
 }
 
