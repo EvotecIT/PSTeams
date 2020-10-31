@@ -4,8 +4,19 @@ function Send-TeamsMessageBody {
     param (
         [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string] $Body,
-        [bool] $Supress = $true
+        [bool] $Supress = $true,
+        [switch] $Wrap
     )
+    if ($Wrap) {
+        $TemporaryBody = ConvertFrom-Json -InputObject $Body
+        $Wrapper = [ordered]@{
+            "type"        = "message"
+            "attachments" = @(
+                $TemporaryBody
+            )
+        }
+        $Body = $Wrapper | ConvertTo-Json -Depth 20
+    }
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
