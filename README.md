@@ -34,11 +34,10 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
-- 1.0.7 / Unreleased
+- 1.0.6 / 2020.10.31
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
     - [x] Replaced it with `ErrorAction Stop`
-- 1.0.6 / 2020.10.29
   - [x] Add support for custom activity image file system path [#24](https://github.com/EvotecIT/PSTeams/pull/24) by R3ality
 - 1.0.5 / 2020.08.10
   - [x] Fix for ActivityImage images not working correctly [#22](https://github.com/EvotecIT/PSTeams/issues/22)
