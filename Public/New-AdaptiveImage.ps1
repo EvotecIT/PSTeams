@@ -1,4 +1,5 @@
 ﻿function New-AdaptiveImage {
+    [alias('New-HeroImage')]
     [cmdletBinding()]
     param(
         [alias('Link')][string] $Url,

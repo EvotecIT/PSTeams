@@ -20,9 +20,18 @@
 
 # PSTeams - PowerShell Module
 
-[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**. It allows to send notifications to _Microsoft Teams_. It's pretty flexible and provides a bunch of options.
+[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**. It allows sending notifications to _Microsoft Teams_ via WebHook Notifications. It's pretty flexible and provides a bunch of options.
 
-For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) dedicated page.
+## Supported Cards
+
+While `WebHook Notifications` in theory only support `Office 365 Connector Card` it's possible to do more than that.
+
+- Supported in 0.X.0 - 1.0.X
+  - [x] [Office 365 Connector Card](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#office-365-connector-card) - The Office 365 Connector card provides a flexible layout with multiple sections, fields, images, and actions. This card encapsulates a connector card so that it can be used by bots. See the notes section for differences between connector cards and the O365 card.
+- Supported in 2.X.X (PreRelease)
+  - [x] [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card)
+  - [x] [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card)
+  - [x] [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card)
 
 ## Readme Links
 
@@ -35,11 +44,21 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 ## Updates
 
 - 2.0.0 Alpha1 / PreRelease / Testing
-  - [x] Added AdaptiveCard
+  - [x] Added initial support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
+    - [x] Added `New-AdaptiveColumn`
+    - [x] Added `New-AdaptiveImage`
+    - [x] Added `New-AdaptiveFactSet`
+      - [x] Added `New-AdaptiveFact`
+    - [x] Added `New-AdaptiveRichTextBlock`
+    - [x] Added `New-AdaptiveSection`
+    - [x] Added `New-AdaptiveTextBlock`
   - [x] Added support for [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card) using `New-CardList`
     - [x] Added `New-CardListItem`
     - [x] Added `New-CardListButton` (Maximum 6 buttons)
     - [x] Please notice this isn't really supported in Connectors and is added mostly for fun or basic usage as most of the features do not work
+  - [x] Added support for [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card) using `New-HeroCard`
+    - [x] Added `New-HeroImage` -> actually an alias `New-AdaptiveImage`
+    - [x] Added `New-HeroButton` -> actually an alias `New-CardListButton`
 - 1.0.6 / Unreleased
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`

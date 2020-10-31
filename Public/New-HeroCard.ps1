@@ -19,7 +19,11 @@
                     Write-Warning "New-HeroCard - Herd Card support only up to 6 buttons."
                 }
             } else {
-                $Images.Add($E)
+                if ($Images.Count -lt 1) {
+                    $Images.Add($E)
+                } else {
+                    Write-Warning "New-HeroCard - Herd Card support only 1 image."
+                }
             }
         }
 
