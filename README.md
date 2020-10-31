@@ -36,6 +36,10 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 - 2.0.0 Alpha1 / PreRelease / Testing
   - [x] Added AdaptiveCard
+  - [x] Added support for [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card) using `New-CardList`
+    - [x] Added `New-CardListItem`
+    - [x] Added `New-CardListButton`
+    - [x] Please notice this isn't really supported in Connectors and is added mostly for fun or basic usage as most of the features do not work
 - 1.0.6 / Unreleased
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
