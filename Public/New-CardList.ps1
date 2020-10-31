@@ -11,7 +11,11 @@
         $ExecutedContent = & $Content
         foreach ($E in $ExecutedContent) {
             if ($E.Value) {
-                $Buttons.Add($E)
+                if ($Buttons.Count -lt 6) {
+                    $Buttons.Add($E)
+                } else {
+                    Write-Warning "New-CardList - List Cards support only up to 6 buttons."
+                }
             } else {
                 $Items.Add($E)
             }
