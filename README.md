@@ -34,7 +34,7 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 
 ## Updates
 
-- 1.0.6 / 2020.10.31
+- 1.0.6 / Unreleased
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
     - [x] Replaced it with `ErrorAction Stop`
