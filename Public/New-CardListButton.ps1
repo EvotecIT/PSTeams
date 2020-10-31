@@ -1,4 +1,5 @@
 ﻿function New-CardListButton {
+    [alias('New-HeroButton')]
     [cmdletBinding()]
     param(
         [ValidateSet('imBack', 'openUrl', 'file')][string] $Type,
