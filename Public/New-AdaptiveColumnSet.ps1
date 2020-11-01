@@ -1,4 +1,4 @@
-﻿function New-AdaptiveSection {
+﻿function New-AdaptiveColumnSet {
     [cmdletBinding()]
     param(
         [scriptblock] $Columns,

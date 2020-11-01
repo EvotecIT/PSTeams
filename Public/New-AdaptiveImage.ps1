@@ -4,6 +4,7 @@
     param(
         [alias('Link')][string] $Url,
         [ValidateSet('Auto', 'Stretch', 'Small', 'Medium', 'Large')][string] $Size,
+        [ValidateSet('person')][string] $Style,
         [ValidateSet('Stretch', 'Automatic')][string] $Height,
         [alias('Alt')][string] $AltText
     )
@@ -13,6 +14,7 @@
         size   = $Size
         height = $Height
         alt    = $AltText
+        style  = $Style
     }
     Remove-EmptyValue -Hashtable $TeamObject
     $TeamObject
