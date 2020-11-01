@@ -145,7 +145,7 @@
         title = $SelectActionTitle
         url   = $SelectActionUrl
     }
-    Remove-EmptyValue -Hashtable $Wrapper['attachments'][0]['content'] -Recursive -Rerun 2
+    Remove-EmptyValue -Hashtable $Wrapper['attachments'][0]['content'] -Recursive -Rerun 1
     $JsonBody = $Wrapper | ConvertTo-Json -Depth 20
     # If URI is not given we return JSON. This is because it's possible to use nested Adaptive Cards in actions
     if ($Uri) {
