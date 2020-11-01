@@ -5,19 +5,20 @@ online version:
 schema: 2.0.0
 ---
 
-# Send-TeamsMessageBody
+# New-CardListItem
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-Send-TeamsMessageBody [-Uri] <String> [[-Body] <String>] [[-Supress] <Boolean>] [-Wrap] [<CommonParameters>]
+New-CardListItem [-Type] <String> [[-Icon] <String>] [[-Title] <String>] [[-SubTitle] <String>]
+ [[-TapAction] <String>] [[-TapType] <String>] [[-TapValue] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,8 +31,8 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Body
-{{Fill Body Description}}
+### -Icon
+{{ Fill Icon Description }}
 
 ```yaml
 Type: String
@@ -45,11 +46,73 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Supress
-{{ Fill Supress Description }}
+### -SubTitle
+{{ Fill SubTitle Description }}
 
 ```yaml
-Type: Boolean
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TapAction
+{{ Fill TapAction Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: whois, editOnline
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TapType
+{{ Fill TapType Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: imBack, openUrl, file
+
+Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TapValue
+{{ Fill TapValue Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Title
+{{ Fill Title Description }}
+
+```yaml
+Type: String
 Parameter Sets: (All)
 Aliases:
 
@@ -60,31 +123,17 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Uri
-{{Fill URI Description}}
+### -Type
+{{ Fill Type Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: TeamsID, Url
+Aliases:
+Accepted values: file, resultItem, section, person
 
 Required: True
 Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Wrap
-{{ Fill Wrap Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

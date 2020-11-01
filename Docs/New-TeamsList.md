@@ -5,19 +5,19 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# New-TeamsList
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+New-TeamsList [[-List] <ScriptBlock>] [[-Name] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,11 +30,11 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -List
+{{ Fill List Description }}
 
 ```yaml
-Type: String
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
 
@@ -45,8 +45,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Value
-{{Fill Value Description}}
+### -Name
+{{ Fill Name Description }}
 
 ```yaml
 Type: String

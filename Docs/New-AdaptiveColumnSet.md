@@ -5,22 +5,20 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsSection
+# New-AdaptiveColumnSet
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-New-TeamsSection [[-SectionInput] <ScriptBlock>] [[-Title] <String>] [[-ActivityTitle] <String>]
- [[-ActivitySubtitle] <String>] [[-ActivityImageLink] <String>] [[-ActivityImage] <String>]
- [[-ActivityImagePath] <FileInfo>] [[-ActivityText] <String>] [[-Text] <String>]
- [[-ActivityDetails] <IDictionary[]>] [[-Buttons] <IDictionary[]>] [-StartGroup] [<CommonParameters>]
+New-AdaptiveColumnSet [[-Columns] <ScriptBlock>] [[-Style] <String>] [[-MinimumHeight] <Int32>] [-Bleed]
+ [[-Spacing] <String>] [-Separator] [[-HorizontalAlignment] <String>] [[-Height] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -33,144 +31,8 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ActivityDetails
-{{Fill ActivityDetails Description}}
-
-```yaml
-Type: IDictionary[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 9
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivityImage
-{{Fill ActivityImage Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Alert, Cancel, Disable, Download, Minus, Check, Add, None
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivityImageLink
-{{Fill ActivityImageLink Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivityImagePath
-{{ Fill ActivityImagePath Description }}
-
-```yaml
-Type: FileInfo
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 6
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivitySubtitle
-{{Fill ActivitySubtitle Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivityText
-{{Fill ActivityText Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ActivityTitle
-{{Fill ActivityTitle Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Buttons
-{{Fill Buttons Description}}
-
-```yaml
-Type: IDictionary[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 10
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SectionInput
-{{ Fill SectionInput Description }}
-
-```yaml
-Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -StartGroup
-{{ Fill StartGroup Description }}
+### -Bleed
+{{ Fill Bleed Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -184,28 +46,107 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Text
-{{ Fill Text Description }}
+### -Columns
+{{ Fill Columns Description }}
 
 ```yaml
-Type: String
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 8
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Title
-{{Fill Title Description}}
+### -Height
+{{ Fill Height Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
 Aliases:
+Accepted values: Stretch, Automatic
+
+Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+{{ Fill HorizontalAlignment Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Left, Center, Right
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MinimumHeight
+{{ Fill MinimumHeight Description }}
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+{{ Fill Separator Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+{{ Fill Spacing Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Style
+{{ Fill Style Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Accent, Default, Emphasis, Good, Warning, Attention
 
 Required: False
 Position: 1

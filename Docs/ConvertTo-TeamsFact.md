@@ -5,58 +5,47 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# ConvertTo-TeamsFact
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Convert a PSCustomObject or a Hashtable to Teams facts.
 
 ## SYNTAX
 
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+ConvertTo-TeamsFact [-InputObject] <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Teams facts are name-value pairs.
+This function helps convert a PSObject or a Hashtable to Teams facts (only one level deep).
 
 ## EXAMPLES
 
-### Example 1
-```powershell
-PS C:\> {{ Add example code here }}
+### EXAMPLE 1
+```
+Get-ChildItem | Select-Object -First 1 | ConvertTo-TeamsFact
 ```
 
-{{ Add example description here }}
+### EXAMPLE 2
+```
+@{ Product = 'Microsoft Teams'; Developer = 'Microsoft Corporation'; ReleaseYear = '2018' } | ConvertTo-TeamsFact
+```
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -InputObject
+The Hashtable or PSObject that is output by another cmdlet.
 
 ```yaml
-Type: String
+Type: Object
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Value
-{{Fill Value Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
+Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 
@@ -65,11 +54,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
-
 ## OUTPUTS
 
-### System.Object
 ## NOTES
+Ram Iyer (https://ramiyer.me)
 
 ## RELATED LINKS

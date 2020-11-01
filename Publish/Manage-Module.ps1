@@ -150,7 +150,7 @@ $Configuration = @{
             ReleasesUnpacked = $false
             RefreshPSD1Only  = $false
         }
-        BuildDocumentation = $false
+        BuildDocumentation = $true
         ImportModules      = @{
             Self            = $true
             RequiredModules = $false

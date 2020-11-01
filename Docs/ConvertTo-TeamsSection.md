@@ -5,48 +5,47 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# ConvertTo-TeamsSection
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Convert an array of PSCustomObject or a Hashtable to separate Teams sections.
 
 ## SYNTAX
 
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+ConvertTo-TeamsSection [-InputObject] <Object> [[-SectionTitleProperty] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Teams sections are chunks of information that appear within a Teams message.
+This function helps convert an array of PSObject or an array of Hashtables to Teams sections (only one level deep).
 
 ## EXAMPLES
 
-### Example 1
-```powershell
-PS C:\> {{ Add example code here }}
+### EXAMPLE 1
 ```
-
-{{ Add example description here }}
+Get-ChildItem -Directory | ConvertTo-TeamsSection -SectionTitleProperty Name
+```
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -InputObject
+The Hashtable or PSObject that is output by another cmdlet.
 
 ```yaml
-Type: String
+Type: Object
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: 0
+Required: True
+Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 
-### -Value
-{{Fill Value Description}}
+### -SectionTitleProperty
+The property to use for title
 
 ```yaml
 Type: String
@@ -54,7 +53,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -65,11 +64,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
-
 ## OUTPUTS
 
-### System.Object
 ## NOTES
+Ram Iyer (https://ramiyer.me)
 
 ## RELATED LINKS

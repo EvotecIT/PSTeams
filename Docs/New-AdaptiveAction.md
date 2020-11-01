@@ -5,19 +5,20 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# New-AdaptiveAction
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+New-AdaptiveAction [[-Body] <ScriptBlock>] [[-Actions] <ScriptBlock>] [[-Type] <String>] [[-Title] <String>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,11 +31,26 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -Actions
+{{ Fill Actions Description }}
 
 ```yaml
-Type: String
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Body
+{{ Fill Body Description }}
+
+```yaml
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
 
@@ -45,8 +61,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Value
-{{Fill Value Description}}
+### -Title
+{{ Fill Title Description }}
 
 ```yaml
 Type: String
@@ -54,7 +70,23 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Type
+{{ Fill Type Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Action.ShowCard, Action.Submit, Action.OpenUrl, Action.ToggleVisibility
+
+Required: False
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
