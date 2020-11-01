@@ -6,30 +6,36 @@
         [string] $Uri
     )
 
-    if ($Content) {
-        $Wrapper = [ordered]@{
-            "type"        = "message"
-            "attachments" = @(
-                [ordered] @{
-                    "contentType" = 'application/vnd.microsoft.card.adaptive'
-                    "content"     = [ordered]@{
-                        '$schema' = "http://adaptivecards.io/schemas/adaptive-card.json"
-                        type      = "AdaptiveCard"
-                        version   = "1.2"
-                        body      = @(
+
+    $Wrapper = [ordered]@{
+        "type"        = "message"
+        "attachments" = @(
+            [ordered] @{
+                "contentType" = 'application/vnd.microsoft.card.adaptive'
+                "content"     = [ordered]@{
+                    '$schema' = "http://adaptivecards.io/schemas/adaptive-card.json"
+                    type      = "AdaptiveCard"
+                    version   = "1.2"
+                    body      = @(
+                        if ($Content) {
                             & $Content
-                        )
-                        actions   = @(
-                            if ($Action) {
-                                & $Action
-                            }
-                        )
-                    }
+                        }
+                    )
+                    actions   = @(
+                        if ($Action) {
+                            & $Action
+                        }
+                    )
                 }
-            )
-        }
-        $Body = $Wrapper | ConvertTo-Json -Depth 20
+            }
+        )
+    }
+    $Body = $Wrapper | ConvertTo-Json -Depth 20
+    # If URI is not given we return JSON. This is because it's possible to use nested Adaptive Cards in actions
+    if ($Uri) {
         Send-TeamsMessageBody -Uri $URI -Body $Body -Verbose
+    } else {
+        $Body
     }
 }
 
