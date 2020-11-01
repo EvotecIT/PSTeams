@@ -124,9 +124,6 @@
         $TeamObject['separator'] = $Separator.IsPresent
     }
     # End Layout
-    if ($Separator) {
-        $TeamObject['separator'] = $Separator.IsPresent
-    }
     if ($Hidden) {
         $TeamObject['isVisible'] = $false
     }
