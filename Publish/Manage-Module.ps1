@@ -12,27 +12,35 @@ $Configuration = @{
 
         Manifest          = @{
             # Version number of this module.
-            ModuleVersion        = '2.0.0'
+            ModuleVersion              = '2.0.0'
             # Supported PSEditions
-            CompatiblePSEditions = @('Desktop', 'Core')
+            CompatiblePSEditions       = @('Desktop', 'Core')
             # ID used to uniquely identify this module
-            GUID                 = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
+            GUID                       = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
             # Minimum version of the Windows PowerShell engine required by this module
-            PowerShellVersion    = '5.1'
+            PowerShellVersion          = '5.1'
             # Author of this module
-            Author               = 'Przemyslaw Klys'
+            Author                     = 'Przemyslaw Klys'
             # Company or vendor of this module
-            CompanyName          = 'Evotec'
+            CompanyName                = 'Evotec'
             # Copyright statement for this module
-            Copyright            = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
+            Copyright                  = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
             # Description of the functionality provided by this module
-            Description          = 'Simple project to send messages to Microsoft Teams Channel.'
+            Description                = 'Simple project to send messages to Microsoft Teams Channel.'
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags                 = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Windows', 'macOS', 'Linux')
+            Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Windows', 'macOS', 'Linux')
             # A URL to the main website for this project.
-            ProjectUri           = 'https://github.com/EvotecIT/PSTeams'
+            ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
             # A URL to an icon representing this module.
-            IconUri              = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
+            IconUri                    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
+
+            RequiredModules            = @(
+                @{ ModuleName = 'PSSharedGoods'; ModuleVersion = "Latest"; Guid = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe' }
+            )
+            ExternalModuleDependencies = @(
+                "Microsoft.PowerShell.Management"
+                "Microsoft.PowerShell.Utility"
+            )
         }
     }
     Options     = @{

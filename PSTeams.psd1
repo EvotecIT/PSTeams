@@ -12,11 +12,17 @@
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
-            Tags       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Windows', 'macOS', 'Linux')
-            ProjectUri = 'https://github.com/EvotecIT/PSTeams'
-            IconUri    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
-            Prerelease = 'Alpha1'
+            Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Windows', 'macOS', 'Linux')
+            ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
+            IconUri                    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
+            Prerelease                 = 'Alpha1'
+            ExternalModuleDependencies = @('Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility')
         }
     }
+    RequiredModules      = @(@{
+            ModuleVersion = '0.0.186'
+            ModuleName    = 'PSSharedGoods'
+            Guid          = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'
+        }, 'Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility')
     RootModule           = 'PSTeams.psm1'
 }
