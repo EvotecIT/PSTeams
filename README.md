@@ -114,6 +114,72 @@ Output
 
 ![Thumbnail Card](Docs/Images/ThumbnailCard.png)
 
+### Office 365 Connector Card - pre 2.X.X version
+
+```powershell
+$TeamsID = 'YourCodeGoesHere'
+$Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
+$Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
+$Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
+$Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
+$CurrentDate = Get-Date
+$Section = New-TeamsSection `
+    -ActivityTitle "**PSTeams**" `
+    -ActivitySubtitle "@PSTeams - $CurrentDate" `
+    -ActivityImage Add `
+    -ActivityText "This message proves PSTeams Pester test passed properly." `
+    -Buttons $Button1 `
+    -ActivityDetails $Fact1, $Fact2, $Fact3
+Send-TeamsMessage `
+    -URI $TeamsID `
+    -MessageTitle 'PSTeams - Pester Test' `
+    -MessageText "This text won't show up" `
+    -Color DodgerBlue `
+    -Sections $Section
+```
+
+- When executed from Linux
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
+
+- When executed from Windows
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
+
+- When executed from MacOS
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
+
+- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
+
+![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
+
+## Installing on Windows / Linux / MacOS
+
+Installation doesn't require administrative rights. You can install it using following:
+
+```powershell
+Install-Module PSTeams
+```
+
+But if you don't have administrative rights on your machine:
+
+```powershell
+Install-Module PSTeams -Scope CurrentUser
+```
+
+To update
+
+```powershell
+Update-Module -Name PSTeams
+```
+
+That's it. Whenever there's a new version you simply run the command and you can enjoy it.
+Remember, that you may need to close, reopen the PowerShell session if you have already used the module before updating it.
+**The important thing** is if something works for you on production, keep using it till you test the new version on a test computer.
+I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
+Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only used during development. When published to PSGallery / Releases it's a merged release without any dependencies.
+
 ## Updates
 
 - 2.0.0 Alpha1 / PreRelease / Testing
@@ -195,53 +261,3 @@ Send-TeamsMessage -Verbose {
     New-TeamsSection -ActivityTitle "**Elon Musk**" -ActivitySubtitle "@elonmusk - 9/12/2016 at 5:33pm" -ActivityImageLink "https://pbs.twimg.com/profile_images/782474226020200448/zDo-gAo0.jpg" -ActivityText "Climate change explained in comic book form by xkcd xkcd.com/1732"
 } -Uri $TeamsID -MessageSummary 'Tweet'
 ```
-
-## Installing on Windows / Linux / MacOS
-
-```powershell
-Install-Module PSTeams
-#Install-Module PSTeams -Scope CurrentUser
-#Update-Module PSTeams
-```
-
-## Usage
-
-```powershell
-$TeamsID = 'YourCodeGoesHere'
-$Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
-$Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
-$Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
-$Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
-$CurrentDate = Get-Date
-$Section = New-TeamsSection `
-    -ActivityTitle "**PSTeams**" `
-    -ActivitySubtitle "@PSTeams - $CurrentDate" `
-    -ActivityImage Add `
-    -ActivityText "This message proves PSTeams Pester test passed properly." `
-    -Buttons $Button1 `
-    -ActivityDetails $Fact1, $Fact2, $Fact3
-Send-TeamsMessage `
-    -URI $TeamsID `
-    -MessageTitle 'PSTeams - Pester Test' `
-    -MessageText "This text won't show up" `
-    -Color DodgerBlue `
-    -Sections $Section
-```
-
-## How does it look like
-
-- When executed from Linux
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
-
-- When executed from Windows
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
-
-- When executed from MacOS
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
-
-- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
-
-![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
