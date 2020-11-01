@@ -3,7 +3,7 @@
     param(
         [scriptblock] $Body,
         [scriptblock] $Actions,
-        [ValidateSet('Action.ShowCard', 'Action.Submit')][string] $Type = 'Action.ShowCard',
+        [ValidateSet('Action.ShowCard', 'Action.Submit', 'Action.OpenUrl', 'Action.ToggleVisibility')][string] $Type = 'Action.ShowCard',
         [string] $Title
     )
     $TeamObject = [ordered] @{

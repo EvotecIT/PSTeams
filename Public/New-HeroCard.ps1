@@ -44,7 +44,7 @@
     }
     $Body = $Wrapper | ConvertTo-Json -Depth 20
     if ($Uri) {
-        Send-TeamsMessageBody -Uri $URI -Body $Body -Verbose -Wrap
+        Send-TeamsMessageBody -Uri $URI -Body $Body -Wrap
     } else {
         $Body
     }
