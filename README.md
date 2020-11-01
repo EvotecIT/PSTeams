@@ -22,6 +22,14 @@
 
 [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**. It allows sending notifications to _Microsoft Teams_ via WebHook Notifications. It's pretty flexible and provides a bunch of options.
 
+## Readme Links
+
+While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
+
+- [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
+- [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
+- [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
+
 ## Supported Cards
 
 While `WebHook Notifications` in theory only support `Office 365 Connector Card` it's possible to do more than that.
@@ -33,13 +41,78 @@ While `WebHook Notifications` in theory only support `Office 365 Connector Card`
   - [x] [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card)
   - [x] [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card)
 
-## Readme Links
+Below you can find how to send them and what they display. You should be aware that while I've added some features, not all of them will work in Teams.
 
-While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
+### List Cards
 
-- [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
-- [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
-- [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
+Here's a simple way to send List Cards to Teams using WebHook
+
+- List Items do not support `tapType` `imBack`. When clicked action is not taken
+- List Items do not support `tapAction`. It's there, but doesn't work.
+- List Items do not support type `file`. It displays, but no action is taken. It's better to use `resultItem`
+
+Code
+
+```powershell
+New-CardList {
+    New-CardListItem -Type file -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx" -TapAction editOnline
+    New-CardListItem -Type resultItem -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx"
+    New-CardListItem -Type resultItem -Title 'Trello title' -SubTitle 'A Trello subtitle' -TapType openUrl -TapValue "http://trello.com" -Icon "https://cdn2.iconfinder.com/data/icons/social-icons-33/128/Trello-128.png"
+    New-CardListItem -Type section -Title 'Manager'
+    New-CardListItem -Type person -Title "John Doe" -SubTitle 'Manager' -TapType imBack -TapValue "JohnDoe@contoso.com" -TapAction whois
+    New-CardListButton -Type openUrl -Title 'Show' -Value 'https://evotec.xyz'
+} -Uri $Env:TEAMSPESTERID -Title 'Card Title'
+```
+
+Output
+
+![List Card](Docs/Images/CardList.png)
+
+### Hero Cards
+
+Here's a simple way to send List Cards to Teams using WebHook
+
+- Hero Buttons (`New-HeroButton`)do not support button type other then `openUrl`
+  - When using Type `imBack` action is not taken
+  - When using Type `file` button is not displayed
+- Using more than 3 buttons causes carousel for card. I've blocked it out, as all that happens is text is doubled/image is doubled but buttons don't show up over 3
+
+Code
+
+```powershell
+New-HeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service." {
+    New-HeroImage -Url 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg'
+    New-HeroButton -Type openUrl -Title 'Official website' -Value 'https://www.seattlemonorail.com'
+    New-HeroButton -Type openUrl -Title 'Wikipeda page' -Value 'https://www.seattlemonorail.com'
+    New-HeroButton -Type openUrl -Title 'Evotec page' -Value 'https://www.evotec.xyz'
+} -Uri $Env:TEAMSPESTERID
+```
+
+Output
+
+![Hero Card](Docs/Images/HeroCard.png)
+
+### Thumbnail Cards
+
+Here's a simple way to send Thumbnail Cards to Teams using WebHook
+
+- Images are not supported in buttons, you can send them but it's not displayed
+- imBack action is not supported in buttons, you can send them but once you click it an notification message appears
+
+Code
+
+```powershell
+New-ThumbnailCard -Title 'Bender' -SubTitle "tale of a robot who dared to love" -Text "Bender Bending Rodríguez is a main character in the animated television series Futurama. He was created by series creators Matt Groening and David X. Cohen, and is voiced by John DiMaggio" {
+    New-ThumbnailImage -Url 'https://upload.wikimedia.org/wikipedia/en/a/a6/Bender_Rodriguez.png' -AltText "Bender Rodríguez"
+    New-ThumbnailButton -Type imBack -Title 'Thumbs Up' -Value 'I like it' -Image "http://moopz.com/assets_c/2012/06/emoji-thumbs-up-150-thumb-autox125-140616.jpg"
+    New-ThumbnailButton -Type openUrl -Title 'Thumbs Down' -Value 'https://evotec.xyz'
+    New-ThumbnailButton -Type openUrl -Title 'I feel luck' -Value 'https://www.bing.com/images/search?q=bender&qpvt=bender&qpvt=bender&qpvt=bender&FORM=IGRE'
+} -Uri $Env:TEAMSPESTERID
+```
+
+Output
+
+![Thumbnail Card](Docs/Images/ThumbnailCard.png)
 
 ## Updates
 

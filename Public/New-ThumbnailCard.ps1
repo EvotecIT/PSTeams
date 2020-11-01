@@ -1,4 +1,4 @@
-﻿function New-HeroCard {
+﻿function New-ThumbnailCard {
     [cmdletBinding()]
     param(
         [Parameter(Mandatory)][scriptblock] $Content,
@@ -13,23 +13,23 @@
         $ExecutedContent = & $Content
         foreach ($E in $ExecutedContent) {
             if ($E.Value) {
-                if ($Buttons.Count -lt 3) {
+                if ($Buttons.Count -lt 6) {
                     $Buttons.Add($E)
                 } else {
-                    Write-Warning "New-HeroCard - Herd Card support only up to 3 buttons."
+                    Write-Warning "New-ThumbnailCard - Thumbnail Card support only up to 6 buttons."
                 }
             } else {
-                if ($Images.Count -lt 2) {
+                if ($Images.Count -lt 1) {
                     $Images.Add($E)
                 } else {
-                    Write-Warning "New-HeroCard - Herd Card support only 1 image."
+                    Write-Warning "New-ThumbnailCard - Thumbnail Card support only 1 image."
                 }
             }
         }
 
-        $Wrapper = @{
-            contentType = "application/vnd.microsoft.card.hero"
-            content     = @{
+        $Wrapper = [ordered]@{
+            contentType = "application/vnd.microsoft.card.thumbnail"
+            content     = [ordered]@{
                 title    = $Title
                 subTitle = $SubTitle
                 text     = $Text
