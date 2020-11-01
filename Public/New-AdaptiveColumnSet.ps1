@@ -2,13 +2,15 @@
     [cmdletBinding()]
     param(
         [scriptblock] $Columns,
-        [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
-        [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
         [ValidateSet("Accent", 'Default', 'Emphasis', 'Good', 'Warning', 'Attention')][string] $Style,
-        [ValidateSet('Stretch', 'Automatic')][string] $Height,
         [int] $MinimumHeight,
         [switch] $Bleed,
-        [switch] $Separator
+        # Layout Start
+        [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
+        [switch] $Separator,
+        [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
+        [ValidateSet('Stretch', 'Automatic')][string] $Height
+        # Layout End
     )
     if ($Columns) {
         $TeamObject = [ordered] @{
@@ -16,8 +18,10 @@
             "columns"             = @(
                 & $Columns
             )
-            "horizontalAlignment" = $HorizontalAlignment
             "style"               = $Style
+
+            # Layout
+            "horizontalAlignment" = $HorizontalAlignment
             "height"              = $Height
             "spacing"             = $Spacing
         }

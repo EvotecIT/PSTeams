@@ -229,14 +229,13 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
 - 0.4.0 / 2019.04.03
   - [x] fix for UTF-8 charset - (provided by hjorslev)
   - [x] emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
-- 0.3.x / 2019.02.21
+- 0.3.0 / 2019.02.21
   - [x] added summary for message that is visible in Activity pane
-- 0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
+- 0.2.0 / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
   - [x] added cross-platform (works on linux, mac os, windows)
   - [x] added azure pipelines
   - [x] added some pester tests
-
-- 0.1.x / 2018.07.12
+- 0.1.0 / 2018.07.12
   [x] first release
 
 ## Documentation for Message Cards (for development)

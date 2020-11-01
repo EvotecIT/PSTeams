@@ -101,7 +101,7 @@
                 "content"     = [ordered]@{
                     '$schema' = "http://adaptivecards.io/schemas/adaptive-card.json"
                     type      = "AdaptiveCard"
-                    version   = "1.3"
+                    version   = "1.2" # Currently maximum supported is 1.2 for Teams, available is 1.3
                     body      = @(
                         if ($Body) {
                             & $Body
@@ -146,12 +146,12 @@
         url   = $SelectActionUrl
     }
     Remove-EmptyValue -Hashtable $Wrapper['attachments'][0]['content'] -Recursive -Rerun 2
-    $Body = $Wrapper | ConvertTo-Json -Depth 20
+    $JsonBody = $Wrapper | ConvertTo-Json -Depth 20
     # If URI is not given we return JSON. This is because it's possible to use nested Adaptive Cards in actions
     if ($Uri) {
-        Send-TeamsMessageBody -Uri $URI -Body $Body #-Verbose
+        Send-TeamsMessageBody -Uri $URI -Body $JsonBody #-Verbose
     } else {
-        $Body
+        $JsonBody
     }
 }
 
