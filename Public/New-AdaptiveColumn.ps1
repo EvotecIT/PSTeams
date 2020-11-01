@@ -21,28 +21,31 @@
     }
 
     if ($Items) {
-        $TeamObject = [ordered] @{
-            type                     = 'Column'
-            width                    = $WidthValue
-            height                   = $Height
-            items                    = @(
-                & $Items
-            )
-            horizontalAlignment      = $HorizontalAlignment
-            verticalContentAlignment = $VerticalContentAlignment
-            spacing                  = $Spacing
-            style                    = $Style
+        $OutputItems = & $Items
+        if ($OutputItems) {
+            $TeamObject = [ordered] @{
+                type                     = 'Column'
+                width                    = $WidthValue
+                height                   = $Height
+                items                    = @(
+                    $OutputItems
+                )
+                horizontalAlignment      = $HorizontalAlignment
+                verticalContentAlignment = $VerticalContentAlignment
+                spacing                  = $Spacing
+                style                    = $Style
+            }
+            if ($MinimumHeight) {
+                $TeamObject['minHeight'] = "$($MinimumHeight)px"
+            }
+            if ($Hidden) {
+                $TeamObject['isVisible'] = $false
+            }
+            if ($Separator) {
+                $TeamObject['separator'] = $Separator.IsPresent
+            }
+            Remove-EmptyValue -Hashtable $TeamObject
+            $TeamObject
         }
-        if ($MinimumHeight) {
-            $TeamObject['minHeight'] = "$($MinimumHeight)px"
-        }
-        if ($Hidden) {
-            $TeamObject['isVisible'] = $false
-        }
-        if ($Separator) {
-            $TeamObject['separator'] = $Separator.IsPresent
-        }
-        Remove-EmptyValue -Hashtable $TeamObject
-        $TeamObject
     }
 }

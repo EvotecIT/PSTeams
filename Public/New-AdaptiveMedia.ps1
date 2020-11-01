@@ -60,18 +60,21 @@
     )
     if ($Sources) {
         $TeamObject = [ordered] @{
-            type                  = 'Media'
-            poster                = $PosterUrl
-            id                    = $Id
-            altText               = $AlternateText
-            # Layout
-            "horizontalAlignment" = $HorizontalAlignment
-            "height"              = $Height
-            "spacing"             = $Spacing
+            type                = 'Media'
+            poster              = $PosterUrl
+            id                  = $Id
+            altText             = $AlternateText
+            # Start Layout
+            horizontalAlignment = $HorizontalAlignment
+            height              = $Height
+            spacing             = $Spacing
+            # End Layout
         }
+        # Start Layout
         if ($Separator) {
             $TeamObject['separator'] = $Separator.IsPresent
         }
+        # End Layout
         if ($Hidden) {
             $TeamObject['isVisible'] = $false
         }

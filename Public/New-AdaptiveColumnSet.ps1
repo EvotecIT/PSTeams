@@ -13,28 +13,31 @@
         # Layout End
     )
     if ($Columns) {
-        $TeamObject = [ordered] @{
-            "type"                = "ColumnSet"
-            "columns"             = @(
-                & $Columns
-            )
-            "style"               = $Style
+        $ColumnsOutput = & $Columns
+        if ($ColumnsOutput) {
+            $TeamObject = [ordered] @{
+                "type"                = "ColumnSet"
+                "columns"             = @(
+                    $ColumnsOutput
+                )
+                "style"               = $Style
 
-            # Layout
-            "horizontalAlignment" = $HorizontalAlignment
-            "height"              = $Height
-            "spacing"             = $Spacing
+                # Layout
+                "horizontalAlignment" = $HorizontalAlignment
+                "height"              = $Height
+                "spacing"             = $Spacing
+            }
+            if ($Bleed) {
+                $TeamObject['bleed'] = $true
+            }
+            if ($MinimumHeight) {
+                $TeamObject['minHeight'] = "$($MinimumHeight)px"
+            }
+            if ($Separator) {
+                $TeamObject['separator'] = $Separator.IsPresent
+            }
+            Remove-EmptyValue -Hashtable $TeamObject
+            $TeamObject
         }
-        if ($Bleed) {
-            $TeamObject['bleed'] = $true
-        }
-        if ($MinimumHeight) {
-            $TeamObject['minHeight'] = "$($MinimumHeight)px"
-        }
-        if ($Separator) {
-            $TeamObject['separator'] = $Separator.IsPresent
-        }
-        Remove-EmptyValue -Hashtable $TeamObject
-        $TeamObject
     }
 }
