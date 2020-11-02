@@ -5,7 +5,7 @@
         [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
         [ValidateSet('Stretch', 'Automatic')][string] $Height,
         [ValidateSet('Stretch', 'Auto', 'Weighted')][string] $Width,
-        [int] $WidthInPercent,
+        [int] $WidthInWeight,
         [int] $WidthInPixels,
         [int] $MinimumHeight,
         [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
@@ -19,8 +19,8 @@
         [string] $SelectActionUrl,
         [string] $SelectActionTitle
     )
-    if ($WidthInPercent) {
-        $WidthValue = "$($WidthInPercent)"
+    if ($WidthInWeight) {
+        $WidthValue = "$($WidthInWeight)"
         # it actually forces $Width = Weighted but it's not in JSON
     } elseif ($WidthInPixels) {
         $WidthValue = "$($WidthInPixels)px"
