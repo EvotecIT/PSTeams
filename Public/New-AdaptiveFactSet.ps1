@@ -7,16 +7,19 @@
         [switch] $Separator
     )
     if ($Facts) {
-        $TeamObject = [ordered] @{
-            type    = 'FactSet'
-            height  = $Height
-            spacing = $Spacing
-            facts   = & $Facts
+        $OutputFacts = & $Facts
+        if ($OutputFacts) {
+            $TeamObject = [ordered] @{
+                type    = 'FactSet'
+                height  = $Height
+                spacing = $Spacing
+                facts   = @($OutputFacts)
+            }
+            if ($Separator) {
+                $TeamObject['separator'] = $Separator.IsPresent
+            }
+            Remove-EmptyValue -Hashtable $TeamObject
+            $TeamObject
         }
-        if ($Separator) {
-            $TeamObject['separator'] = $Separator.IsPresent
-        }
-        Remove-EmptyValue -Hashtable $TeamObject
-        $TeamObject
     }
 }

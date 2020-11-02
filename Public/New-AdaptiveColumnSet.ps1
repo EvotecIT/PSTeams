@@ -36,7 +36,13 @@
             if ($Separator) {
                 $TeamObject['separator'] = $Separator.IsPresent
             }
-            Remove-EmptyValue -Hashtable $TeamObject
+            $TeamObject['selectAction'] = [ordered] @{
+                type  = $SelectAction
+                id    = $SelectActionId
+                title = $SelectActionTitle
+                url   = $SelectActionUrl
+            }
+            Remove-EmptyValue -Hashtable $TeamObject -Recursive -Rerun 1
             $TeamObject
         }
     }

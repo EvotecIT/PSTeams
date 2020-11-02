@@ -4,7 +4,7 @@
         [scriptblock] $Items,
         [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
         [ValidateSet('Stretch', 'Automatic')][string] $Height,
-        [ValidateSet('stretch', 'auto', 'weighted')][string] $Width,
+        [ValidateSet('Stretch', 'Auto', 'Weighted')][string] $Width,
         [int] $WidthSize,
         [int] $MinimumHeight,
         [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
