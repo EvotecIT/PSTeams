@@ -144,6 +144,10 @@
         "url"                 = $BackgroundUrl
     }
     #}
+    if ($SelectActionUrl) {
+        # We help user so the actioon choses itself
+        $SelectAction = 'Action.OpenUrl'
+    }
     $Wrapper['attachments'][0]['content']['selectAction'] = [ordered] @{
         type  = $SelectAction
         id    = $SelectActionId
