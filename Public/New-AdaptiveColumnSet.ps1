@@ -36,6 +36,10 @@
             if ($Separator) {
                 $TeamObject['separator'] = $Separator.IsPresent
             }
+            if ($SelectActionUrl) {
+                # We help user so the actioon choses itself
+                $SelectAction = 'Action.OpenUrl'
+            }
             $TeamObject['selectAction'] = [ordered] @{
                 type  = $SelectAction
                 id    = $SelectActionId

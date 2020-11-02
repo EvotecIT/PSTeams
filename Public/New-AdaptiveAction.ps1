@@ -7,6 +7,10 @@
         [string] $ActionUrl,
         [string] $Title
     )
+    if ($ActionUrl) {
+        # We help user so the actioon choses itself
+        $Type = 'Action.OpenUrl'
+    }
     $TeamObject = [ordered] @{
         type  = $Type
         title = $Title

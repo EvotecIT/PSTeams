@@ -5,19 +5,29 @@
         [ValidateSet('None', 'Small', 'Default', 'Medium', 'Large', 'ExtraLarge', 'Padding')][string] $Spacing,
         [ValidateSet('Stretch', 'Automatic')][string] $Height,
         [ValidateSet('Stretch', 'Auto', 'Weighted')][string] $Width,
-        [int] $WidthSize,
+        [int] $WidthInPercent,
+        [int] $WidthInPixels,
         [int] $MinimumHeight,
         [ValidateSet("Left", "Center", 'Right')][string] $HorizontalAlignment,
         [ValidateSet('Top', 'Center', 'Bottom')][string] $VerticalContentAlignment,
         [ValidateSet("Accent", 'Default', 'Emphasis', 'Good', 'Warning', 'Attention')][string] $Style,
         [switch] $Hidden,
-        [switch] $Separator
+        [switch] $Separator,
+
+        [ValidateSet('Action.Submit', 'Action.OpenUrl', 'Action.ToggleVisibility')][string] $SelectAction,
+        [string] $SelectActionId,
+        [string] $SelectActionUrl,
+        [string] $SelectActionTitle
     )
-    if ($WidthSize) {
-        $WidthValue = "$($WidthSize)px"
+    if ($WidthInPercent) {
+        $WidthValue = "$($WidthInPercent)"
+        # it actually forces $Width = Weighted but it's not in JSON
+    } elseif ($WidthInPixels) {
+        $WidthValue = "$($WidthInPixels)px"
     } else {
         # Width value pixels is not displayed
-        $WidthValue = $Width
+        # it seems width requires lowerCase values which is weird for Microsoft
+        $WidthValue = $Width.ToLower()
     }
 
     if ($Items) {
@@ -44,7 +54,17 @@
             if ($Separator) {
                 $TeamObject['separator'] = $Separator.IsPresent
             }
-            Remove-EmptyValue -Hashtable $TeamObject
+            if ($SelectActionUrl) {
+                # We help user so the actioon choses itself
+                $SelectAction = 'Action.OpenUrl'
+            }
+            $TeamObject['selectAction'] = [ordered] @{
+                type  = $SelectAction
+                id    = $SelectActionId
+                title = $SelectActionTitle
+                url   = $SelectActionUrl
+            }
+            Remove-EmptyValue -Hashtable $TeamObject -Recursive -Rerun 1
             $TeamObject
         }
     }
