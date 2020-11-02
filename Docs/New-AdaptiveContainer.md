@@ -13,7 +13,12 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-New-AdaptiveContainer [[-Items] <ScriptBlock>] [<CommonParameters>]
+New-AdaptiveContainer [[-Items] <ScriptBlock>] [[-Spacing] <String>] [-Separator]
+ [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Style] <String>] [[-MinimumHeight] <Int32>] [-Bleed]
+ [[-VerticalContentAlignment] <String>] [[-BackgroundUrl] <String>] [[-BackgroundFillMode] <String>]
+ [[-BackgroundHorizontalAlignment] <String>] [[-BackgroundVerticalAlignment] <String>]
+ [[-SelectAction] <String>] [[-SelectActionId] <String>] [[-SelectActionUrl] <String>]
+ [[-SelectActionTitle] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -30,6 +35,116 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
+### -BackgroundFillMode
+{{ Fill BackgroundFillMode Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Cover, RepeatHorizontally, RepeatVertically, Repeat
+
+Required: False
+Position: 8
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -BackgroundHorizontalAlignment
+{{ Fill BackgroundHorizontalAlignment Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: left, center, right
+
+Required: False
+Position: 9
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -BackgroundUrl
+{{ Fill BackgroundUrl Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 7
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -BackgroundVerticalAlignment
+{{ Fill BackgroundVerticalAlignment Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: top, center, bottom
+
+Required: False
+Position: 10
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Bleed
+{{ Fill Bleed Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Height
+{{ Fill Height Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Stretch, Automatic
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+{{ Fill HorizontalAlignment Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Left, Center, Right
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Items
 {{ Fill Items Description }}
 
@@ -40,6 +155,145 @@ Aliases:
 
 Required: False
 Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MinimumHeight
+{{ Fill MinimumHeight Description }}
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectAction
+{{ Fill SelectAction Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
+
+Required: False
+Position: 11
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionId
+{{ Fill SelectActionId Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 12
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionTitle
+{{ Fill SelectActionTitle Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 14
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionUrl
+{{ Fill SelectActionUrl Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 13
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+{{ Fill Separator Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+{{ Fill Spacing Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+
+Required: False
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Style
+{{ Fill Style Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Accent, Default, Emphasis, Good, Warning, Attention
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -VerticalContentAlignment
+{{ Fill VerticalContentAlignment Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: top, center, bottom
+
+Required: False
+Position: 6
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

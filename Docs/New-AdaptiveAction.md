@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-New-AdaptiveAction [[-Body] <ScriptBlock>] [[-Actions] <ScriptBlock>] [[-Type] <String>] [[-Title] <String>]
- [<CommonParameters>]
+New-AdaptiveAction [[-Body] <ScriptBlock>] [[-Actions] <ScriptBlock>] [[-Type] <String>]
+ [[-ActionUrl] <String>] [[-Title] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -30,6 +30,21 @@ PS C:\> {{ Add example code here }}
 {{ Add example description here }}
 
 ## PARAMETERS
+
+### -ActionUrl
+{{ Fill ActionUrl Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -Actions
 {{ Fill Actions Description }}
@@ -70,7 +85,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 3
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

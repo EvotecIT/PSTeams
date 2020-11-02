@@ -14,8 +14,10 @@ schema: 2.0.0
 
 ```
 New-AdaptiveColumn [[-Items] <ScriptBlock>] [[-Spacing] <String>] [[-Height] <String>] [[-Width] <String>]
- [[-WidthSize] <Int32>] [[-MinimumHeight] <Int32>] [[-HorizontalAlignment] <String>]
- [[-VerticalContentAlignment] <String>] [[-Style] <String>] [-Hidden] [-Separator] [<CommonParameters>]
+ [[-WidthInPercent] <Int32>] [[-WidthInPixels] <Int32>] [[-MinimumHeight] <Int32>]
+ [[-HorizontalAlignment] <String>] [[-VerticalContentAlignment] <String>] [[-Style] <String>] [-Hidden]
+ [-Separator] [[-SelectAction] <String>] [[-SelectActionId] <String>] [[-SelectActionUrl] <String>]
+ [[-SelectActionTitle] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -73,7 +75,7 @@ Aliases:
 Accepted values: Left, Center, Right
 
 Required: False
-Position: 6
+Position: 7
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -103,7 +105,68 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 5
+Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectAction
+{{ Fill SelectAction Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
+
+Required: False
+Position: 10
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionId
+{{ Fill SelectActionId Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 11
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionTitle
+{{ Fill SelectActionTitle Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 13
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionUrl
+{{ Fill SelectActionUrl Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 12
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -150,7 +213,7 @@ Aliases:
 Accepted values: Accent, Default, Emphasis, Good, Warning, Attention
 
 Required: False
-Position: 8
+Position: 9
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -166,7 +229,7 @@ Aliases:
 Accepted values: Top, Center, Bottom
 
 Required: False
-Position: 7
+Position: 8
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -179,7 +242,7 @@ Accept wildcard characters: False
 Type: String
 Parameter Sets: (All)
 Aliases:
-Accepted values: stretch, auto, weighted
+Accepted values: Stretch, Auto, Weighted
 
 Required: False
 Position: 3
@@ -188,8 +251,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WidthSize
-{{ Fill WidthSize Description }}
+### -WidthInPercent
+{{ Fill WidthInPercent Description }}
 
 ```yaml
 Type: Int32
@@ -198,6 +261,21 @@ Aliases:
 
 Required: False
 Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WidthInPixels
+{{ Fill WidthInPixels Description }}
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
