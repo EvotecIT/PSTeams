@@ -158,7 +158,7 @@ $Configuration = @{
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
             Enabled      = $false
-            Prerelease   = 'Alpha1'
+            Prerelease   = ''
             RequireForce = $false
             GitHub       = $false
         }

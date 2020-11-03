@@ -198,7 +198,7 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
   - [x] Added support for [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card) using `New-HeroCard`
     - [x] Added `New-HeroImage` -> actually an alias `New-AdaptiveImage`
     - [x] Added `New-HeroButton` -> actually an alias `New-CardListButton`
-- 1.0.6 / Unreleased
+- 1.0.7 / 2020.10.31
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
     - [x] Replaced it with `ErrorAction Stop`
