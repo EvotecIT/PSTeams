@@ -5,19 +5,20 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# New-ThumbnailCard
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+New-ThumbnailCard [-Content] <ScriptBlock> [[-Title] <String>] [[-SubTitle] <String>] [[-Text] <String>]
+ [[-Uri] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,8 +31,23 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -Content
+{{ Fill Content Description }}
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SubTitle
+{{ Fill SubTitle Description }}
 
 ```yaml
 Type: String
@@ -39,14 +55,29 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 0
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Value
-{{Fill Value Description}}
+### -Text
+{{ Fill Text Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Title
+{{ Fill Title Description }}
 
 ```yaml
 Type: String
@@ -55,6 +86,21 @@ Aliases:
 
 Required: False
 Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Uri
+{{ Fill Uri Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

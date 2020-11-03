@@ -5,95 +5,52 @@ online version:
 schema: 2.0.0
 ---
 
-# Send-TeamsMessage
+# New-AdaptiveMedia
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Displays a media player for audio or video content.
 
 ## SYNTAX
 
 ```
-Send-TeamsMessage [[-SectionsInput] <ScriptBlock>] [-Uri] <String> [[-MessageTitle] <String>]
- [[-MessageText] <String>] [[-MessageSummary] <String>] [[-Color] <String>] [-HideOriginalBody]
- [[-Sections] <IDictionary[]>] [[-Suppress] <Boolean>] [<CommonParameters>]
+New-AdaptiveMedia [-Sources] <ScriptBlock> [[-PosterUrl] <String>] [[-AlternateText] <String>]
+ [[-Spacing] <String>] [-Separator] [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Id] <String>]
+ [-Hidden] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Displays a media player for audio or video content.
 
 ## EXAMPLES
 
-### Example 1
-```powershell
-PS C:\> {{ Add example code here }}
+### EXAMPLE 1
+```
+New-AdaptiveMedia -PosterUrl 'https://adaptivecards.io/content/poster-video.png' {
 ```
 
-{{ Add example description here }}
+New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
+    New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
+}
 
 ## PARAMETERS
 
-### -Color
-{{Fill Color Description}}
+### -Sources
+One or more sources of media to attempt to play.
 
 ```yaml
-Type: String
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: 5
+Required: True
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -HideOriginalBody
-{{ Fill HideOriginalBody Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -MessageSummary
-{{Fill MessageSummary Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -MessageText
-{{Fill MessageText Description}}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -MessageTitle
-{{Fill MessageTitle Description}}
+### -PosterUrl
+URL of an image to display before playing
 
 ```yaml
 Type: String
@@ -107,11 +64,71 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Sections
-{{Fill Sections Description}}
+### -AlternateText
+Alternate text describing the audio or video.
 
 ```yaml
-Type: IDictionary[]
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+Controls the amount of spacing between this element and the preceding element.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+Draw a separating line at the top of the element.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+Controls the horizontal text alignment.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Height
+Specifies the height of the element.
+
+```yaml
+Type: String
 Parameter Sets: (All)
 Aliases:
 
@@ -122,28 +139,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SectionsInput
-{{ Fill SectionsInput Description }}
+### -Id
+A unique identifier associated with the item.
 
 ```yaml
-Type: ScriptBlock
+Type: String
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Suppress
-{{ Fill Suppress Description }}
-
-```yaml
-Type: Boolean
-Parameter Sets: (All)
-Aliases: Supress
 
 Required: False
 Position: 7
@@ -152,17 +154,17 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Uri
-{{Fill URI Description}}
+### -Hidden
+If used this item will be removed from the visual tree.
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases: TeamsID, Url
+Aliases:
 
-Required: True
-Position: 1
-Default value: None
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -172,11 +174,11 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
-
 ## OUTPUTS
 
-### System.Object
 ## NOTES
+Media playback is currently not supported in Adaptive Cards in Teams.
+Adding it for sake of having.
+May need to improve how it's handled.
 
 ## RELATED LINKS

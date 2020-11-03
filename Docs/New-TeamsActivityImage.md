@@ -5,19 +5,30 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsFact
+# New-TeamsActivityImage
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
+### Link (Default)
 ```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+New-TeamsActivityImage [-Link <String>] [<CommonParameters>]
+```
+
+### Image
+```
+New-TeamsActivityImage [-Image <String>] [<CommonParameters>]
+```
+
+### Path
+```
+New-TeamsActivityImage [-Path <FileInfo>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,31 +41,47 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Name
-{{Fill Name Description}}
+### -Image
+{{ Fill Image Description }}
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: Image
 Aliases:
+Accepted values: Add, Alert, Cancel, Check, Disable, Download, Info, Minus, Question, Reload, None
 
 Required: False
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Value
-{{Fill Value Description}}
+### -Link
+{{ Fill Link Description }}
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: Link
 Aliases:
 
 Required: False
-Position: 1
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Path
+{{ Fill Path Description }}
+
+```yaml
+Type: FileInfo
+Parameter Sets: Path
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

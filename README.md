@@ -20,9 +20,7 @@
 
 # PSTeams - PowerShell Module
 
-[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**. It allows to send notifications to _Microsoft Teams_. It's pretty flexible and provides a bunch of options.
-
-For description and **advanced** usage visit [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) dedicated page.
+[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**. It allows sending notifications to _Microsoft Teams_ via WebHook Notifications. It's pretty flexible and provides a bunch of options.
 
 ## Readme Links
 
@@ -32,8 +30,174 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 - [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
 - [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
 
+## Supported Cards
+
+While `WebHook Notifications` in theory only support `Office 365 Connector Card` it's possible to do more than that.
+
+- Supported in 0.X.0 - 1.0.X
+  - [x] [Office 365 Connector Card](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#office-365-connector-card) - The Office 365 Connector card provides a flexible layout with multiple sections, fields, images, and actions. This card encapsulates a connector card so that it can be used by bots. See the notes section for differences between connector cards and the O365 card.
+- Supported in 2.X.X (PreRelease)
+  - [x] [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card)
+  - [x] [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card)
+  - [x] [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card)
+
+Below you can find how to send them and what they display. You should be aware that while I've added some features, not all of them will work in Teams.
+
+### List Cards
+
+Here's a simple way to send List Cards to Teams using WebHook
+
+- List Items do not support `tapType` `imBack`. When clicked action is not taken
+- List Items do not support `tapAction`. It's there, but doesn't work.
+- List Items do not support type `file`. It displays, but no action is taken. It's better to use `resultItem`
+
+Code
+
+```powershell
+New-CardList {
+    New-CardListItem -Type file -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx" -TapAction editOnline
+    New-CardListItem -Type resultItem -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx"
+    New-CardListItem -Type resultItem -Title 'Trello title' -SubTitle 'A Trello subtitle' -TapType openUrl -TapValue "http://trello.com" -Icon "https://cdn2.iconfinder.com/data/icons/social-icons-33/128/Trello-128.png"
+    New-CardListItem -Type section -Title 'Manager'
+    New-CardListItem -Type person -Title "John Doe" -SubTitle 'Manager' -TapType imBack -TapValue "JohnDoe@contoso.com" -TapAction whois
+    New-CardListButton -Type openUrl -Title 'Show' -Value 'https://evotec.xyz'
+} -Uri $Env:TEAMSPESTERID -Title 'Card Title'
+```
+
+Output
+
+![List Card](Docs/Images/CardList.png)
+
+### Hero Cards
+
+Here's a simple way to send List Cards to Teams using WebHook
+
+- Hero Buttons (`New-HeroButton`)do not support button type other then `openUrl`
+  - When using Type `imBack` action is not taken
+  - When using Type `file` button is not displayed
+- Using more than 3 buttons causes carousel for card. I've blocked it out, as all that happens is text is doubled/image is doubled but buttons don't show up over 3
+
+Code
+
+```powershell
+New-HeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service." {
+    New-HeroImage -Url 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg'
+    New-HeroButton -Type openUrl -Title 'Official website' -Value 'https://www.seattlemonorail.com'
+    New-HeroButton -Type openUrl -Title 'Wikipeda page' -Value 'https://www.seattlemonorail.com'
+    New-HeroButton -Type openUrl -Title 'Evotec page' -Value 'https://www.evotec.xyz'
+} -Uri $Env:TEAMSPESTERID
+```
+
+Output
+
+![Hero Card](Docs/Images/HeroCard.png)
+
+### Thumbnail Cards
+
+Here's a simple way to send Thumbnail Cards to Teams using WebHook
+
+- Images are not supported in buttons, you can send them but it's not displayed
+- imBack action is not supported in buttons, you can send them but once you click it an notification message appears
+
+Code
+
+```powershell
+New-ThumbnailCard -Title 'Bender' -SubTitle "tale of a robot who dared to love" -Text "Bender Bending Rodríguez is a main character in the animated television series Futurama. He was created by series creators Matt Groening and David X. Cohen, and is voiced by John DiMaggio" {
+    New-ThumbnailImage -Url 'https://upload.wikimedia.org/wikipedia/en/a/a6/Bender_Rodriguez.png' -AltText "Bender Rodríguez"
+    New-ThumbnailButton -Type imBack -Title 'Thumbs Up' -Value 'I like it' -Image "http://moopz.com/assets_c/2012/06/emoji-thumbs-up-150-thumb-autox125-140616.jpg"
+    New-ThumbnailButton -Type openUrl -Title 'Thumbs Down' -Value 'https://evotec.xyz'
+    New-ThumbnailButton -Type openUrl -Title 'I feel luck' -Value 'https://www.bing.com/images/search?q=bender&qpvt=bender&qpvt=bender&qpvt=bender&FORM=IGRE'
+} -Uri $Env:TEAMSPESTERID
+```
+
+Output
+
+![Thumbnail Card](Docs/Images/ThumbnailCard.png)
+
+### Office 365 Connector Card - pre 2.X.X version
+
+```powershell
+$TeamsID = 'YourCodeGoesHere'
+$Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
+$Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
+$Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
+$Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
+$CurrentDate = Get-Date
+$Section = New-TeamsSection `
+    -ActivityTitle "**PSTeams**" `
+    -ActivitySubtitle "@PSTeams - $CurrentDate" `
+    -ActivityImage Add `
+    -ActivityText "This message proves PSTeams Pester test passed properly." `
+    -Buttons $Button1 `
+    -ActivityDetails $Fact1, $Fact2, $Fact3
+Send-TeamsMessage `
+    -URI $TeamsID `
+    -MessageTitle 'PSTeams - Pester Test' `
+    -MessageText "This text won't show up" `
+    -Color DodgerBlue `
+    -Sections $Section
+```
+
+- When executed from Linux
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
+
+- When executed from Windows
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
+
+- When executed from MacOS
+
+![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
+
+- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
+
+![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
+
+## Installing on Windows / Linux / MacOS
+
+Installation doesn't require administrative rights. You can install it using following:
+
+```powershell
+Install-Module PSTeams
+```
+
+But if you don't have administrative rights on your machine:
+
+```powershell
+Install-Module PSTeams -Scope CurrentUser
+```
+
+To update
+
+```powershell
+Update-Module -Name PSTeams
+```
+
+That's it. Whenever there's a new version you simply run the command and you can enjoy it.
+Remember, that you may need to close, reopen the PowerShell session if you have already used the module before updating it.
+**The important thing** is if something works for you on production, keep using it till you test the new version on a test computer.
+I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
+Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only used during development. When published to PSGallery / Releases it's a merged release without any dependencies.
+
 ## Updates
 
+- 2.0.0 Alpha1 / PreRelease / Testing
+  - [x] Added initial support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
+    - [x] Added `New-AdaptiveColumn`
+    - [x] Added `New-AdaptiveImage`
+    - [x] Added `New-AdaptiveFactSet`
+      - [x] Added `New-AdaptiveFact`
+    - [x] Added `New-AdaptiveRichTextBlock`
+    - [x] Added `New-AdaptiveSection`
+    - [x] Added `New-AdaptiveTextBlock`
+  - [x] Added support for [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card) using `New-CardList`
+    - [x] Added `New-CardListItem`
+    - [x] Added `New-CardListButton` (Maximum 6 buttons)
+    - [x] Please notice this isn't really supported in Connectors and is added mostly for fun or basic usage as most of the features do not work
+  - [x] Added support for [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card) using `New-HeroCard`
+    - [x] Added `New-HeroImage` -> actually an alias `New-AdaptiveImage`
+    - [x] Added `New-HeroButton` -> actually an alias `New-CardListButton`
 - 1.0.7 / 2020.10.31
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
@@ -65,14 +229,13 @@ While I didn't spent much time creating WIKI, working on `Get-Help` documentatio
 - 0.4.0 / 2019.04.03
   - [x] fix for UTF-8 charset - (provided by hjorslev)
   - [x] emoji support added - (provided by hjorslev) - to use it you may need UTF-8 with BOM file encoding
-- 0.3.x / 2019.02.21
+- 0.3.0 / 2019.02.21
   - [x] added summary for message that is visible in Activity pane
-- 0.2.x / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
+- 0.2.0 / 2018.10.04 - [full blog post](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
   - [x] added cross-platform (works on linux, mac os, windows)
   - [x] added azure pipelines
   - [x] added some pester tests
-
-- 0.1.x / 2018.07.12
+- 0.1.0 / 2018.07.12
   [x] first release
 
 ## Documentation for Message Cards (for development)
@@ -97,53 +260,3 @@ Send-TeamsMessage -Verbose {
     New-TeamsSection -ActivityTitle "**Elon Musk**" -ActivitySubtitle "@elonmusk - 9/12/2016 at 5:33pm" -ActivityImageLink "https://pbs.twimg.com/profile_images/782474226020200448/zDo-gAo0.jpg" -ActivityText "Climate change explained in comic book form by xkcd xkcd.com/1732"
 } -Uri $TeamsID -MessageSummary 'Tweet'
 ```
-
-## Installing on Windows / Linux / MacOS
-
-```powershell
-Install-Module PSTeams
-#Install-Module PSTeams -Scope CurrentUser
-#Update-Module PSTeams
-```
-
-## Usage
-
-```powershell
-$TeamsID = 'YourCodeGoesHere'
-$Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
-$Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
-$Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
-$Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
-$CurrentDate = Get-Date
-$Section = New-TeamsSection `
-    -ActivityTitle "**PSTeams**" `
-    -ActivitySubtitle "@PSTeams - $CurrentDate" `
-    -ActivityImage Add `
-    -ActivityText "This message proves PSTeams Pester test passed properly." `
-    -Buttons $Button1 `
-    -ActivityDetails $Fact1, $Fact2, $Fact3
-Send-TeamsMessage `
-    -URI $TeamsID `
-    -MessageTitle 'PSTeams - Pester Test' `
-    -MessageText "This text won't show up" `
-    -Color DodgerBlue `
-    -Sections $Section
-```
-
-## How does it look like
-
-- When executed from Linux
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
-
-- When executed from Windows
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
-
-- When executed from MacOS
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
-
-- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
-
-![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)

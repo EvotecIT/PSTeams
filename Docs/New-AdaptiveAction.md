@@ -5,19 +5,20 @@ online version:
 schema: 2.0.0
 ---
 
-# New-TeamsButton
+# New-AdaptiveAction
 
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ```
-New-TeamsButton [-Name] <String> [-Link] <String> [[-Type] <String>] [<CommonParameters>]
+New-AdaptiveAction [[-Body] <ScriptBlock>] [[-Actions] <ScriptBlock>] [[-Type] <String>]
+ [[-ActionUrl] <String>] [[-Title] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
@@ -30,31 +31,61 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Link
-{{Fill Link Description}}
+### -ActionUrl
+{{ Fill ActionUrl Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: TargetUri, Uri, Url
+Aliases:
 
-Required: True
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Actions
+{{ Fill Actions Description }}
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Name
-{{Fill Name Description}}
+### -Body
+{{ Fill Body Description }}
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Title
+{{ Fill Title Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ButtonName
+Aliases:
 
-Required: True
-Position: 0
+Required: False
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -66,8 +97,8 @@ Accept wildcard characters: False
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ButtonType
-Accepted values: ViewAction, TextInput, DateInput, HttpPost, OpenUri
+Aliases:
+Accepted values: Action.ShowCard, Action.Submit, Action.OpenUrl, Action.ToggleVisibility
 
 Required: False
 Position: 2
