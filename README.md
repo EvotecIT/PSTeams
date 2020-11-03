@@ -21,13 +21,15 @@
 # PSTeams - PowerShell Module
 
 [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**.
-It allows sending notifications to _Microsoft Teams_ via WebHook Notifications. It's pretty flexible and provides a bunch of options.
-Initially it only supported one sort of Team Cards but since version `2.X.X` it supports `Adaptive Cards`, `Hero Cards`, `List Cards` and `Thumbnail Cards`.
+It allows sending notifications to _Microsoft Teams_ via **WebHook Notifications**. It's pretty flexible and provides a bunch of options.
+Initially it only supported one sort of `Office 365 Connector Card` but since version `2.X.X` it supports `Adaptive Cards`, `Hero Cards`, `List Cards` and `Thumbnail Cards`.
 All those new cards have their own cmdlets and the old version of creating Teams Cards stays as is for compatibility reasons.
+The most fun you will get from playing with `Adaptive Cards`, but rest has their use case.
 
 ## Readme Links
 
 While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
+Keep in mind those articles are for version 0.X.X-1.X.X, and version 2.X.X doesn't yet have it's own blog post.
 
 - [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
 - [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
@@ -425,6 +427,9 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
   - [x] Added support for [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card) using `New-HeroCard`
     - [x] Added `New-HeroImage` -> actually an alias `New-AdaptiveImage`
     - [x] Added `New-HeroButton` -> actually an alias `New-CardListButton`
+  - [x] Added support for [Thumbnail Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#thumbnail-card) using `New-ThumbnailCard`
+    - [x] Added `New-ThumbnailImage` -> actually an alias `New-AdaptiveImage`
+    - [x] Added `New-ThumbnailButton` -> actually an alias `New-CardListButton`
 - 1.0.7 / 2020.10.31
   - [x] Improved `Send-TeamsMessageBody`
   - [x] Removed `ShowErrors` from `Send-TeamsMessage`
