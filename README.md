@@ -405,7 +405,7 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
 
 ## Updates
 
-- 2.0.0 - Unreleased
+- 2.0.0 / 2020.11.03
   - [x] Added support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
     - [x] Added `New-AdaptiveActionSet`
       - [x] Added `New-AdaptiveAction`
