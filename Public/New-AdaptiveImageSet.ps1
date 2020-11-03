@@ -1,4 +1,4 @@
-﻿function New-AdaptiveImageGallery {
+﻿function New-AdaptiveImageSet {
     <#
     .SYNOPSIS
     The ImageSet displays a collection of Images similar to a gallery. Acceptable formats are PNG, JPEG, and GIF
@@ -58,7 +58,7 @@
     .NOTES
     General notes
     #>
-    [alias('New-AdaptiveImageSet')]
+    [alias('New-AdaptiveImageGallery')]
     [cmdletBinding()]
     param(
         [scriptblock] $Images,

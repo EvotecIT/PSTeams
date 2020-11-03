@@ -182,15 +182,21 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
 
 ## Updates
 
-- 2.0.0 Alpha1 / PreRelease / Testing
-  - [x] Added initial support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
-    - [x] Added `New-AdaptiveColumn`
-    - [x] Added `New-AdaptiveImage`
+- 2.0.0 - Unreleased
+  - [x] Added support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
+    - [x] Added `New-AdaptiveActionSet`
+      - [x] Added `New-AdaptiveAction`
+    - [x] Added `New-AdaptiveColumnSet`
+      - [x] Added `New-AdaptiveColumn`
+    - [x] Added `New-AdaptiveImageSet` -> alias `New-AdaptiveImageGallery`
+      - [x] Added `New-AdaptiveImage`
+    - [x] Added `New-AdaptiveMedia`
+      - [x] Added `New-AdaptiveMediaSource`
     - [x] Added `New-AdaptiveFactSet`
       - [x] Added `New-AdaptiveFact`
-    - [x] Added `New-AdaptiveRichTextBlock`
-    - [x] Added `New-AdaptiveSection`
+    - [x] Added `New-AdaptiveContainer`
     - [x] Added `New-AdaptiveTextBlock`
+    - [x] Added `New-AdaptiveRichTextBlock`
   - [x] Added support for [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card) using `New-CardList`
     - [x] Added `New-CardListItem`
     - [x] Added `New-CardListButton` (Maximum 6 buttons)
