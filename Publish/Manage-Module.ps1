@@ -26,9 +26,9 @@ $Configuration = @{
             # Copyright statement for this module
             Copyright                  = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
             # Description of the functionality provided by this module
-            Description                = 'Simple project to send messages to Microsoft Teams Channel.'
+            Description                = "PSTeams is a PowerShell Module working on Windows / Linux and Mac. It allows sending notifications to Microsoft Teams via WebHook Notifications. It's pretty flexible and provides a bunch of options. Initially, it only supported one sort of Team Cards but since version 2.X.X it supports Adaptive Cards, Hero Cards, List Cards, and Thumbnail Cards. All those new cards have their own cmdlets and the old version of creating Teams Cards stays as-is for compatibility reasons."
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Windows', 'macOS', 'Linux')
+            Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'Windows', 'macOS', 'Linux')
             # A URL to the main website for this project.
             ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
             # A URL to an icon representing this module.
@@ -157,10 +157,10 @@ $Configuration = @{
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $false
+            Enabled      = $true
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $false
+            GitHub       = $true
         }
     }
 }
