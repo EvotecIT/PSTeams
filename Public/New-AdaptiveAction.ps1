@@ -26,6 +26,6 @@
             $TeamObject['card']['actions'] = & $Actions
         }
     }
-    Remove-EmptyValue -Hashtable $TeamObject
+    Remove-EmptyValue -Hashtable $TeamObject -Recursive -Rerun 1
     $TeamObject
 }

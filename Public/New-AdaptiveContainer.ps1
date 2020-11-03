@@ -12,6 +12,8 @@
         [int] $MinimumHeight,
         [switch] $Bleed,
         [ValidateSet('top', 'center', 'bottom')][string] $VerticalContentAlignment,
+        [string] $Id,
+        [switch] $Hidden,
 
         [string] $BackgroundUrl,
         [ValidateSet('Cover', 'RepeatHorizontally', 'RepeatVertically', 'Repeat')][string] $BackgroundFillMode,
@@ -21,13 +23,15 @@
         [ValidateSet('Action.Submit', 'Action.OpenUrl', 'Action.ToggleVisibility')][string] $SelectAction,
         [string] $SelectActionId,
         [string] $SelectActionUrl,
-        [string] $SelectActionTitle
+        [string] $SelectActionTitle,
+        [string[]] $SelectActionTargetElement
     )
     if ($Items) {
         $OutputItems = & $Items
         if ($OutputItems) {
             $TeamObject = [ordered] @{
                 type                     = "Container"
+                id                       = $Id
                 items                    = @(
                     $OutputItems
                 )
@@ -47,6 +51,9 @@
             if ($Separator) {
                 $TeamObject['separator'] = $Separator.IsPresent
             }
+            if ($Hidden) {
+                $TeamObject['isVisible'] = $false
+            }
             $TeamObject['backgroundImage'] = [ordered] @{
                 "fillMode"            = $BackgroundFillMode
                 "horizontalAlignment" = $BackgroundHorizontalAlignment
@@ -62,6 +69,14 @@
                 id    = $SelectActionId
                 title = $SelectActionTitle
                 url   = $SelectActionUrl
+            }
+            if ($SelectActionTargetElement) {
+                # We help user so the actioon choses itself
+                $TeamObject['selectAction']['type'] = 'Action.ToggleVisibility'
+                # We add missing data
+                $TeamObject['selectAction']['targetElements'] = @(
+                    $SelectActionTargetElement
+                )
             }
             Remove-EmptyValue -Hashtable $TeamObject -Recursive -Rerun 1
             $TeamObject

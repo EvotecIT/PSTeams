@@ -99,7 +99,8 @@
         [ValidateSet('Action.Submit', 'Action.OpenUrl', 'Action.ToggleVisibility')][string] $SelectAction,
         [string] $SelectActionId,
         [string] $SelectActionUrl,
-        [string] $SelectActionTitle
+        [string] $SelectActionTitle,
+        [string[]] $SelectActionTargetElement
     )
     $TeamObject = [ordered] @{
         type                = 'Image'
@@ -140,6 +141,14 @@
         id    = $SelectActionId
         title = $SelectActionTitle
         url   = $SelectActionUrl
+    }
+    if ($SelectActionTargetElement) {
+        # We help user so the actioon choses itself
+        $TeamObject['selectAction']['type'] = 'Action.ToggleVisibility'
+        # We add missing data
+        $TeamObject['selectAction']['targetElements'] = @(
+            $SelectActionTargetElement
+        )
     }
     Remove-EmptyValue -Hashtable $TeamObject -Recursive -Rerun 1
     $TeamObject
