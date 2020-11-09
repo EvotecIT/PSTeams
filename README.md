@@ -26,7 +26,22 @@ Initially it only supported one sort of `Office 365 Connector Card` but since ve
 All those new cards have their own cmdlets and the old version of creating Teams Cards stays as is for compatibility reasons.
 The most fun you will get from playing with `Adaptive Cards`, but rest has their use case.
 
-## Readme Links
+## Table Of Contents
+
+- [PSTeams - PowerShell Module](#psteams---powershell-module)
+  - [Table Of Contents](#table-of-contents)
+  - [Links/Blogs](#linksblogs)
+  - [Supported Cards](#supported-cards)
+    - [Adaptive cards](#adaptive-cards)
+    - [List Cards](#list-cards)
+    - [Hero Cards](#hero-cards)
+    - [Thumbnail Cards](#thumbnail-cards)
+    - [Office 365 Connector Card - pre 2.X.X version](#office-365-connector-card---pre-2xx-version)
+  - [Installing/Updating on Windows / Linux / MacOS](#installingupdating-on-windows--linux--macos)
+  - [Changelog](#changelog)
+  - [Documentation for Message Cards (for development)](#documentation-for-message-cards-for-development)
+
+## Links/Blogs
 
 While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
 Keep in mind those articles are for version 0.X.X-1.X.X, and version 2.X.X doesn't yet have it's own blog post.
@@ -34,6 +49,7 @@ Keep in mind those articles are for version 0.X.X-1.X.X, and version 2.X.X doesn
 - [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
 - [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
 - [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
+- [x] [Introducing PSTeams 2.0 – Support for Adaptive Cards, Hero Cards, List Cards and Thumbnail Cards](https://evotec.xyz/introducing-psteams-2-0-support-for-adaptive-cards-hero-cards-list-cards-and-thumbnail-cards/)
 
 ## Supported Cards
 
@@ -377,7 +393,7 @@ Send-TeamsMessage `
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
 
-## Installing on Windows / Linux / MacOS
+## Installing/Updating on Windows / Linux / MacOS
 
 Installation doesn't require administrative rights. You can install it using following:
 
@@ -403,7 +419,7 @@ Remember, that you may need to close, reopen the PowerShell session if you have 
 I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
 Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only used during development. When published to PSGallery / Releases it's a merged release without any dependencies.
 
-## Updates
+## Changelog
 
 - 2.0.0 / 2020.11.03
   - [x] Added support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
