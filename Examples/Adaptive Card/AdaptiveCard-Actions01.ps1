@@ -12,5 +12,5 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
     }
 } -Action {
     New-AdaptiveAction -Title 'Set due date' -Type Action.Submit
-    New-AdaptiveAction -Title 'Comment'
+    New-AdaptiveAction -Title 'Comment' -Type Action.OpenUrl -ActionUrl 'https://evotec.xyz'
 }

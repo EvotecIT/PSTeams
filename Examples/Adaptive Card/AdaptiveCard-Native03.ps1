@@ -24,7 +24,7 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID {
     }
 } -Action {
     New-AdaptiveAction -Title 'Set due date' -Type Action.Submit
-    New-AdaptiveAction -Title 'Comment'
+    New-AdaptiveAction -Title 'Comment' -Type Action.OpenUrl -ActionUrl 'https://evotec.xyz'
     New-AdaptiveAction -Title 'Show Nested, but limited Adaptive Card' -Body {
         New-AdaptiveTextBlock -Text 'Publish Adaptive Card schema' -Weight Bolder -Size Medium
         New-AdaptiveColumnSet {
