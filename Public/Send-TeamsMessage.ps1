@@ -10,7 +10,8 @@ function Send-TeamsMessage {
         [string]$Color,
         [switch]$HideOriginalBody,
         [System.Collections.IDictionary[]]$Sections,
-        [alias('Supress')][bool] $Suppress = $true
+        [alias('Supress')][bool] $Suppress = $true,
+        [switch]$DisableTextMarkdown
     )
     if ($SectionsInput) {
         $Output = & $SectionsInput
@@ -33,6 +34,9 @@ function Send-TeamsMessage {
         -Sections $Output `
         -MessageSummary $MessageSummary `
         -HideOriginalBody:$HideOriginalBody.IsPresent
+    if ($DisableTextMarkdown.IsPresent) {
+        $Body = Disable-TextMarkdown -InputJson $Body
+    }
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop
