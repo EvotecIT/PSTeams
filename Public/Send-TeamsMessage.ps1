@@ -33,10 +33,8 @@ function Send-TeamsMessage {
         -ThemeColor $ThemeColor `
         -Sections $Output `
         -MessageSummary $MessageSummary `
-        -HideOriginalBody:$HideOriginalBody.IsPresent
-    if ($DisableTextMarkdown.IsPresent) {
-        $Body = Disable-TextMarkdown -InputJson $Body
-    }
+        -HideOriginalBody:$HideOriginalBody.IsPresent `
+        -DisableTextMarkdown:$DisableTextMarkdown.IsPresent
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop

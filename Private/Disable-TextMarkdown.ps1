@@ -1,22 +1,22 @@
 function Disable-TextMarkdown() {
     [CmdletBinding()]
     Param(
-        $InputJson
+        $InputObject
     )
 
     $ReturnBody = [ordered] @{}
-    ($InputJson | ConvertFrom-Json) | Foreach-Object {
+    $InputObject | Foreach-Object {
         $Object = $_
-        $Keys = $Object | Get-Member -MemberType NoteProperty
+        $Keys = $Object.Keys
         $Keys | Foreach-Object {
-            $Key = $_.Name
+            $Key = $_
             if ($Key -eq 'sections') {
                 $ReturnBody.sections = @(
                     $Object.$Key | Foreach-Object {
                         $Section = $_
-                        $SectionKeys = ($Section | Get-Member -MemberType NoteProperty).Name
-                        Foreach ($Item in $SectionKeys) {
-                            Switch($Item -like "*text*") {
+                        $SectionKeys = $Section.Keys
+                        Foreach ($Item in $SectionKeys.Clone()) {
+                            Switch($Item.ToLower().Contains('text')) {
                                 $true {
                                     $Section."$Item" = Invoke-EscapeMarkdownCharacter -InputString $Section."$Item"
                                 }
@@ -30,5 +30,5 @@ function Disable-TextMarkdown() {
             }
         }
     }
-    $ReturnBody | ConvertTo-Json -Depth 10
+    $ReturnBody
 }
