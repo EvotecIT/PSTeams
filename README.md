@@ -43,8 +43,8 @@ The most fun you will get from playing with `Adaptive Cards`, but rest has their
 
 ## Links/Blogs
 
-While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 3 articles that should help you get started.
-Keep in mind those articles are for version 0.X.X-1.X.X, and version 2.X.X doesn't yet have it's own blog post.
+While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 4 articles that should help you get started.
+First 3 articles are for version 0.X.X-1.X.X, and last one is small introduction to new versionF.
 
 - [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
 - [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
