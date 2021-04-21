@@ -100,7 +100,7 @@
         [string] $SelectActionId,
         [string] $SelectActionUrl,
         [string] $SelectActionTitle,
-        [ValidateSet('Full', 'Small')][string] $Width = 'Full',
+        [switch] $FullWidth,
         [switch] $AllowImageExpand
     )
     $Wrapper = [ordered]@{
@@ -132,12 +132,8 @@
     if ($AllowImageExpand) {
         $Wrapper['attachments'][0]['content']['msteams']['allowExpand'] = $true
     }
-    if ($Width) {
-        if ($Width -eq 'Small') {
-            $Wrapper['attachments'][0]['content']['msteams']['width'] = 'Default'
-        } else {
-            $Wrapper['attachments'][0]['content']['msteams']['width'] = 'Full'
-        }
+    if ($FullWidth) {
+        $Wrapper['attachments'][0]['content']['msteams']['width'] = 'Full'
     }
     if ($MinimumHeight) {
         $Wrapper['attachments'][0]['content']['minHeight'] = "$($MinimumHeight)px"
