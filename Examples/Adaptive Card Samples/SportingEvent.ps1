@@ -18,4 +18,4 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
             } -Width Auto -Separator -Spacing Medium
         }
     }
-} -Speak 'The Seattle Seahawks beat the Carolina Panthers 40-7'
+} -Speak 'The Seattle Seahawks beat the Carolina Panthers 40-7' -Verbose -Width Full

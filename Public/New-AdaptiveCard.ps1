@@ -59,6 +59,9 @@
     .PARAMETER SelectActionTitle
     Provide Title for Select Action
 
+    .PARAMETER Width
+    Provides ability to manage width of Adaptive Card. By default it's set to Full, but can be set to Small
+
     .EXAMPLE
     New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
         New-AdaptiveTextBlock -Size ExtraLarge -Weight Bolder -Text 'Test' -Color Attention -HorizontalAlignment Center
@@ -96,7 +99,9 @@
         [ValidateSet('Action.Submit', 'Action.OpenUrl', 'Action.ToggleVisibility')][string] $SelectAction,
         [string] $SelectActionId,
         [string] $SelectActionUrl,
-        [string] $SelectActionTitle
+        [string] $SelectActionTitle,
+        [ValidateSet('Full', 'Small')][string] $Width = 'Full',
+        [switch] $AllowImageExpand
     )
     $Wrapper = [ordered]@{
         "type"        = "message"
@@ -117,9 +122,22 @@
                             & $Action
                         }
                     )
+                    msteams   = [ordered]@{
+
+                    }
                 }
             }
         )
+    }
+    if ($AllowImageExpand) {
+        $Wrapper['attachments'][0]['content']['msteams']['allowExpand'] = $true
+    }
+    if ($Width) {
+        if ($Width -eq 'Small') {
+            $Wrapper['attachments'][0]['content']['msteams']['width'] = 'Default'
+        } else {
+            $Wrapper['attachments'][0]['content']['msteams']['width'] = 'Full'
+        }
     }
     if ($MinimumHeight) {
         $Wrapper['attachments'][0]['content']['minHeight'] = "$($MinimumHeight)px"
@@ -154,8 +172,48 @@
         title = $SelectActionTitle
         url   = $SelectActionUrl
     }
+    <#
+    # this somewhat works, except it doesn't
+    $Wrapper['attachments'][0]['content']["msteams"] = @{
+        "entities" = @(
+            @{
+                "type"      = "mention"
+                "text"      = "<at>przemyslaw.klys</at>"
+                "mentioned" = @{
+                    #"id"   = "8:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d"
+                    #"id" = '29:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    #"id" = '29:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    "id" = '19:b6b525a2187848ddb257f59e374363bd'
+                    #"id" = 'orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    #"id" = '49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    "name" = "przemyslaw.klys"
+                }
+            }
+        )
+    }
+    #>
+    <# this doesn't work, but tested
+    $Wrapper["msteams"] = @{
+        "entities" = @(
+            @{
+                "type"      = "mention"
+                "text"      = "<at>przemyslaw.klys</at>"
+                "mentioned" = @{
+                    "id"   = "8:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d"
+                    #"id" = '29:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    #"id" = 'orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    #"id" = '49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                    "name" = "przemyslaw.klys"
+                }
+            }
+        )
+    }
+    #>
+
     Remove-EmptyValue -Hashtable $Wrapper['attachments'][0]['content'] -Recursive -Rerun 1
-    $JsonBody = $Wrapper | ConvertTo-Json -Depth 20
+    $JsonBody = $Wrapper | ConvertTo-JsonLiteral -Depth 20 #ConvertTo-Json -Depth 20
+    #$New = $JsonBody | Format-Json -Indentation 4
+    # $JsonBody = $Wrapper | ConvertTo-Json -Depth 20
     # If URI is not given we return JSON. This is because it's possible to use nested Adaptive Cards in actions
     if ($Uri) {
         Send-TeamsMessageBody -Uri $URI -Body $JsonBody #-Verbose

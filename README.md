@@ -26,21 +26,6 @@ Initially it only supported one sort of `Office 365 Connector Card` but since ve
 All those new cards have their own cmdlets and the old version of creating Teams Cards stays as is for compatibility reasons.
 The most fun you will get from playing with `Adaptive Cards`, but rest has their use case.
 
-## Table Of Contents
-
-- [PSTeams - PowerShell Module](#psteams---powershell-module)
-  - [Table Of Contents](#table-of-contents)
-  - [Links/Blogs](#linksblogs)
-  - [Supported Cards](#supported-cards)
-    - [Adaptive cards](#adaptive-cards)
-    - [List Cards](#list-cards)
-    - [Hero Cards](#hero-cards)
-    - [Thumbnail Cards](#thumbnail-cards)
-    - [Office 365 Connector Card - pre 2.X.X version](#office-365-connector-card---pre-2xx-version)
-  - [Installing/Updating on Windows / Linux / MacOS](#installingupdating-on-windows--linux--macos)
-  - [Changelog](#changelog)
-  - [Documentation for Message Cards (for development)](#documentation-for-message-cards-for-development)
-
 ## Links/Blogs
 
 While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 4 articles that should help you get started.
