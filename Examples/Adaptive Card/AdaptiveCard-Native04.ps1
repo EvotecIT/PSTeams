@@ -12,4 +12,4 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
             New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Good
         }
     }
-} -BackgroundUrl 'https://devblogs.microsoft.com/powershell/wp-content/uploads/sites/30/2018/09/Powershell_256.png' -MinimumHeight 450 -Verbose
+} -BackgroundUrl 'https://devblogs.microsoft.com/powershell/wp-content/uploads/sites/30/2018/09/Powershell_256.png' -MinimumHeight 450 -Verbose -FullWidth
