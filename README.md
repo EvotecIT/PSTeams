@@ -406,6 +406,8 @@ Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only us
 
 ## Changelog
 
+- 2.0.1 / 2021.04.21
+  - ☑ Adaptive Cards are now set to Full Width by default. You can set them back to small by using Width parameter
 - 2.0.0 / 2020.11.03
   - [x] Added support for [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card) using `New-AdaptiveCard`
     - [x] Added `New-AdaptiveActionSet`
