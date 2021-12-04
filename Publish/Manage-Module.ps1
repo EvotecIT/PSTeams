@@ -12,7 +12,7 @@ $Configuration = @{
 
         Manifest          = @{
             # Version number of this module.
-            ModuleVersion              = '2.0.X'
+            ModuleVersion              = '2.1.X'
             # Supported PSEditions
             CompatiblePSEditions       = @('Desktop', 'Core')
             # ID used to uniquely identify this module
@@ -157,10 +157,10 @@ $Configuration = @{
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $false
+            Enabled      = $true
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $false
+            GitHub       = $true
         }
     }
 }
