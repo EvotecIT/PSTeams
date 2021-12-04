@@ -11,5 +11,11 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
             New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Warning
             New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Good
         }
+        New-AdaptiveColumn {
+            New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1 <at>Name</at>' -Color Warning
+            New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1 <at>Zenon Jaskuła</at>' -Color Warning
+        }
     }
-} -SelectAction Action.OpenUrl -SelectActionUrl 'https://evotec.xyz' -Verbose
+    New-AdaptiveMention -Text 'Zenon Jaskuła' -UserPrincipalName 'przemyslaw.klys@evotec.test'
+    New-AdaptiveMention -Text 'Name' -UserPrincipalName 'przemyslaw.klys@evotec.test'
+} -Verbose #-SelectAction Action.OpenUrl -SelectActionUrl 'https://evotec.xyz'

@@ -103,6 +103,7 @@
         [switch] $FullWidth,
         [switch] $AllowImageExpand
     )
+    $Mentions = [System.Collections.Generic.List[System.Collections.Specialized.OrderedDictionary]]::new()
     $Wrapper = [ordered]@{
         "type"        = "message"
         "attachments" = @(
@@ -114,7 +115,14 @@
                     version   = "1.2" # Currently maximum supported is 1.2 for Teams, available is 1.3
                     body      = @(
                         if ($Body) {
-                            & $Body
+                            $OutputBody = & $Body
+                            foreach ($B in $OutputBody) {
+                                if ($B.type -eq 'mention') {
+                                    $Mentions.Add($B)
+                                } else {
+                                    $B
+                                }
+                            }
                         }
                     )
                     actions   = @(
@@ -168,25 +176,37 @@
         title = $SelectActionTitle
         url   = $SelectActionUrl
     }
-    <#
-    # this somewhat works, except it doesn't
-    $Wrapper['attachments'][0]['content']["msteams"] = @{
-        "entities" = @(
-            @{
-                "type"      = "mention"
-                "text"      = "<at>przemyslaw.klys</at>"
-                "mentioned" = @{
-                    #"id"   = "8:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d"
-                    #"id" = '29:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
-                    #"id" = '29:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
-                    "id" = '19:b6b525a2187848ddb257f59e374363bd'
-                    #"id" = 'orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
-                    #"id" = '49f7e27a-ce6c-45ef-9936-6ef3e940583d'
-                    "name" = "przemyslaw.klys"
+
+    if ($Mentions.Count -gt 0) {
+        # this somewhat works, except it doesn't
+        $Wrapper['attachments'][0]['content']["msteams"] = @{
+            "entities" = @(
+                foreach ($Mention in $Mentions) {
+                    $Mention
                 }
-            }
-        )
+                <#
+                @{
+                    "type"      = "mention"
+                    "text"      = "<at>przemyslaw.klys</at>"
+                    "mentioned" = @{
+                        #"id"   = "8:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d"
+                        #"id" = '29:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                        #"id" = '29:orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                        #"id" = '19:b6b525a2187848ddb257f59e374363bd'
+                        #"id" = 'orgid:49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                        #"id" = '49f7e27a-ce6c-45ef-9936-6ef3e940583d'
+                        #"name" = "przemyslaw.klys"
+
+                        id   = 'przemyslaw.klys@evotec.pl'
+                        name = 'Przemysław Kłys'
+
+                    }
+                }
+                #>
+            )
+        }
     }
+    <#
     #>
     <# this doesn't work, but tested
     $Wrapper["msteams"] = @{
