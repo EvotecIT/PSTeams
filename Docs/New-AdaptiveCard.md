@@ -17,7 +17,8 @@ New-AdaptiveCard [[-Body] <ScriptBlock>] [[-Action] <ScriptBlock>] [[-Uri] <Stri
  [[-MinimumHeight] <Int32>] [[-Speak] <String>] [[-Language] <String>] [[-VerticalContentAlignment] <String>]
  [[-BackgroundUrl] <String>] [[-BackgroundFillMode] <String>] [[-BackgroundHorizontalAlignment] <String>]
  [[-BackgroundVerticalAlignment] <String>] [[-SelectAction] <String>] [[-SelectActionId] <String>]
- [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [<CommonParameters>]
+ [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [-FullWidth] [-AllowImageExpand]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -302,6 +303,36 @@ Aliases:
 Required: False
 Position: 16
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -FullWidth
+{{ Fill FullWidth Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AllowImageExpand
+{{ Fill AllowImageExpand Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

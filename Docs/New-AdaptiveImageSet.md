@@ -5,13 +5,18 @@ online version:
 schema: 2.0.0
 ---
 
-# New-AdaptiveImageGallery
+# New-AdaptiveImageSet
 
 ## SYNOPSIS
 The ImageSet displays a collection of Images similar to a gallery.
 Acceptable formats are PNG, JPEG, and GIF
 
 ## SYNTAX
+
+```
+New-AdaptiveImageSet [[-Images] <ScriptBlock>] [[-Size] <String>] [[-Spacing] <String>] [-Separator]
+ [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Id] <String>] [-Hidden] [<CommonParameters>]
+```
 
 ## DESCRIPTION
 The ImageSet displays a collection of Images similar to a gallery.
@@ -54,6 +59,126 @@ New-AdaptiveImage -BackgroundColor AlbescentWhite -Url 'https://devblogs.microso
 } -Size Small
 
 ## PARAMETERS
+
+### -Images
+List of images
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Size
+Controls size of all images in gallery
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+Controls the amount of spacing between this element and the preceding element.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+Draw a separating line at the top of the element.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+Controls the horizontal text alignment.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Height
+Specifies the height of the element.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Id
+A unique identifier associated with the item.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Hidden
+If used this item will be removed from the visual tree.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### CommonParameters
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).

@@ -15,10 +15,11 @@ schema: 2.0.0
 ```
 New-AdaptiveContainer [[-Items] <ScriptBlock>] [[-Spacing] <String>] [-Separator]
  [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Style] <String>] [[-MinimumHeight] <Int32>] [-Bleed]
- [[-VerticalContentAlignment] <String>] [[-BackgroundUrl] <String>] [[-BackgroundFillMode] <String>]
- [[-BackgroundHorizontalAlignment] <String>] [[-BackgroundVerticalAlignment] <String>]
- [[-SelectAction] <String>] [[-SelectActionId] <String>] [[-SelectActionUrl] <String>]
- [[-SelectActionTitle] <String>] [<CommonParameters>]
+ [[-VerticalContentAlignment] <String>] [[-Id] <String>] [-Hidden] [[-BackgroundUrl] <String>]
+ [[-BackgroundFillMode] <String>] [[-BackgroundHorizontalAlignment] <String>]
+ [[-BackgroundVerticalAlignment] <String>] [[-SelectAction] <String>] [[-SelectActionId] <String>]
+ [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [[-SelectActionTargetElement] <String[]>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -45,7 +46,7 @@ Aliases:
 Accepted values: Cover, RepeatHorizontally, RepeatVertically, Repeat
 
 Required: False
-Position: 8
+Position: 9
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -61,7 +62,7 @@ Aliases:
 Accepted values: left, center, right
 
 Required: False
-Position: 9
+Position: 10
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -76,7 +77,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 7
+Position: 8
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -92,7 +93,7 @@ Aliases:
 Accepted values: top, center, bottom
 
 Required: False
-Position: 10
+Position: 11
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -129,6 +130,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Hidden
+{{ Fill Hidden Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -HorizontalAlignment
 {{ Fill HorizontalAlignment Description }}
 
@@ -140,6 +156,21 @@ Accepted values: Left, Center, Right
 
 Required: False
 Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Id
+{{ Fill Id Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 7
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -185,7 +216,7 @@ Aliases:
 Accepted values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
 
 Required: False
-Position: 11
+Position: 12
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -200,7 +231,22 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 12
+Position: 13
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionTargetElement
+{{ Fill SelectActionTargetElement Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 16
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -215,7 +261,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 14
+Position: 15
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -230,7 +276,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 13
+Position: 14
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

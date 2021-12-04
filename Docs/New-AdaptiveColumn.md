@@ -14,10 +14,10 @@ schema: 2.0.0
 
 ```
 New-AdaptiveColumn [[-Items] <ScriptBlock>] [[-Spacing] <String>] [[-Height] <String>] [[-Width] <String>]
- [[-WidthInPercent] <Int32>] [[-WidthInPixels] <Int32>] [[-MinimumHeight] <Int32>]
+ [[-WidthInWeight] <Int32>] [[-WidthInPixels] <Int32>] [[-MinimumHeight] <Int32>]
  [[-HorizontalAlignment] <String>] [[-VerticalContentAlignment] <String>] [[-Style] <String>] [-Hidden]
  [-Separator] [[-SelectAction] <String>] [[-SelectActionId] <String>] [[-SelectActionUrl] <String>]
- [[-SelectActionTitle] <String>] [<CommonParameters>]
+ [[-SelectActionTitle] <String>] [[-SelectActionTargetElement] <String[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -142,6 +142,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -SelectActionTargetElement
+{{ Fill SelectActionTargetElement Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 14
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -SelectActionTitle
 {{ Fill SelectActionTitle Description }}
 
@@ -251,21 +266,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WidthInPercent
-{{ Fill WidthInPercent Description }}
-
-```yaml
-Type: Int32
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -WidthInPixels
 {{ Fill WidthInPixels Description }}
 
@@ -276,6 +276,21 @@ Aliases:
 
 Required: False
 Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WidthInWeight
+{{ Fill WidthInWeight Description }}
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

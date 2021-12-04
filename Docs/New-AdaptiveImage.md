@@ -18,7 +18,8 @@ New-AdaptiveImage [[-Url] <String>] [[-Style] <String>] [[-AlternateText] <Strin
  [[-Spacing] <String>] [-Separator] [[-HorizontalAlignment] <String>] [[-Height] <String>]
  [[-HeightInPixels] <Int32>] [[-WidthInPixels] <Int32>] [[-Id] <String>] [-Hidden]
  [[-BackgroundColor] <String>] [[-SelectAction] <String>] [[-SelectActionId] <String>]
- [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [<CommonParameters>]
+ [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [[-SelectActionTargetElement] <String[]>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -310,6 +311,21 @@ Aliases:
 
 Required: False
 Position: 15
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectActionTargetElement
+{{ Fill SelectActionTargetElement Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 16
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
