@@ -1,4 +1,37 @@
 ﻿function New-HeroCard {
+    <#
+    .SYNOPSIS
+    Provides a quick and easy way to build a Hero Card and send it thru incoming webhook to Microsoft Teams.
+
+    .DESCRIPTION
+    Provides a quick and easy way to build a Hero Card and send it thru incoming webhook to Microsoft Teams.
+
+    .PARAMETER Content
+    ScriptBlock to define the content of HeroCard
+
+    .PARAMETER Title
+    Title of the hero card
+
+    .PARAMETER SubTitle
+    Subtitle of the hero card
+
+    .PARAMETER Text
+    Text to display within hero card
+
+    .PARAMETER Uri
+    URI/URL of Incoming Webhook generated in Microsoft Teams
+
+    .EXAMPLE
+    New-HeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service." {
+        New-HeroImage -Url 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg'
+        New-HeroButton -Type openUrl -Title 'Official website' -Value 'https://www.seattlemonorail.com'
+        New-HeroButton -Type openUrl -Title 'Wikipeda page' -Value 'https://www.seattlemonorail.com'
+        New-HeroButton -Type imBack -Title 'Evotec page' -Value 'https://www.evotec.xyz'
+    } -Uri $URI
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding()]
     param(
         [Parameter(Mandatory)][scriptblock] $Content,
