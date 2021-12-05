@@ -18,4 +18,4 @@ New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
     }
     New-AdaptiveMention -Text 'Zenon Jaskuła' -UserPrincipalName 'przemyslaw.klys@evotec.test'
     New-AdaptiveMention -Text 'Name' -UserPrincipalName 'przemyslaw.klys@evotec.test'
-} -Verbose #-SelectAction Action.OpenUrl -SelectActionUrl 'https://evotec.xyz'
+} -Verbose -FullWidth #-SelectAction Action.OpenUrl -SelectActionUrl 'https://evotec.xyz'
