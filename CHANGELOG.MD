@@ -1,5 +1,9 @@
 ﻿### PSTeams Release Notes
 
+#### 2.1.1 / 2021.12.05
+  - Fixes broken `FullWidth` and `AllowImageExpand` in last version of PSTeams for `New-AdaptiveCard`
+  - Updated docs for `New-AdaptiveCard`
+
 #### 2.1.0 / 2021.12.04
   - ☑ Added `New-AdaptiveMention` that allows to define mentions for Adaptive Cards. Requires MS to enable notifications. For details: [#17](https://github.com/EvotecIT/PSTeams/issues/17)
 
