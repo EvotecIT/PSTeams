@@ -59,8 +59,11 @@
     .PARAMETER SelectActionTitle
     Provide Title for Select Action
 
-    .PARAMETER Width
-    Provides ability to manage width of Adaptive Card. By default it's set to Full, but can be set to Small
+    .PARAMETER FullWidth
+    Provide ability to make card full width. By default it set to small.
+
+    .PARAMETER AllowImageExpand
+    Defines that image may expand
 
     .EXAMPLE
     New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
@@ -76,6 +79,27 @@
             }
         }
     } -SelectAction Action.OpenUrl -SelectActionUrl 'https://evotec.xyz' -Verbose
+
+    .EXAMPLE
+    New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
+        New-AdaptiveTextBlock -Size ExtraLarge -Weight Bolder -Text 'Test' -Color Attention -HorizontalAlignment Center
+        New-AdaptiveColumnSet {
+            New-AdaptiveColumn {
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Dark
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Light
+            }
+            New-AdaptiveColumn {
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Warning
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1' -Color Good
+            }
+            New-AdaptiveColumn {
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1 <at>Name</at>' -Color Warning
+                New-AdaptiveTextBlock -Size 'Medium' -Text 'Test Card Title 1 <at>Zenon Jaskuła</at>' -Color Warning
+            }
+        }
+        New-AdaptiveMention -Text 'Zenon Jaskuła' -UserPrincipalName 'przemyslaw.klys@evotec.test'
+        New-AdaptiveMention -Text 'Name' -UserPrincipalName 'przemyslaw.klys@evotec.test'
+    } -Verbose -FullWidth
 
     .NOTES
     General notes
@@ -179,12 +203,11 @@
 
     if ($Mentions.Count -gt 0) {
         # this somewhat works, except it doesn't
-        $Wrapper['attachments'][0]['content']["msteams"] = @{
-            "entities" = @(
-                foreach ($Mention in $Mentions) {
-                    $Mention
-                }
-                <#
+        $Wrapper['attachments'][0]['content']["msteams"]["entities"] = @(
+            foreach ($Mention in $Mentions) {
+                $Mention
+            }
+            <#
                 @{
                     "type"      = "mention"
                     "text"      = "<at>przemyslaw.klys</at>"
@@ -202,9 +225,8 @@
 
                     }
                 }
-                #>
-            )
-        }
+            #>
+        )
     }
     <#
     #>

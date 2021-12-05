@@ -42,7 +42,7 @@
         }
         New-AdaptiveMention -Text 'Zenon Jaskuła' -UserPrincipalName 'przemyslaw.klys@evotec.test'
         New-AdaptiveMention -Text 'Name' -UserPrincipalName 'przemyslaw.klys@evotec.test'
-    } -Verbose
+    } -Verbose -FullWidth
 
     .NOTES
     More information here: https://github.com/EvotecIT/PSTeams/issues/17
