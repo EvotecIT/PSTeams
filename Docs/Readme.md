@@ -20,6 +20,9 @@ Convert an array of PSCustomObject or a Hashtable to separate Teams sections.
 ### [New-AdaptiveAction](New-AdaptiveAction.md)
 {{ Fill in the Synopsis }}
 
+### [New-AdaptiveActionSet](New-AdaptiveActionSet.md)
+{{ Fill in the Synopsis }}
+
 ### [New-AdaptiveCard](New-AdaptiveCard.md)
 An Adaptive Card, containing a free-form body of card elements, and an optional set of actions.
 
@@ -46,11 +49,18 @@ Acceptable formats are PNG, JPEG, and GIF
 The ImageSet displays a collection of Images similar to a gallery.
 Acceptable formats are PNG, JPEG, and GIF
 
+### [New-AdaptiveImageSet](New-AdaptiveImageSet.md)
+The ImageSet displays a collection of Images similar to a gallery.
+Acceptable formats are PNG, JPEG, and GIF
+
 ### [New-AdaptiveMedia](New-AdaptiveMedia.md)
 Displays a media player for audio or video content.
 
 ### [New-AdaptiveMediaSource](New-AdaptiveMediaSource.md)
 Defines a source for a Media element
+
+### [New-AdaptiveMention](New-AdaptiveMention.md)
+Allows Adaptive Card to mention specific person in the notification.
 
 ### [New-AdaptiveRichTextBlock](New-AdaptiveRichTextBlock.md)
 Defines an array of inlines, allowing for inline text formatting.
