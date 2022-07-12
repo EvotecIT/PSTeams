@@ -5,7 +5,8 @@ function Send-TeamsMessageBody {
         [alias("TeamsID", 'Url')][Parameter(Mandatory = $true)][string]$Uri,
         [string] $Body,
         [bool] $Supress = $true,
-        [switch] $Wrap
+        [switch] $Wrap,
+        [string] $Proxy
     )
     if ($Wrap) {
         $TemporaryBody = ConvertFrom-Json -InputObject $Body
@@ -19,7 +20,16 @@ function Send-TeamsMessageBody {
     }
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
-        $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8'
+        $Params = @{
+            Uri         = $Uri
+            Method      = 'Post'
+            Body        = $Body
+            ContentType = 'application/json; charset=UTF-8'
+        }
+        if ($Proxy) {
+            $Params.Proxy = $Proxy
+        }
+        $Execute = Invoke-RestMethod @Params
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         if ($PSBoundParameters.ErrorAction -eq 'Stop') {
