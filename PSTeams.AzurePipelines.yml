@@ -1,17 +1,26 @@
 jobs:
   - job: Build_PS_Win2016
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     steps:
     - powershell: |
         Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
         .\PSTeams.Tests.ps1 $(TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
+  - job: Windows_PowerShell_7
+    pool:
+      vmImage: windows-latest
+    steps:
+      - pwsh: 'Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck'
+        displayName: "Update PESTER"
+      - pwsh: '.\PSTeams.Tests.ps1 $(TEAMSPESTERID)'
+        displayName: "Run Tests on Windows PowerShell 7"
+
   - job: Build_PSCore_Ubuntu1604
 
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
 
     steps:
     - script: |
