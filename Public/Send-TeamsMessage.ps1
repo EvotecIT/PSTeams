@@ -9,7 +9,7 @@ function Send-TeamsMessage {
         [string]$MessageSummary,
         [string]$Color,
         [switch]$HideOriginalBody,
-        [string]$Proxy,
+        [Uri]$Proxy,
         [System.Collections.IDictionary[]]$Sections,
         [alias('Supress')][bool] $Suppress = $true
     )

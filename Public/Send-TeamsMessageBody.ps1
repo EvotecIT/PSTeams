@@ -6,7 +6,7 @@ function Send-TeamsMessageBody {
         [string] $Body,
         [bool] $Supress = $true,
         [switch] $Wrap,
-        [string] $Proxy
+        [Uri] $Proxy
     )
     if ($Wrap) {
         $TemporaryBody = ConvertFrom-Json -InputObject $Body
