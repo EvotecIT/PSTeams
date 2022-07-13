@@ -15,7 +15,7 @@ schema: 2.0.0
 ```
 Send-TeamsMessage [[-SectionsInput] <ScriptBlock>] [-Uri] <String> [[-MessageTitle] <String>]
  [[-MessageText] <String>] [[-MessageSummary] <String>] [[-Color] <String>] [-HideOriginalBody]
- [[-Sections] <IDictionary[]>] [[-Suppress] <Boolean>] [<CommonParameters>]
+ [[-Sections] <IDictionary[]>] [[-Suppress] <Boolean>] [[Proxy] <Uri>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -162,6 +162,20 @@ Aliases: TeamsID, Url
 
 Required: True
 Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Proxy
+{{ Fill in Proxy Description }}
+
+```yaml
+Type: System.Uri
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

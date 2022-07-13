@@ -1,5 +1,8 @@
 ﻿### PSTeams Release Notes
 
+#### 2.1.2 / 2022.07.13
+  - ☑ Added support for `Proxy` parameter in `Send-TeamsMessage` and `Send-TeamsMessageBody`, for environments where connections to Office 365 go via a proxy.
+
 #### 2.1.1 / 2021.12.05
   - 🐛 Fixes broken `FullWidth` and `AllowImageExpand` in last version of PSTeams for `New-AdaptiveCard`
   - 📃 Updated docs for `New-AdaptiveCard`
