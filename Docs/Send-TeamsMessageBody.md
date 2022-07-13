@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Send-TeamsMessageBody [-Uri] <String> [[-Body] <String>] [[-Supress] <Boolean>] [-Wrap] [<CommonParameters>]
+Send-TeamsMessageBody [-Uri] <String> [[-Body] <String>] [[-Supress] <Boolean>] [-Wrap] [[-Proxy] <Uri>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -85,6 +85,20 @@ Aliases:
 
 Required: False
 Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Proxy
+{{ Fill in Proxy Description }}
+
+```yaml
+Type: System.Uri
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

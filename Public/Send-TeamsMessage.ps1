@@ -9,6 +9,7 @@ function Send-TeamsMessage {
         [string]$MessageSummary,
         [string]$Color,
         [switch]$HideOriginalBody,
+        [Uri]$Proxy,
         [System.Collections.IDictionary[]]$Sections,
         [alias('Supress')][bool] $Suppress = $true
     )
@@ -35,7 +36,17 @@ function Send-TeamsMessage {
         -HideOriginalBody:$HideOriginalBody.IsPresent
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
-        $Execute = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -ContentType 'application/json; charset=UTF-8' -ErrorAction Stop
+        $Params = @{
+            Uri         = $Uri
+            Method      = 'Post'
+            Body        = $Body
+            ContentType = 'application/json; charset=UTF-8'
+            ErrorAction = 'Stop'
+        }
+        if ($Proxy) {
+            $Params.Proxy = $Proxy
+        }
+        $Execute = Invoke-RestMethod @Params
     } catch {
         $ErrorMessage = $_.Exception.Message -replace "`n", " " -replace "`r", " "
         if ($PSBoundParameters.ErrorAction -eq 'Stop') {
