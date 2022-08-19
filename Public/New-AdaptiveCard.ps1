@@ -65,6 +65,9 @@
     .PARAMETER AllowImageExpand
     Defines that image may expand
 
+    .PARAMETER ReturnJson
+    Defines that JSON should be returned even when Uri is provided. Useful for debugging
+
     .EXAMPLE
     New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
         New-AdaptiveTextBlock -Size ExtraLarge -Weight Bolder -Text 'Test' -Color Attention -HorizontalAlignment Center
@@ -125,7 +128,8 @@
         [string] $SelectActionUrl,
         [string] $SelectActionTitle,
         [switch] $FullWidth,
-        [switch] $AllowImageExpand
+        [switch] $AllowImageExpand,
+        [switch] $ReturnJson
     )
     $Mentions = [System.Collections.Generic.List[System.Collections.Specialized.OrderedDictionary]]::new()
     $Wrapper = [ordered]@{
@@ -255,6 +259,9 @@
     # If URI is not given we return JSON. This is because it's possible to use nested Adaptive Cards in actions
     if ($Uri) {
         Send-TeamsMessageBody -Uri $URI -Body $JsonBody #-Verbose
+        if ($ReturnJson) {
+            $JsonBody
+        }
     } else {
         $JsonBody
     }
