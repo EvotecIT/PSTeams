@@ -1,5 +1,8 @@
 ﻿### PSTeams Release Notes
 
+#### 2.2.0 / 2022.08.19
+  - Added support for `New-AdaptiveTable` that simplifies the creation of tables from arrays.
+
 #### 2.1.2 / 2022.07.13
   - ☑ Added support for `Proxy` parameter in `Send-TeamsMessage` and `Send-TeamsMessageBody`, for environments where connections to Office 365 go via a proxy.
 
