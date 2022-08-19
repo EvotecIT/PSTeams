@@ -10,13 +10,13 @@
     The card elements to show in the primary card region.
 
     .PARAMETER Action
-    The Actions to show in the card’s action bar.
+    The Actions to show in the card's action bar.
 
     .PARAMETER Uri
     WebHook Uri to send Adaptive Card to. When provided sends Adaptive Card. When not provided JSON is returned.
 
     .PARAMETER FallBackText
-    Text shown when the client doesn’t support the version specified (may contain markdown).
+    Text shown when the client doesn't support the version specified (may contain markdown).
 
     .PARAMETER MinimumHeight
     Specifies the minimum height of the card.
