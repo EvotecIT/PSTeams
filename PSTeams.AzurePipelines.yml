@@ -6,6 +6,8 @@ jobs:
       - powershell: |
           Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
           .\PSTeams.Tests.ps1 $(TEAMSPESTERID)
+        env:
+          TEAMSPESTERID: $(TEAMSPESTERID)
         displayName: "Run Pester Tests"
 
   - job: Windows_PowerShell_7
