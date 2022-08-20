@@ -1,3 +1,6 @@
+variables:
+  GLOBAL_MY_MAPPED_ENV_VAR: $(TEAMSPESTERID)
+
 jobs:
   - job: Build_PS_Win2016
     pool:
