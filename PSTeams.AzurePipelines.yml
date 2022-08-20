@@ -1,23 +1,24 @@
-variables:
-  SECRET_TEAMSPESTERID: $(TEAMSPESTERID)
-
 jobs:
   - job: Build_PS_Win2016
     pool:
       vmImage: windows-latest
     steps:
-    - powershell: |
-        Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
-        .\PSTeams.Tests.ps1 $(SECRET_TEAMSPESTERID)
-      displayName: 'Run Pester Tests'
+      - powershell: |
+          Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
+          .\PSTeams.Tests.ps1 $(TEAMSPESTERID)
+        displayName: "Run Pester Tests"
 
   - job: Windows_PowerShell_7
     pool:
       vmImage: windows-latest
     steps:
-      - pwsh: 'Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck'
+      - pwsh: "Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck"
         displayName: "Update PESTER"
-      - pwsh: '.\PSTeams.Tests.ps1 $(SECRET_TEAMSPESTERID)'
+        env:
+          TEAMSPESTERID: $(TEAMSPESTERID)
+      - pwsh: '.\PSTeams.Tests.ps1 $(TEAMSPESTERID)'
+        env:
+          TEAMSPESTERID: $(TEAMSPESTERID)
         displayName: "Run Tests on Windows PowerShell 7"
 
   - job: Build_PSCore_Ubuntu1604
@@ -26,28 +27,32 @@ jobs:
       vmImage: ubuntu-latest
 
     steps:
-    - script: |
-        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-        curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/microsoft.list
-        sudo apt-get update
-        sudo apt-get install -y powershell
-      displayName: 'Install PowerShell Core'
+      - script: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/microsoft.list
+          sudo apt-get update
+          sudo apt-get install -y powershell
+        displayName: "Install PowerShell Core"
 
-    - script: |
-        pwsh -c '.\PSTeams.Tests.ps1' $(SECRET_TEAMSPESTERID)
-      displayName: 'Run Pester Tests'
+      - script: |
+          pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
+        displayName: "Run Pester Tests"
+        env:
+          TEAMSPESTERID: $(TEAMSPESTERID)
 
   - job: Build_PSCore_MacOS
     pool:
       vmImage: macOS-latest
     steps:
-    - script: |
-        brew update
-        brew tap caskroom/cask
-        brew install mono-libgdiplus
-        brew install --cask powershell
-      displayName: 'Install PowerShell Core'
+      - script: |
+          brew update
+          brew tap caskroom/cask
+          brew install mono-libgdiplus
+          brew install --cask powershell
+        displayName: "Install PowerShell Core"
 
-    - script: |
-        pwsh -c '.\PSTeams.Tests.ps1' $(SECRET_TEAMSPESTERID)
-      displayName: 'Run Pester Tests'
+      - script: |
+          pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
+        displayName: "Run Pester Tests"
+        env:
+          TEAMSPESTERID: $(TEAMSPESTERID)
