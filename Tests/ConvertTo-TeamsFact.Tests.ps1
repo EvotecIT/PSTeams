@@ -1,7 +1,3 @@
-param (
-    $TeamsID = $Env:TEAMSPESTERID
-)
-
 Describe "Conversion of different objects to Teams fact" {
     Context "Object types: PSObject, unordered dictionary, ordered dictionary and string" {
         It "Convert PSObject to Teams facts" {

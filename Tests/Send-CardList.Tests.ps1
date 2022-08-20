@@ -1,4 +1,4 @@
-﻿param (
+﻿param(
     $TeamsID = $Env:TEAMSPESTERID
 )
 

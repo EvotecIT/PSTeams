@@ -1,4 +1,4 @@
-﻿param (
+﻿param(
     $TeamsID = $Env:TEAMSPESTERID
 )
 
@@ -9,6 +9,6 @@ Describe 'New-ThumbnailCard - Should send message properly' {
             New-ThumbnailButton -Type imBack -Title 'Thumbs Up' -Value 'I like it' -Image "http://moopz.com/assets_c/2012/06/emoji-thumbs-up-150-thumb-autox125-140616.jpg"
             New-ThumbnailButton -Type openUrl -Title 'Thumbs Down' -Value 'https://evotec.xyz'
             New-ThumbnailButton -Type openUrl -Title 'I feel luck' -Value 'https://www.bing.com/images/search?q=bender&qpvt=bender&qpvt=bender&qpvt=bender&FORM=IGRE'
-        } -Uri $Env:TEAMSPESTERID -ErrorAction Stop
+        } -Uri $TeamsID -ErrorAction Stop
     } -TestCases @{ TeamsID = $TeamsID }
 }

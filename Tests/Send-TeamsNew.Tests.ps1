@@ -1,10 +1,10 @@
-﻿param (
+﻿param(
     $TeamsID = $Env:TEAMSPESTERID
 )
 
 Describe 'Send-TeamsMessage - Should send messages properly with new syntax' {
     It 'Given 3 facts, 1 section should not throw' {
-        Send-TeamsMessage -URI $TeamsID -MessageTitle 'PSTeams - Pester Test' -MessageText "This text will show up" -Color DodgerBlue {
+        Send-TeamsMessage -Uri $TeamsID -MessageTitle 'PSTeams - Pester Test' -MessageText "This text will show up" -Color DodgerBlue {
             New-TeamsSection {
                 New-TeamsActivityTitle -Title "**PSTeams**"
                 New-TeamsActivitySubtitle -Subtitle "@PSTeams - $CurrentDate"
