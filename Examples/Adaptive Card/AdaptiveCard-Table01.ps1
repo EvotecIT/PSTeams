@@ -30,13 +30,17 @@ $ObjectsHashes = @(
 )
 
 $Card = New-AdaptiveCard {
-    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with PSCustomObject' -Separator -Wrap
+    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with PSCustomObject 🔥' -Wrap
 
     New-AdaptiveTable -DataTable $Objects
 
-    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with OrderedDictionary' -Separator -Wrap
+    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with OrderedDictionary 🤷‍♂️' -Wrap
 
     New-AdaptiveTable -DataTable $ObjectsHashes
+
+    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with display as PSCustomObject ❤️' -Wrap
+
+    New-AdaptiveTable -DataTable $ObjectsHashes -DictionaryAsCustomObject
 } -Uri $Env:TEAMSPESTERID -FullWidth -ReturnJson
 
 $Card | ConvertFrom-Json | ConvertTo-Json -Depth 20

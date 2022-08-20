@@ -1,7 +1,7 @@
 ﻿Import-Module .\PSTeams.psd1 -Force
 
 New-AdaptiveCard {
-    #New-TeamsText -Size 'Medium' -Weight Bolder -Text 'Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation.' -Separator -Wrap
+    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation.' -Separator -Wrap
     New-AdaptiveColumnSet {
         New-AdaptiveColumn {
             New-AdaptiveFactSet {
@@ -21,6 +21,7 @@ New-AdaptiveCard {
         } -Width stretch
     }
     New-AdaptiveRichTextBlock -HorizontalAlignment left
-    New-AdaptiveTextBlock -Text 'Dear <at>przemyslawklys</at>' -Subtle -Spacing None
-    #New-AdaptiveTextBlock -Text '<at>Przemysław</at>'
+    New-AdaptiveTextBlock -Text 'Dear <at>Przemysław Kłys</at>' -Subtle -Spacing None
+
+    New-AdaptiveMention -Text 'Przemysław Kłys' -UserPrincipalName 'przemyslaw.klys@domain.pl'
 } -Uri $Env:TEAMSPESTERID
