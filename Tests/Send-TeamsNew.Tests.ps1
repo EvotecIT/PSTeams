@@ -18,5 +18,5 @@ Describe 'Send-TeamsMessage - Should send messages properly with new syntax' {
                 New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
             }
         } -ErrorAction Stop
-    }
+    } -TestCases @{ TeamsID = $TeamsID }
 }

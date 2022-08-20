@@ -50,5 +50,5 @@ Describe 'New-AdaptiveCard - Should send message properly' {
                 }
             }
         } -ErrorAction Stop
-    }
+    } -TestCases @{ TeamsID = $TeamsID }
 }

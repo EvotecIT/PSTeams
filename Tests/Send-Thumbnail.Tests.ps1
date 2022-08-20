@@ -10,5 +10,5 @@ Describe 'New-ThumbnailCard - Should send message properly' {
             New-ThumbnailButton -Type openUrl -Title 'Thumbs Down' -Value 'https://evotec.xyz'
             New-ThumbnailButton -Type openUrl -Title 'I feel luck' -Value 'https://www.bing.com/images/search?q=bender&qpvt=bender&qpvt=bender&qpvt=bender&FORM=IGRE'
         } -Uri $Env:TEAMSPESTERID -ErrorAction Stop
-    }
+    } -TestCases @{ TeamsID = $TeamsID }
 }

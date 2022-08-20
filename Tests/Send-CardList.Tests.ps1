@@ -11,6 +11,6 @@ Describe 'New-CardList - Should send message properly' {
             New-CardListItem -Type section -Title 'Manager'
             New-CardListItem -Type person -Title "John Doe" -SubTitle 'Manager' -TapType imBack -TapValue "JohnDoe@contoso.com" -TapAction whois
             New-CardListButton -Type openUrl -Title 'Show' -Value 'https://evotec.xyz'
-        } -Uri $Env:TEAMSPESTERID -Title 'Card Title' -ErrorAction Stop
-    }
+        } -Uri $TeamsID -Title 'Card Title' -ErrorAction Stop
+    } -TestCases @{ TeamsID = $TeamsID }
 }

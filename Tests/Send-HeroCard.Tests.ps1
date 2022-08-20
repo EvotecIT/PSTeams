@@ -9,6 +9,6 @@ Describe 'New-HeroCard - Should send message properly' {
             New-HeroButton -Type openUrl -Title 'Official website' -Value 'https://www.seattlemonorail.com'
             New-HeroButton -Type openUrl -Title 'Wikipeda page' -Value 'https://www.seattlemonorail.com'
             New-HeroButton -Type imBack -Title 'Evotec page' -Value 'https://www.evotec.xyz'
-        } -Uri $Env:TEAMSPESTERID -ErrorAction Stop
+        } -Uri $TeamsID -ErrorAction Stop
     }
 }
