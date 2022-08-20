@@ -4,7 +4,7 @@
 
 Describe 'New-AdaptiveCard - Should send message properly' {
     It 'Adaptive Card with nested adapted card' {
-        New-AdaptiveCard -Uri $TeamsID {
+        $Output = New-AdaptiveCard -Uri $TeamsID {
             New-AdaptiveContainer {
                 New-AdaptiveTextBlock -Text 'Publish Adaptive Card schema' -Weight Bolder -Size Medium
                 New-AdaptiveColumnSet {
@@ -48,5 +48,6 @@ Describe 'New-AdaptiveCard - Should send message properly' {
                 }
             }
         } -ErrorAction Stop
+        $Output | Should -Be $null
     } -TestCases @{ TeamsID = $TeamsID }
 }
