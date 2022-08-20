@@ -1,8 +1,6 @@
 param (
     $TeamsID = $Env:TEAMSPESTERID
 )
-#Requires -Modules Pester
-Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
 
 Describe "Conversion of different objects to Teams fact" {
     Context "Object types: PSObject, unordered dictionary, ordered dictionary and string" {
@@ -21,7 +19,7 @@ Describe "Conversion of different objects to Teams fact" {
                 Application = 'Microsoft Teams'
                 Developer   = 'Microsoft Corporation'
             } | ConvertTo-TeamsFact
-            
+
             $Output | Should -HaveCount 2
             $Output | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
             $Output[0].type | Should -Be 'fact'
@@ -31,7 +29,7 @@ Describe "Conversion of different objects to Teams fact" {
                 Application = 'Microsoft Teams'
                 Developer   = 'Microsoft Corporation'
             } | ConvertTo-TeamsFact
-            
+
             $Output | Should -HaveCount 2
             $Output | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
             $Output[0].type | Should -Be 'fact'

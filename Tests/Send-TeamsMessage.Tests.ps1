@@ -1,8 +1,6 @@
 param (
     $TeamsID = $Env:TEAMSPESTERID
 )
-#Requires -Modules Pester
-Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
 
 Describe 'Send-TeamsMessage - Should send messages properly' {
     It 'Given 1 button, 3 facts, 1 section should not throw' {

@@ -1,8 +1,6 @@
 ﻿param (
     $TeamsID = $Env:TEAMSPESTERID
 )
-#Requires -Modules Pester
-Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
 
 Describe 'New-AdaptiveCard - Should send message properly' {
     It 'Adaptive Card with nested adapted card' {
