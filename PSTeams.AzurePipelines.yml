@@ -1,5 +1,5 @@
 variables:
-  GLOBAL_MY_MAPPED_ENV_VAR: $(TEAMSPESTERID)
+  SECRET_TEAMSPESTERID: $(TEAMSPESTERID)
 
 jobs:
   - job: Build_PS_Win2016
@@ -8,7 +8,7 @@ jobs:
     steps:
     - powershell: |
         Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck
-        .\PSTeams.Tests.ps1 $(TEAMSPESTERID)
+        .\PSTeams.Tests.ps1 $(SECRET_TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
   - job: Windows_PowerShell_7
@@ -17,7 +17,7 @@ jobs:
     steps:
       - pwsh: 'Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck'
         displayName: "Update PESTER"
-      - pwsh: '.\PSTeams.Tests.ps1 $(TEAMSPESTERID)'
+      - pwsh: '.\PSTeams.Tests.ps1 $(SECRET_TEAMSPESTERID)'
         displayName: "Run Tests on Windows PowerShell 7"
 
   - job: Build_PSCore_Ubuntu1604
@@ -34,7 +34,7 @@ jobs:
       displayName: 'Install PowerShell Core'
 
     - script: |
-        pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
+        pwsh -c '.\PSTeams.Tests.ps1' $(SECRET_TEAMSPESTERID)
       displayName: 'Run Pester Tests'
 
   - job: Build_PSCore_MacOS
@@ -49,5 +49,5 @@ jobs:
       displayName: 'Install PowerShell Core'
 
     - script: |
-        pwsh -c '.\PSTeams.Tests.ps1' $(TEAMSPESTERID)
+        pwsh -c '.\PSTeams.Tests.ps1' $(SECRET_TEAMSPESTERID)
       displayName: 'Run Pester Tests'
