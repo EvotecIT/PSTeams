@@ -30,6 +30,15 @@
     .PARAMETER Weight
     Controls the weight of TextBlock elements.
 
+    .PARAMETER Highlight
+    Controls the hightlight of text elements
+
+    .PARAMETER StrikeThrough
+    Controls strikethrough of text elements
+
+    .PARAMETER Italic
+    Controls italic of text elements
+
     .PARAMETER Wrap
     Allow text to wrap. Otherwise, text is clipped.
 
@@ -76,6 +85,9 @@
         [int] $MaximumLines,
         [alias('FontSize')][ValidateSet("Small", 'Default', "Medium", "Large", "ExtraLarge")][string] $Size,
         [alias('FontWeight')][ValidateSet("Lighter", 'Default', "Bolder")][string] $Weight,
+        [switch] $Highlight,
+        [switch] $Italic,
+        [switch] $StrikeThrough,
         [switch] $Wrap,
         [alias('BlockElementHeight')][ValidateSet('Stretch', 'Automatic')][string] $Height,
         [switch] $Separator,
@@ -94,6 +106,9 @@
         color               = $Color
         height              = $Height
         fontType            = $FontType
+        highlight           = $Highlight
+        italic              = $Italic
+        strikeThrough       = $StrikeThrough
     }
     if ($MaximumLines) {
         $TeamObject['maxLines'] = $MaximumLines
