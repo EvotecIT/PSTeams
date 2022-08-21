@@ -1,5 +1,6 @@
 ﻿Import-Module .\PSTeams.psd1 -Force
 
+# Lets prepare dummmy object array with few elements
 $Objects = @(
     [PSCustomObject] @{
         Test  = 123
@@ -14,6 +15,8 @@ $Objects = @(
         Test2 = "Test3"
     }
 )
+
+# Different dummy object array with few elements as ordered dictionary or hashtable
 $ObjectsHashes = @(
     [ordered] @{
         Test  = 123
@@ -29,8 +32,9 @@ $ObjectsHashes = @(
     }
 )
 
+# Lets create a new adaptive card
 $Card = New-AdaptiveCard {
-    # So here we should tables and stuff
+    # lets add some text, table and line breaks
     New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with PSCustomObject 🔥' -Wrap
 
     New-AdaptiveTable -DataTable $Objects
@@ -45,7 +49,7 @@ $Card = New-AdaptiveCard {
 
     New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Table usage with display as PSCustomObject ❤️' -Wrap
 
-    New-AdaptiveTable -DataTable $ObjectsHashes -DictionaryAsCustomObject
+    New-AdaptiveTable -DataTable $ObjectsHashes -DictionaryAsCustomObject -HeaderColor Attention
 
     New-AdaptiveTextBlock -Text 'Different example' -Size Large -Subtle -Spacing ExtraLarge
 
@@ -69,6 +73,13 @@ $Card = New-AdaptiveCard {
             } -Width Auto -Separator -Spacing Medium
         }
     }
+
+    # and lets convert Get-Process into Adaptive card
+    New-AdaptiveTextBlock -Text 'Lets convert Get-Process into Adaptive Table' -Size Large -Subtle -Spacing ExtraLarge
+    New-AdaptiveLineBreak
+
+    $TableData = Get-Process | Select-Object -First 5 -Property Name, Id, CompanyName, CPU, FileName
+    New-AdaptiveTable -DataTable $TableData -HeaderHorizontalAlignment Center -HorizontalAlignment Center -HeaderColor Good -Size Small
 
 } -Uri $Env:TEAMSPESTERID -FullWidth -ReturnJson
 
