@@ -1,5 +1,8 @@
 ﻿### PSTeams Release Notes
 
+#### 2.2.2 / 2022.08.21
+  - Improves `New-AdaptiveTable` with more parameters to better support user needs.
+
 #### 2.2.1 / 2022.08.20
   - Improves `New-AdaptiveTable` when it comes to Ordered Dictionary support.
   - Added `New-AdaptiveLineBreak` to create a line break easily.
