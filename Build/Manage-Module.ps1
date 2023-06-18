@@ -8,11 +8,10 @@ $Configuration = @{
 
         FunctionsToExport = 'Public'
         AliasesToExport   = 'Public'
-        ScriptsToProcess  = 'Enums'
 
         Manifest          = @{
             # Version number of this module.
-            ModuleVersion              = '2.2.X'
+            ModuleVersion              = '2.3.0'
             # Supported PSEditions
             CompatiblePSEditions       = @('Desktop', 'Core')
             # ID used to uniquely identify this module
@@ -107,7 +106,10 @@ $Configuration = @{
                 RemoveComments = $false
             }
             Integrate      = @{
-                ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
+                ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword', 'PSPublishModule')
+            }
+            ModuleSkip     = @{
+                IgnoreModuleName = @()
             }
         }
         Standard          = @{
@@ -137,6 +139,9 @@ $Configuration = @{
         Documentation     = @{
             Path       = 'Docs'
             PathReadme = 'Docs\Readme.md'
+        }
+        Signing           = @{
+            CertificateThumbprint = '36A8A2D0E227D81A2D3B60DCE0CFCF23BEFC343B'
         }
     }
     Steps       = @{
