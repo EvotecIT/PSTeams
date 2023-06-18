@@ -1,5 +1,8 @@
 ﻿### PSTeams Release Notes
 
+#### 2.3.0 / 2023.06.18
+  - Improves `New-AdaptiveTable` to support `Width` (Auto/Stretch), default being 'Stretch' [#51](https://github.com/EvotecIT/PSTeams/issues/51)
+
 #### 2.2.1 / 2022.08.21
   - Improves `New-AdaptiveTable` with more parameters to better support user needs.
   - Improves `New-AdaptiveTextBlock` with more parameters to better support user needs.
