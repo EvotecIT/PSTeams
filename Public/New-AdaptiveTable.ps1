@@ -9,6 +9,9 @@
     .PARAMETER DataTable
     Provide a data table to be converted to an adaptive table
 
+    .PARAMETER Width
+    Controls the horizontal size of the element.
+
     .PARAMETER HeaderColor
     Provide a color to be used for the header row of the table. By default, the header row is set to 'Accent'
 
@@ -119,6 +122,7 @@
     [CmdletBinding()]
     param(
         [Array] $DataTable,
+        [ValidateSet('Auto', 'Stretch')][string] $Width = 'Stretch',
         [ValidateSet("Accent", 'Default', 'Dark', 'Light', 'Good', 'Warning', 'Attention')][string] $HeaderColor = 'Accent',
         [alias('HeaderFontWeight')][ValidateSet("Lighter", 'Default', "Bolder")][string] $HeaderWeight = 'Bolder',
         [alias('HeaderFontSize')][ValidateSet("Small", 'Default', "Medium", "Large", "ExtraLarge")][string] $HeaderSize,
@@ -198,7 +202,7 @@
                             $Value = @($DataTable[$j].Values)[$i]
                             New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value -Separator
                         }
-                    } -Width Stretch
+                    } -Width $Width
                 }
             }
         } else {
@@ -212,7 +216,7 @@
                             New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Key -Separator
                         }
                     }
-                } -Width Stretch
+                } -Width $Width
 
                 New-AdaptiveColumn {
                     New-AdaptiveTextBlock @HeaderAdaptiveTextBlockSplat -Text 'Value'
@@ -222,7 +226,7 @@
                             New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Data[$Key] -Separator
                         }
                     }
-                } -Width Stretch
+                } -Width $Width
             }
         }
     } else {
@@ -236,7 +240,7 @@
                         $Value = $DataTable[$j].PSObject.Properties.Value[$i]
                         New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value -Separator
                     }
-                } -Width Stretch
+                } -Width $Width
             }
         }
     }
