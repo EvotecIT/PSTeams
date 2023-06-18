@@ -81,6 +81,9 @@ $Card = New-AdaptiveCard {
     $TableData = Get-Process | Select-Object -First 5 -Property Name, Id, CompanyName, CPU, FileName
     New-AdaptiveTable -DataTable $TableData -HeaderHorizontalAlignment Center -HorizontalAlignment Center -HeaderColor Good -Size Small
 
+    $TableData = Get-Process | Select-Object -First 5 -Property Name, Id, CompanyName, CPU, FileName
+    New-AdaptiveTable -DataTable $TableData -Width Auto -HeaderHorizontalAlignment Center -HorizontalAlignment Center -HeaderColor Good -Size Small
+
 } -Uri $Env:TEAMSPESTERID -FullWidth -ReturnJson
 
 $Card | ConvertFrom-Json | ConvertTo-Json -Depth 20
