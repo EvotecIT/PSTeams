@@ -46,7 +46,16 @@ foreach ($Module in $PSDInformation.RequiredModules) {
 }
 Write-Color
 
-Import-Module $PSScriptRoot\*.psd1 -Force
+try {
+    Import-Module $PSScriptRoot\*.psd1 -Force -ErrorAction Stop
+} catch {
+    Write-Color 'Failed to import module', $_.Exception.Message -Color Red
+    exit 1
+}
+
+Write-Color 'Running tests...' -Color Yellow
+Write-Color
+
 $result = Invoke-Pester -Script $PSScriptRoot\Tests -Verbose -PassThru
 
 if ($result.FailedCount -gt 0) {
