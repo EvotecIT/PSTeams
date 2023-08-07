@@ -97,7 +97,10 @@
     )
     $TeamObject = [ordered]@{
         type                = "TextBlock"
-        text                = $Text
+        # the intent behind this is to allow for empty textblocks to be created
+        # if there is no text, the block is never added which causes all sort of issues
+        # this is a workaround for that
+        text                = if ($Text -eq '') { "$([char]0x200F)" } else { $Text }
         id                  = $Id
         spacing             = $Spacing
         horizontalAlignment = $HorizontalAlignment
@@ -125,7 +128,7 @@
     if ($Hidden) {
         $TeamObject['isVisible'] = $false
     }
-    Remove-EmptyValue -Hashtable $TeamObject
+    Remove-EmptyValue -Hashtable $TeamObject -ExcludeParameter 'text'
     $TeamObject
 }
 
