@@ -12,7 +12,7 @@
         }
     }
     New-AdaptiveContainer {
-        New-AdaptiveTextBlock -Text "Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation." -Wrap
+        New-AdaptiveTextBlock -Text "Now that we have defined the main `n`n rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation." -Wrap
         New-AdaptiveFactSet {
             New-AdaptiveFact -Title 'Board:' -Value 'Adaptive Card'
             New-AdaptiveFact -Title 'List:' -Value 'Backlog'
@@ -22,4 +22,4 @@
     }
     # we need to tell PSTeams to match <at> tags to the user's profile using UPN or AAD ID
     New-AdaptiveMention -Text 'Przemysław Kłys' -UserPrincipalName 'przemyslaw.klys@domain.pl'
-} -FullWidth
+} -FullWidth -Verbose
