@@ -150,7 +150,10 @@
         [switch] $Subtle,
         [int] $MaximumLines,
 
-        [alias('HashTableAsCustomObject')][switch] $DictionaryAsCustomObject
+        [alias('HashTableAsCustomObject')][switch] $DictionaryAsCustomObject,
+        [switch] $DisableHeaderColumnSeparators,
+        [switch] $DisableRowSeparators,
+        [switch] $DisableColumnSeparators
     )
     # We cleanup things before we start
     # This is also required because it seems to be working badly
@@ -192,56 +195,73 @@
         # Process hashtables and dictionaries
         if ($DictionaryAsCustomObject) {
             # process it the same way as a custom object
+            #Header
             New-AdaptiveColumnSet {
                 for ($i = 0; $i -lt $DataTable[0].Keys.Count; $i++) {
                     New-AdaptiveColumn {
                         $HeaderText = @($DataTable[0].Keys)[$i]
                         New-AdaptiveTextBlock @HeaderAdaptiveTextBlockSplat -Text $HeaderText
-
-                        for ($j = 0; $j -lt $DataTable.Count; $j++) {
-                            $Value = @($DataTable[$j].Values)[$i]
-                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value -Separator
-                        }
-                    } -Width $Width
+                    } -Width $Width -Separator:(-not $DisableHeaderColumnSeparators.IsPresent)
                 }
             }
+            #Data
+            for ($j = 0; $j -lt $DataTable.Count; $j++) {
+
+                New-AdaptiveColumnSet {
+                    for ($i = 0; $i -lt $DataTable[0].Keys.Count; $i++) {
+                        New-AdaptiveColumn {
+                            $Value = @($DataTable[$j].Values)[$i]
+                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value
+                        } -Width $Width -Separator:(-not $DisableColumnSeparators.IsPresent)
+                    }
+                } -Separator:(-not $DisableRowSeparators.IsPresent)
+            }
+
         } else {
             # Process as standard hashtable
+            # Header
             New-AdaptiveColumnSet {
                 New-AdaptiveColumn {
                     New-AdaptiveTextBlock @HeaderAdaptiveTextBlockSplat -Text 'Name'
-
-                    foreach ($Data in $DataTable) {
-                        foreach ($Key in $Data.Keys) {
-                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Key -Separator
-                        }
-                    }
-                } -Width $Width
-
+                } -Width $Width -Separator:(-not $DisableHeaderColumnSeparators.IsPresent)
                 New-AdaptiveColumn {
                     New-AdaptiveTextBlock @HeaderAdaptiveTextBlockSplat -Text 'Value'
-
-                    foreach ($Data in $DataTable) {
-                        foreach ($Key in $Data.Keys) {
-                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Data[$Key] -Separator
-                        }
-                    }
-                } -Width $Width
+                } -Width $Width -Separator:(-not $DisableHeaderColumnSeparators.IsPresent)
+            }
+            # Data
+            foreach ($Data in $DataTable) {
+                foreach ($Key in $Data.Keys) {
+                    New-AdaptiveColumnSet {
+                        New-AdaptiveColumn {
+                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Key -Separator
+                        } -Width $Width -Separator:(-not $DisableColumnSeparators.IsPresent)
+                        New-AdaptiveColumn {
+                            New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Data.$Key -Separator
+                        } -Width $Width -Separator:(-not $DisableColumnSeparators.IsPresent)
+                    } -Separator:(-not $DisableRowSeparators.IsPresent)
+                }
             }
         }
     } else {
+        #Header
         New-AdaptiveColumnSet {
-            for ($i = 0; $i -lt $DataTable[0].PSObject.Properties.Name.Count; $i++) {
+            for ($Column = 0; $Column -lt $DataTable[0].PSObject.Properties.Name.Count; $Column++) {
                 New-AdaptiveColumn {
-                    $HeaderText = $DataTable[0].PSObject.Properties.Name[$i]
+                    $HeaderText = $DataTable[0].PSObject.Properties.Name[$Column]
                     New-AdaptiveTextBlock @HeaderAdaptiveTextBlockSplat -Text $HeaderText
-
-                    for ($j = 0; $j -lt $DataTable.Count; $j++) {
-                        $Value = $DataTable[$j].PSObject.Properties.Value[$i]
-                        New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value -Separator
-                    }
-                } -Width $Width
+                } -Width $Width -Separator:(-not $DisableHeaderColumnSeparators.IsPresent)
             }
+        }
+        #Data
+        for ($Row = 0; $Row -lt $DataTable.Count; $Row++) {
+            New-AdaptiveColumnSet {
+                for ($Column = 0; $Column -lt $DataTable[$Row].PSObject.Properties.Name.Count; $Column++) {
+                    New-AdaptiveColumn {
+                        $Value = $DataTable[$Row].PSObject.Properties.Value[$Column]
+                        New-AdaptiveTextBlock @ContentAdaptiveTextBlockSplat -Text $Value
+                    } -Width $Width -Separator:(-not $DisableColumnSeparators.IsPresent)
+                }
+            } -Separator:(-not $DisableRowSeparators.IsPresent)
         }
     }
 }
