@@ -1,5 +1,10 @@
 ﻿### PSTeams Release Notes
 
+#### 2.4.0
+  - Fixes `New-AdaptiveTable` when using null values or empty strings [#55](https://github.com/EvotecIT/PSTeams/issues/55)
+  - Fixes `New-AdaptiveTable` when using longer data [#50](https://github.com/EvotecIT/PSTeams/issues/50)
+  - Add couple of options for `New-AdaptiveTable` (disable separators)
+
 #### 2.3.0 / 2023.06.18
   - Improves `New-AdaptiveTable` to support `Width` (Auto/Stretch), default being 'Stretch' [#51](https://github.com/EvotecIT/PSTeams/issues/51)
 
