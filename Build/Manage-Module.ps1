@@ -1,173 +1,90 @@
-﻿Clear-Host
-Import-Module "C:\Support\GitHub\PSPublishModule\PSPublishModule.psm1" -Force
+﻿# Clear-Host
+Import-Module "PSPublishModule" -Force
 
-$Configuration = @{
-    Information = @{
-        ModuleName        = 'PSTeams'
-        DirectoryProjects = 'C:\Support\GitHub'
-
-        FunctionsToExport = 'Public'
-        AliasesToExport   = 'Public'
-
-        Manifest          = @{
-            # Version number of this module.
-            ModuleVersion              = '2.3.X'
-            # Supported PSEditions
-            CompatiblePSEditions       = @('Desktop', 'Core')
-            # ID used to uniquely identify this module
-            GUID                       = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
-            # Minimum version of the Windows PowerShell engine required by this module
-            PowerShellVersion          = '5.1'
-            # Author of this module
-            Author                     = 'Przemyslaw Klys'
-            # Company or vendor of this module
-            CompanyName                = 'Evotec'
-            # Copyright statement for this module
-            Copyright                  = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
-            # Description of the functionality provided by this module
-            Description                = "PSTeams is a PowerShell Module working on Windows / Linux and Mac. It allows sending notifications to Microsoft Teams via WebHook Notifications. It's pretty flexible and provides a bunch of options. Initially, it only supported one sort of Team Cards but since version 2.X.X it supports Adaptive Cards, Hero Cards, List Cards, and Thumbnail Cards. All those new cards have their own cmdlets and the old version of creating Teams Cards stays as-is for compatibility reasons."
-            # Tags applied to this module. These help with module discovery in online galleries.
-            Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'Windows', 'macOS', 'Linux')
-            # A URL to the main website for this project.
-            ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
-            # A URL to an icon representing this module.
-            IconUri                    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
-
-            RequiredModules            = @(
-                @{ ModuleName = 'PSSharedGoods'; ModuleVersion = "Latest"; Guid = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe' }
-            )
-            ExternalModuleDependencies = @(
-                "Microsoft.PowerShell.Management"
-                "Microsoft.PowerShell.Utility"
-            )
-        }
+Invoke-ModuleBuild -ModuleName 'PSTeams' {
+    # Usual defaults as per standard module
+    $Manifest = [ordered] @{
+        # Version number of this module.
+        ModuleVersion        = '2.X.0'
+        # Supported PSEditions
+        CompatiblePSEditions = @('Desktop', 'Core')
+        # ID used to uniquely identify this module
+        GUID                 = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
+        # Minimum version of the Windows PowerShell engine required by this module
+        PowerShellVersion    = '5.1'
+        # Author of this module
+        Author               = 'Przemyslaw Klys'
+        # Company or vendor of this module
+        CompanyName          = 'Evotec'
+        # Copyright statement for this module
+        Copyright            = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
+        # Description of the functionality provided by this module
+        Description          = "PSTeams is a PowerShell Module working on Windows / Linux and Mac. It allows sending notifications to Microsoft Teams via WebHook Notifications. It's pretty flexible and provides a bunch of options. Initially, it only supported one sort of Team Cards but since version 2.X.X it supports Adaptive Cards, Hero Cards, List Cards, and Thumbnail Cards. All those new cards have their own cmdlets and the old version of creating Teams Cards stays as-is for compatibility reasons."
+        # Tags applied to this module. These help with module discovery in online galleries.
+        Tags                 = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'Windows', 'macOS', 'Linux')
+        # A URL to the main website for this project.
+        ProjectUri           = 'https://github.com/EvotecIT/PSTeams'
+        # A URL to an icon representing this module.
+        IconUri              = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
     }
-    Options     = @{
-        Merge             = @{
-            Sort           = 'None'
-            FormatCodePSM1 = @{
-                Enabled           = $true
-                RemoveComments    = $false
-                FormatterSettings = @{
-                    IncludeRules = @(
-                        'PSPlaceOpenBrace',
-                        'PSPlaceCloseBrace',
-                        'PSUseConsistentWhitespace',
-                        'PSUseConsistentIndentation',
-                        'PSAlignAssignmentStatement',
-                        'PSUseCorrectCasing'
-                    )
+    New-ConfigurationManifest @Manifest
 
-                    Rules        = @{
-                        PSPlaceOpenBrace           = @{
-                            Enable             = $true
-                            OnSameLine         = $true
-                            NewLineAfter       = $true
-                            IgnoreOneLineBlock = $true
-                        }
+    New-ConfigurationModule -Type RequiredModule -Name 'PSSharedGoods' -Guid Auto -Version Latest
+    New-ConfigurationModule -Type ExternalModule -Name "Microsoft.PowerShell.Utility", "Microsoft.PowerShell.Management"
+    New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword'
 
-                        PSPlaceCloseBrace          = @{
-                            Enable             = $true
-                            NewLineAfter       = $false
-                            IgnoreOneLineBlock = $true
-                            NoEmptyLineBefore  = $false
-                        }
+    $ConfigurationFormat = [ordered] @{
+        RemoveComments                              = $false
 
-                        PSUseConsistentIndentation = @{
-                            Enable              = $true
-                            Kind                = 'space'
-                            PipelineIndentation = 'IncreaseIndentationAfterEveryPipeline'
-                            IndentationSize     = 4
-                        }
+        PlaceOpenBraceEnable                        = $true
+        PlaceOpenBraceOnSameLine                    = $true
+        PlaceOpenBraceNewLineAfter                  = $true
+        PlaceOpenBraceIgnoreOneLineBlock            = $false
 
-                        PSUseConsistentWhitespace  = @{
-                            Enable          = $true
-                            CheckInnerBrace = $true
-                            CheckOpenBrace  = $true
-                            CheckOpenParen  = $true
-                            CheckOperator   = $true
-                            CheckPipe       = $true
-                            CheckSeparator  = $true
-                        }
+        PlaceCloseBraceEnable                       = $true
+        PlaceCloseBraceNewLineAfter                 = $true
+        PlaceCloseBraceIgnoreOneLineBlock           = $false
+        PlaceCloseBraceNoEmptyLineBefore            = $true
 
-                        PSAlignAssignmentStatement = @{
-                            Enable         = $true
-                            CheckHashtable = $true
-                        }
+        UseConsistentIndentationEnable              = $true
+        UseConsistentIndentationKind                = 'space'
+        UseConsistentIndentationPipelineIndentation = 'IncreaseIndentationAfterEveryPipeline'
+        UseConsistentIndentationIndentationSize     = 4
 
-                        PSUseCorrectCasing         = @{
-                            Enable = $true
-                        }
-                    }
-                }
-            }
-            FormatCodePSD1 = @{
-                Enabled        = $true
-                RemoveComments = $false
-            }
-            Integrate      = @{
-                ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword', 'PSPublishModule')
-            }
-            ModuleSkip     = @{
-                IgnoreModuleName = @()
-            }
-        }
-        Standard          = @{
-            FormatCodePSM1 = @{
+        UseConsistentWhitespaceEnable               = $true
+        UseConsistentWhitespaceCheckInnerBrace      = $true
+        UseConsistentWhitespaceCheckOpenBrace       = $true
+        UseConsistentWhitespaceCheckOpenParen       = $true
+        UseConsistentWhitespaceCheckOperator        = $true
+        UseConsistentWhitespaceCheckPipe            = $true
+        UseConsistentWhitespaceCheckSeparator       = $true
 
-            }
-            FormatCodePSD1 = @{
-                Enabled = $true
-                #RemoveComments = $true
-            }
-        }
-        ImportModules     = @{
-            Self            = $true
-            RequiredModules = $false
-            Verbose         = $false
-        }
-        PowerShellGallery = @{
-            ApiKey   = 'C:\Support\Important\PowerShellGalleryAPI.txt'
-            FromFile = $true
-        }
-        GitHub            = @{
-            ApiKey   = 'C:\Support\Important\GithubAPI.txt'
-            FromFile = $true
-            UserName = 'EvotecIT'
-            #RepositoryName = 'PSWriteHTML'
-        }
-        Documentation     = @{
-            Path       = 'Docs'
-            PathReadme = 'Docs\Readme.md'
-        }
-        Signing           = @{
-            CertificateThumbprint = '36A8A2D0E227D81A2D3B60DCE0CFCF23BEFC343B'
-        }
+        AlignAssignmentStatementEnable              = $true
+        AlignAssignmentStatementCheckHashtable      = $true
+
+        UseCorrectCasingEnable                      = $true
     }
-    Steps       = @{
-        BuildModule        = @{  # requires Enable to be on to process all of that
-            Enable           = $true
-            DeleteBefore     = $false
-            Merge            = $true
-            MergeMissing     = $true
-            SignMerged       = $true
-            Releases         = $true
-            ReleasesUnpacked = $false
-            RefreshPSD1Only  = $false
-        }
-        BuildDocumentation = $false
-        ImportModules      = @{
-            Self            = $true
-            RequiredModules = $false
-            Verbose         = $false
-        }
-        PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $false
-            Prerelease   = ''
-            RequireForce = $false
-            GitHub       = $false
-        }
-    }
-}
+    # format PSD1 and PSM1 files when merging into a single file
+    # enable formatting is not required as Configuration is provided
+    New-ConfigurationFormat -ApplyTo 'OnMergePSM1', 'OnMergePSD1' -Sort None @ConfigurationFormat
+    # format PSD1 and PSM1 files within the module
+    # enable formatting is required to make sure that formatting is applied (with default settings)
+    New-ConfigurationFormat -ApplyTo 'DefaultPSD1', 'DefaultPSM1' -EnableFormatting -Sort None
+    # when creating PSD1 use special style without comments and with only required parameters
+    New-ConfigurationFormat -ApplyTo 'DefaultPSD1', 'OnMergePSD1' -PSD1Style 'Minimal'
+    # configuration for documentation, at the same time it enables documentation processing
+    New-ConfigurationDocumentation -Enable:$false -StartClean -UpdateWhenNew -PathReadme 'Docs\Readme.md' -Path 'Docs'
 
-New-PrepareModule -Configuration $Configuration
+    New-ConfigurationImportModule -ImportSelf
+
+    New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
+
+    #New-ConfigurationTest -TestsPath "$PSScriptRoot\..\Tests" -Enable
+
+    New-ConfigurationArtefact -Type Unpacked -Enable -Path "$PSScriptRoot\..\Artefacts\Unpacked" -AddRequiredModules
+    New-ConfigurationArtefact -Type Packed -Enable -Path "$PSScriptRoot\..\Artefacts\Packed" -ArtefactName '<ModuleName>.v<ModuleVersion>.zip'
+
+    # options for publishing to github/psgallery
+    #New-ConfigurationPublish -Type PowerShellGallery -FilePath 'C:\Support\Important\PowerShellGalleryAPI.txt' -Enabled:$true
+    #New-ConfigurationPublish -Type GitHub -FilePath 'C:\Support\Important\GitHubAPI.txt' -UserName 'EvotecIT' -Enabled:$true
+} -ExitCode
