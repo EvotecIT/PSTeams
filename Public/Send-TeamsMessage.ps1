@@ -11,7 +11,8 @@ function Send-TeamsMessage {
         [switch]$HideOriginalBody,
         [Uri]$Proxy,
         [System.Collections.IDictionary[]]$Sections,
-        [alias('Supress')][bool] $Suppress = $true
+        [alias('Supress')][bool] $Suppress = $true,
+        [switch]$DisableTextMarkdown
     )
     if ($SectionsInput) {
         $Output = & $SectionsInput
@@ -33,7 +34,8 @@ function Send-TeamsMessage {
         -ThemeColor $ThemeColor `
         -Sections $Output `
         -MessageSummary $MessageSummary `
-        -HideOriginalBody:$HideOriginalBody.IsPresent
+        -HideOriginalBody:$HideOriginalBody.IsPresent `
+        -DisableTextMarkdown:$DisableTextMarkdown.IsPresent
     Write-Verbose "Send-TeamsMessage - Body $Body"
     try {
         $Params = @{

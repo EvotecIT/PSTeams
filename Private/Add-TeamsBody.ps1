@@ -6,7 +6,8 @@
         [string] $MessageText,
         [string] $MessageSummary,
         [System.Collections.IDictionary[]] $Sections,
-        [switch] $HideOriginalBody
+        [switch] $HideOriginalBody,
+        [switch] $DisableTextMarkdown
     )
 
     $Body = [ordered] @{
@@ -33,5 +34,9 @@
     if ($MessageText -ne '') {
         $Body.text = $MessageText
     }
+    if ($DisableTextMarkdown.IsPresent) {
+        $Body = Disable-TextMarkdown -InputObject $Body
+    }
+
     return $Body | ConvertTo-Json -Depth 6
 }
