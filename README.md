@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=3"><img src="https://dev.azure.com/evotecpl/PSTeams/_apis/build/status/EvotecIT.PSTeams"></a>
   <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/v/PSTeams.svg"></a>
-  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/vpre/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow"></a>
+  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/v/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&include_prereleases"></a>
   <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/license/EvotecIT/PSTeams.svg"></a>
 </p>
 
