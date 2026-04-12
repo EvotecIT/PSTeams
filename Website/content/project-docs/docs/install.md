@@ -4,7 +4,7 @@ description: "Install PSTeams from the package source used by this project."
 layout: docs
 ---
 
-Use this page when you need the shortest setup path before trying the curated examples.
+Install PSTeams before trying the curated Teams notification examples.
 
 ## PowerShell Gallery
 

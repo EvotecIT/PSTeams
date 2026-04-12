@@ -4,7 +4,7 @@ description: "Curated examples for PSTeams."
 layout: docs
 ---
 
-These examples are maintained with the PSTeams repository and selected for the website because they show safe, reviewable usage patterns.
+These PSTeams examples focus on practical notification patterns you can adapt without copying a large demo script.
 
 ## Featured examples
 

@@ -22,7 +22,7 @@ Import-Module .\PSTeams.psd1 -Force
 New-AdaptiveCard {
     New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Backup summary' -Wrap
     New-AdaptiveFactSet {
-        New-AdaptiveFact -Title 'Server' -Value 'DC01'
+        New-AdaptiveFact -Title 'Server' -Value 'Server01'
         New-AdaptiveFact -Title 'Status' -Value 'Completed'
     }
 } -Uri $env:TEAMS_WEBHOOK_URL
