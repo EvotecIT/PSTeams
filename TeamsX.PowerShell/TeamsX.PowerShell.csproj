@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks Condition=" '$([MSBuild]::IsOsPlatform(`Windows`))' ">
+      netstandard2.0;net472;net8.0;net10.0
+    </TargetFrameworks>
+    <TargetFrameworks Condition=" '$([MSBuild]::IsOsPlatform(`OSX`))' Or '$([MSBuild]::IsOsPlatform(`Linux`))' ">
+      netstandard2.0;net8.0;net10.0
+    </TargetFrameworks>
+    <Title>TeamsX PowerShell Module</Title>
+    <Description>Thin PowerShell cmdlets over the TeamsX library.</Description>
+    <AssemblyName>TeamsX.PowerShell</AssemblyName>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <Target Name="RemoveFilesAfterBuild" AfterTargets="Build">
+    <Delete Files="$(OutDir)System.Management.Automation.dll" />
+    <Delete Files="$(OutDir)System.Management.dll" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TeamsX\TeamsX.csproj" />
+  </ItemGroup>
+</Project>

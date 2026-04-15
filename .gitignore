@@ -4,3 +4,7 @@ Ignore/*
 Artefacts/Packed/*
 Artefacts/Unpacked/*
 Releases/*
+artifacts/*
+Module/Artefacts/*
+**/bin/*
+**/obj/*
