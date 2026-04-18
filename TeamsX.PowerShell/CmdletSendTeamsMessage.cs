@@ -6,6 +6,8 @@ namespace TeamsX.PowerShell;
 [Cmdlet(VerbsCommunications.Send, "TeamsMessage", SupportsShouldProcess = true)]
 [OutputType(typeof(TeamsDeliveryResult))]
 public sealed class CmdletSendTeamsMessage : PSCmdlet {
+    private static readonly TeamsClient SharedClient = TeamsClient.Default;
+
     [Parameter(Mandatory = true, Position = 0)]
     public TeamsMessageRequest Message { get; set; } = null!;
 
@@ -24,8 +26,7 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
             return;
         }
 
-        var client = new TeamsClient();
-        var result = client.SendAsync(Message, Target).GetAwaiter().GetResult();
+        var result = SharedClient.SendAsync(Message, Target).GetAwaiter().GetResult();
 
         if (PassThru) {
             WriteObject(result);

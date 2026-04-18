@@ -4,6 +4,8 @@ using System.Text;
 namespace TeamsX;
 
 public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMessageSender, IDisposable {
+    internal static WebhookTeamsMessageSender Shared { get; } = new(new HttpClient(), disposeHttpClient: false);
+
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
 

@@ -1,5 +1,10 @@
 Import-Module PSPublishModule -Force -ErrorAction Stop
 
+$refreshPSD1Only = $false
+if ($env:RefreshPSD1Only) {
+    $refreshPSD1Only = [System.Convert]::ToBoolean($env:RefreshPSD1Only)
+}
+
 Build-Module -ModuleName 'TeamsX' {
     $Manifest = [ordered] @{
         ModuleVersion        = '0.1.X'
@@ -68,7 +73,7 @@ Build-Module -ModuleName 'TeamsX' {
         DotSourceLibraries                = $true
         NETSearchClass                    = 'TeamsX.PowerShell.CmdletSendTeamsMessage'
         NETBinaryModuleDocumentation      = $true
-        RefreshPSD1Only                   = $false
+        RefreshPSD1Only                   = $refreshPSD1Only
     }
 
     New-ConfigurationBuild @newConfigurationBuildSplat

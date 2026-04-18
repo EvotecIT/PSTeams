@@ -1,0 +1,161 @@
+name: Test PowerShell
+
+on:
+    push:
+        branches:
+            - main
+        paths-ignore:
+            - '*.md'
+            - 'Docs/**'
+            - 'Examples/**'
+            - '.gitignore'
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+env:
+    BUILD_CONFIGURATION: 'Debug'
+
+jobs:
+    test-windows-ps5:
+        name: 'Windows PowerShell 5.1'
+        runs-on: windows-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: |
+                      8.x
+                      10.x
+
+            - name: Install PowerShell modules
+              shell: powershell
+              run: |
+                  Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+                  Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+
+            - name: Build .NET solution
+              run: |
+                  dotnet restore TeamsX.sln
+                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+            - name: Run PowerShell tests
+              shell: powershell
+              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+
+    test-windows-ps7:
+        name: 'Windows PowerShell 7'
+        runs-on: windows-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: |
+                      8.x
+                      10.x
+
+            - name: Install PowerShell
+              run: |
+                  curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+                  curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | sudo tee /etc/apt/sources.list.d/microsoft.list
+                  sudo apt-get update
+                  sudo apt-get install -y powershell
+
+            - name: Install PowerShell modules
+              shell: pwsh
+              run: |
+                  Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+                  Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+
+            - name: Build .NET solution
+              run: |
+                  dotnet restore TeamsX.sln
+                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+            - name: Run PowerShell tests
+              shell: pwsh
+              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+
+    test-ubuntu:
+        name: 'Ubuntu PowerShell 7'
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: |
+                      8.x
+                      10.x
+
+            - name: Install PowerShell modules
+              shell: pwsh
+              run: |
+                  Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+                  Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+
+            - name: Build .NET solution
+              run: |
+                  dotnet restore TeamsX.sln
+                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+            - name: Run PowerShell tests
+              shell: pwsh
+              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+
+    test-macos:
+        name: 'macOS PowerShell 7'
+        runs-on: macos-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: |
+                      8.x
+                      10.x
+
+            - name: Install PowerShell
+              shell: bash
+              run: |
+                  if command -v pwsh >/dev/null 2>&1; then
+                    pwsh --version
+                    exit 0
+                  fi
+
+                  brew update
+                  brew tap powershell/tap
+                  brew install --cask powershell || brew install powershell/tap/powershell
+
+            - name: Install PowerShell modules
+              shell: pwsh
+              run: |
+                  Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+                  Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+
+            - name: Build .NET solution
+              run: |
+                  dotnet restore TeamsX.sln
+                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+            - name: Run PowerShell tests
+              shell: pwsh
+              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
