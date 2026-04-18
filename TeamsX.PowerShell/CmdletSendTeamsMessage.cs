@@ -28,8 +28,26 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
 
         var result = SharedClient.SendAsync(Message, Target).GetAwaiter().GetResult();
 
+        if (!result.IsSuccessStatusCode) {
+            WriteError(CreateDeliveryFailureError(result));
+        }
+
         if (PassThru) {
             WriteObject(result);
         }
+    }
+
+    private ErrorRecord CreateDeliveryFailureError(TeamsDeliveryResult result) {
+        var statusCode = result.StatusCode?.ToString() ?? "unknown";
+        var message = $"Teams message delivery failed using {result.DeliveryMethod}. HTTP status: {statusCode}.";
+        var error = new ErrorRecord(
+            new InvalidOperationException(message),
+            "TeamsMessageDeliveryFailed",
+            ErrorCategory.ConnectionError,
+            result.TargetUri) {
+            ErrorDetails = new ErrorDetails(result.ResponseBody ?? message)
+        };
+
+        return error;
     }
 }
