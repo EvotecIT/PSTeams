@@ -86,7 +86,7 @@ on:
         required: false
         default: ''
       swarm_reviewers:
-        description: 'Override reviewer swarm roles (CSV or JSON)'
+        description: 'Override reviewer swarm roles (CSV)'
         required: false
         default: ''
       swarm_max_parallel:
@@ -105,6 +105,18 @@ on:
         description: 'Override swarm metrics/artifact capture (true|false)'
         required: false
         default: ''
+      copilot_auto_install:
+        description: 'Allow auto-install of Copilot CLI'
+        required: false
+        default: 'false'
+      copilot_auto_install_method:
+        description: 'Auto-install method (Auto/Winget/Brew/Npm/Script)'
+        required: false
+        default: 'Auto'
+      copilot_auto_install_prerelease:
+        description: 'Auto-install prerelease Copilot CLI'
+        required: false
+        default: 'false'
 
 jobs:
   # INTELLIGENCEX:BEGIN
@@ -118,12 +130,12 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@a0bcd3f112d2c7ad696da846f41652d44bc1c7d7
+    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@d6fa41a56128f97fd06ba4eff97791a5d2d03f8f
     with:
       runs_on: ${{ github.event.repository.private && vars.IX_FORCE_GITHUB_HOSTED != 'true' && '["self-hosted","ubuntu"]' || '["ubuntu-latest"]' }}
       reviewer_source: release
       reviewer_release_repo: EvotecIT/IntelligenceX
-      reviewer_release_tag: latest
+      reviewer_release_tag: reviewer-20260419115614
       repo: ${{ github.event.pull_request.number && github.repository || inputs.repo }}
       pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
       provider: openai
@@ -155,6 +167,9 @@ jobs:
       swarm_aggregator_model: ${{ inputs.swarm_aggregator_model }}
       swarm_fail_open_on_partial: ${{ inputs.swarm_fail_open_on_partial }}
       swarm_metrics: ${{ inputs.swarm_metrics }}
+      copilot_auto_install: ${{ inputs.copilot_auto_install == 'true' }}
+      copilot_auto_install_method: ${{ inputs.copilot_auto_install_method }}
+      copilot_auto_install_prerelease: ${{ inputs.copilot_auto_install_prerelease == 'true' }}
       include_issue_comments: true
       include_review_comments: true
       include_related_prs: true
