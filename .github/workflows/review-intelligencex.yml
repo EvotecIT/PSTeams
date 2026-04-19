@@ -156,7 +156,7 @@ jobs:
       swarm_fail_open_on_partial: ${{ inputs.swarm_fail_open_on_partial }}
       swarm_metrics: ${{ inputs.swarm_metrics }}
       copilot_auto_install: true
-      copilot_auto_install_method: Auto
+      copilot_auto_install_method: Script
       copilot_auto_install_prerelease: true
       include_issue_comments: true
       include_review_comments: true
