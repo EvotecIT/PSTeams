@@ -126,8 +126,8 @@ jobs:
       reviewer_release_tag: reviewer-20260419115614
       repo: ${{ github.event.pull_request.number && github.repository || inputs.repo }}
       pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
-      provider: openai
-      model: gpt-5.4
+      provider: ${{ inputs.provider != '' && inputs.provider || 'openai' }}
+      model: ${{ inputs.model != '' && inputs.model || 'gpt-5.4' }}
       openai_model: ${{ inputs.openai_model }}
       copilot_model: ${{ inputs.copilot_model }}
       copilot_launcher: ${{ inputs.copilot_launcher }}
