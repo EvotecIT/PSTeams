@@ -118,7 +118,7 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@fb72170966841eb32cfcb00c46461bbf8f46233f
+    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@a0bcd3f112d2c7ad696da846f41652d44bc1c7d7
     with:
       runs_on: ${{ github.event.repository.private && vars.IX_FORCE_GITHUB_HOSTED != 'true' && '["self-hosted","ubuntu"]' || '["ubuntu-latest"]' }}
       reviewer_source: release
