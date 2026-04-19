@@ -118,12 +118,12 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@d6fa41a56128f97fd06ba4eff97791a5d2d03f8f
+    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@e0d476860a651c6a92713840313bad1a0e1e5708
     with:
       runs_on: ${{ github.event.repository.private && vars.IX_FORCE_GITHUB_HOSTED != 'true' && '["self-hosted","ubuntu"]' || '["ubuntu-latest"]' }}
       reviewer_source: release
       reviewer_release_repo: EvotecIT/IntelligenceX
-      reviewer_release_tag: reviewer-20260419115614
+      reviewer_release_tag: reviewer-20260419164337
       repo: ${{ github.event.pull_request.number && github.repository || inputs.repo }}
       pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
       provider: ${{ inputs.provider != '' && inputs.provider || 'openai' }}
