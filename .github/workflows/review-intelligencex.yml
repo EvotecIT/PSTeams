@@ -1,0 +1,177 @@
+name: IntelligenceX Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository (owner/name) for manual runs'
+        required: false
+        default: ''
+      pr_number:
+        description: 'Pull request number for manual runs'
+        required: false
+        default: ''
+      provider:
+        description: 'Review provider override for manual runs (openai, claude, copilot)'
+        required: false
+        default: ''
+      model:
+        description: 'Optional model override for manual runs'
+        required: false
+        default: ''
+      openai_model:
+        description: 'Optional OpenAI model override for manual runs'
+        required: false
+        default: ''
+      copilot_model:
+        description: 'Optional Copilot model override for manual runs'
+        required: false
+        default: ''
+      copilot_launcher:
+        description: 'Copilot launcher override for manual runs (binary, gh, auto)'
+        required: false
+        default: ''
+      openai_account_id:
+        description: 'Override OpenAI account id for this run'
+        required: false
+        default: ''
+      openai_account_ids:
+        description: 'Override ordered OpenAI account ids (CSV) for this run'
+        required: false
+        default: ''
+      openai_account_rotation:
+        description: 'Override OpenAI account rotation (first-available|round-robin|sticky)'
+        required: false
+        default: ''
+      openai_account_failover:
+        description: 'Override OpenAI account failover (true|false)'
+        required: false
+        default: ''
+      usage_budget_guard:
+        description: 'Override usage budget guard (true|false) for this run'
+        required: false
+        default: ''
+      usage_budget_allow_credits:
+        description: 'Override credits budget allowance (true|false)'
+        required: false
+        default: ''
+      usage_budget_allow_weekly_limit:
+        description: 'Override weekly-limit budget allowance (true|false)'
+        required: false
+        default: ''
+      history_enabled:
+        description: 'Override reviewer history awareness (true|false)'
+        required: false
+        default: ''
+      history_include_external_bot_summaries:
+        description: 'Include configured external bot summaries as supporting context (true|false)'
+        required: false
+        default: ''
+      history_external_bot_logins:
+        description: 'External bot logins included as supporting history context (CSV)'
+        required: false
+        default: ''
+      history_artifacts:
+        description: 'Write reviewer history artifacts (true|false)'
+        required: false
+        default: ''
+      swarm_enabled:
+        description: 'Override reviewer swarm mode (true|false)'
+        required: false
+        default: ''
+      swarm_shadow_mode:
+        description: 'Override reviewer swarm shadow mode (true|false)'
+        required: false
+        default: ''
+      swarm_reviewers:
+        description: 'Override reviewer swarm roles (CSV or JSON)'
+        required: false
+        default: ''
+      swarm_max_parallel:
+        description: 'Override reviewer swarm max parallel reviewers'
+        required: false
+        default: ''
+      swarm_aggregator_model:
+        description: 'Override reviewer swarm aggregator model'
+        required: false
+        default: ''
+      swarm_fail_open_on_partial:
+        description: 'Override swarm partial-failure fail-open behavior (true|false)'
+        required: false
+        default: ''
+      swarm_metrics:
+        description: 'Override swarm metrics/artifact capture (true|false)'
+        required: false
+        default: ''
+
+jobs:
+  # INTELLIGENCEX:BEGIN
+  review:
+    # Do not run secret-dependent review on any forked pull requests.
+    # Skip Dependabot PRs by default to avoid unnecessary LLM usage/budget burn.
+    # Maintainers can opt in per PR by adding the `needs-ai-review` label.
+    if: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) && (github.event_name != 'pull_request' || (github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot') || contains(github.event.pull_request.labels.*.name, 'needs-ai-review')) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    uses: evotecit/intelligencex/.github/workflows/review-intelligencex-core.yml@fb72170966841eb32cfcb00c46461bbf8f46233f
+    with:
+      runs_on: ${{ github.event.repository.private && vars.IX_FORCE_GITHUB_HOSTED != 'true' && '["self-hosted","ubuntu"]' || '["ubuntu-latest"]' }}
+      reviewer_source: release
+      reviewer_release_repo: EvotecIT/IntelligenceX
+      reviewer_release_tag: latest
+      repo: ${{ github.event.pull_request.number && github.repository || inputs.repo }}
+      pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+      provider: openai
+      model: gpt-5.4
+      openai_model: ${{ inputs.openai_model }}
+      copilot_model: ${{ inputs.copilot_model }}
+      copilot_launcher: ${{ inputs.copilot_launcher }}
+      openai_transport: native
+      openai_account_id: ${{ inputs.openai_account_id }}
+      openai_account_ids: ${{ inputs.openai_account_ids }}
+      openai_account_rotation: ${{ inputs.openai_account_rotation }}
+      openai_account_failover: ${{ inputs.openai_account_failover }}
+      usage_budget_guard: ${{ inputs.usage_budget_guard }}
+      usage_budget_allow_credits: ${{ inputs.usage_budget_allow_credits }}
+      usage_budget_allow_weekly_limit: ${{ inputs.usage_budget_allow_weekly_limit }}
+      history_enabled: ${{ inputs.history_enabled }}
+      history_include_ix_summary_history: ${{ inputs.history_include_ix_summary_history }}
+      history_include_review_threads: ${{ inputs.history_include_review_threads }}
+      history_include_external_bot_summaries: ${{ inputs.history_include_external_bot_summaries }}
+      history_external_bot_logins: ${{ inputs.history_external_bot_logins }}
+      history_artifacts: ${{ inputs.history_artifacts }}
+      history_max_rounds: ${{ inputs.history_max_rounds }}
+      history_max_items: ${{ inputs.history_max_items }}
+      swarm_enabled: ${{ inputs.swarm_enabled }}
+      swarm_shadow_mode: ${{ inputs.swarm_shadow_mode }}
+      swarm_reviewers: ${{ inputs.swarm_reviewers }}
+      swarm_max_parallel: ${{ inputs.swarm_max_parallel }}
+      swarm_publish_subreviews: ${{ inputs.swarm_publish_subreviews }}
+      swarm_aggregator_model: ${{ inputs.swarm_aggregator_model }}
+      swarm_fail_open_on_partial: ${{ inputs.swarm_fail_open_on_partial }}
+      swarm_metrics: ${{ inputs.swarm_metrics }}
+      include_issue_comments: true
+      include_review_comments: true
+      include_related_prs: true
+      progress_updates: true
+      diagnostics: false
+      preflight: false
+      preflight_timeout_seconds: 15
+      cleanup_enabled: false
+      cleanup_mode: comment
+      cleanup_scope: pr
+      cleanup_require_label: ''
+      cleanup_min_confidence: 0.85
+      cleanup_allowed_edits: 'formatting,grammar,title,sections'
+      cleanup_post_edit_comment: true
+    secrets:
+      INTELLIGENCEX_AUTH_B64: ${{ secrets.INTELLIGENCEX_AUTH_B64 }}
+      INTELLIGENCEX_GITHUB_APP_ID: ${{ secrets.INTELLIGENCEX_GITHUB_APP_ID }}
+      INTELLIGENCEX_GITHUB_APP_PRIVATE_KEY: ${{ secrets.INTELLIGENCEX_GITHUB_APP_PRIVATE_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  # INTELLIGENCEX:END
