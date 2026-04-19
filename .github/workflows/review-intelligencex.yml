@@ -162,6 +162,7 @@ jobs:
       include_review_comments: true
       include_related_prs: true
       progress_updates: true
+      wait_seconds: 180
       diagnostics: ${{ inputs.provider == 'copilot' }}
       preflight: false
       preflight_timeout_seconds: 15
