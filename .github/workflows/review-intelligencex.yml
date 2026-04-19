@@ -105,18 +105,6 @@ on:
         description: 'Override swarm metrics/artifact capture (true|false)'
         required: false
         default: ''
-      copilot_auto_install:
-        description: 'Allow auto-install of Copilot CLI'
-        required: false
-        default: 'false'
-      copilot_auto_install_method:
-        description: 'Auto-install method (Auto/Winget/Brew/Npm/Script)'
-        required: false
-        default: 'Auto'
-      copilot_auto_install_prerelease:
-        description: 'Auto-install prerelease Copilot CLI'
-        required: false
-        default: 'false'
 
 jobs:
   # INTELLIGENCEX:BEGIN
@@ -167,9 +155,9 @@ jobs:
       swarm_aggregator_model: ${{ inputs.swarm_aggregator_model }}
       swarm_fail_open_on_partial: ${{ inputs.swarm_fail_open_on_partial }}
       swarm_metrics: ${{ inputs.swarm_metrics }}
-      copilot_auto_install: ${{ inputs.copilot_auto_install == 'true' }}
-      copilot_auto_install_method: ${{ inputs.copilot_auto_install_method }}
-      copilot_auto_install_prerelease: ${{ inputs.copilot_auto_install_prerelease == 'true' }}
+      copilot_auto_install: true
+      copilot_auto_install_method: Auto
+      copilot_auto_install_prerelease: true
       include_issue_comments: true
       include_review_comments: true
       include_related_prs: true
