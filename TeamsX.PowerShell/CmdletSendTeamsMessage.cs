@@ -22,7 +22,7 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
     }
 
     private void ProcessTypedRecord() {
-        if (!ShouldProcess(Target.TargetUri.ToString(), $"Send Teams message using {Target.DeliveryMethod}")) {
+        if (!ShouldProcess(GetShouldProcessTarget(), $"Send Teams message using {Target.DeliveryMethod}")) {
             return;
         }
 
@@ -35,6 +35,14 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
         if (PassThru) {
             WriteObject(result);
         }
+    }
+
+    private string GetShouldProcessTarget() {
+        if (!string.IsNullOrWhiteSpace(Target.DisplayName)) {
+            return Target.DisplayName!;
+        }
+
+        return $"{Target.DeliveryMethod} target at {Target.TargetUri.Host}";
     }
 
     private ErrorRecord CreateDeliveryFailureError(TeamsDeliveryResult result) {
