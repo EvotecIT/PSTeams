@@ -4,8 +4,10 @@ $preferredFolders = if ($PSEdition -eq 'Core') {
     $runtimeMajor = [System.Environment]::Version.Major
     if ($runtimeMajor -ge 10) {
         @('net10.0', 'net8.0', 'netstandard2.0')
-    } else {
+    } elseif ($runtimeMajor -ge 8) {
         @('net8.0', 'netstandard2.0')
+    } else {
+        @('netstandard2.0')
     }
 } else {
     @('net472', 'netstandard2.0')

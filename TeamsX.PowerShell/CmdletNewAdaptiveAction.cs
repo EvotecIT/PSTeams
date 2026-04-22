@@ -26,7 +26,8 @@ public sealed class CmdletNewAdaptiveAction : PSCmdlet {
     public string? Title { get; set; }
 
     protected override void ProcessRecord() {
-        if (!string.IsNullOrWhiteSpace(ActionUrl)) {
+        if (!string.IsNullOrWhiteSpace(ActionUrl) ||
+            string.Equals(Type, "Action.OpenUrl", StringComparison.OrdinalIgnoreCase)) {
             WriteObject(new TeamsAdaptiveOpenUrlAction {
                 Title = Title ?? string.Empty,
                 Url = ActionUrl ?? string.Empty

@@ -59,6 +59,7 @@ Describe 'Legacy adaptive leaf migration cmdlets' {
         $mention.Text | Should -Be '<at>Ops Team</at>'
         $submitAction.GetType().Name | Should -Be 'TeamsAdaptiveSubmitAction'
         $openUrlAction.GetType().Name | Should -Be 'TeamsAdaptiveOpenUrlAction'
+        (New-AdaptiveAction -Title 'Open later' -Type Action.OpenUrl).GetType().Name | Should -Be 'TeamsAdaptiveOpenUrlAction'
         $showCardAction.GetType().Name | Should -Be 'TeamsAdaptiveShowCardAction'
         $showCardAction.Card.type | Should -Be 'AdaptiveCard'
         $container.GetType().Name | Should -Be 'TeamsAdaptiveContainer'

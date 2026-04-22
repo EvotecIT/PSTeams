@@ -1,4 +1,8 @@
 Describe 'PSTeams module migration shell' {
+    BeforeAll {
+        $script:baselinePath = Join-Path -Path $PSScriptRoot -ChildPath 'Baselines'
+    }
+
     BeforeEach {
         Get-Module PSTeams, TeamsX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
     }
@@ -119,17 +123,13 @@ Describe 'PSTeams module migration shell' {
     }
 
     It 'preserves every legacy command name on main' {
-        $legacyScript = @'
-Import-Module 'C:\Support\GitHub\PSTeams\PSTeams.psd1' -Force
-Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object | ConvertTo-Json
-'@
         $currentPath = (Resolve-Path "$PSScriptRoot\..\PSTeams\PSTeams.psd1").Path.Replace("'", "''")
         $currentScript = @'
 Import-Module '{CURRENT_PATH}' -Force
 Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object | ConvertTo-Json
 '@.Replace('{CURRENT_PATH}', $currentPath)
 
-        $legacyNames = @(pwsh -NoProfile -Command $legacyScript | ConvertFrom-Json)
+        $legacyNames = @(Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyCommands.json') -Raw | ConvertFrom-Json)
         $currentNames = @(pwsh -NoProfile -Command $currentScript | ConvertFrom-Json)
 
         $missing = @($legacyNames | Where-Object { $_ -notin $currentNames } | Sort-Object)
@@ -137,17 +137,13 @@ Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object |
     }
 
     It 'preserves every legacy alias target on main' {
-        $legacyScript = @'
-Import-Module 'C:\Support\GitHub\PSTeams\PSTeams.psd1' -Force
-Get-Alias | Where-Object Source -eq 'PSTeams' | ForEach-Object { '{0}=>{1}' -f $_.Name, $_.Definition } | Sort-Object | ConvertTo-Json
-'@
         $currentPath = (Resolve-Path "$PSScriptRoot\..\PSTeams\PSTeams.psd1").Path.Replace("'", "''")
         $currentScript = @'
 Import-Module '{CURRENT_PATH}' -Force
 Get-Alias | Where-Object Source -eq 'PSTeams' | ForEach-Object { '{0}=>{1}' -f $_.Name, $_.Definition } | Sort-Object | ConvertTo-Json
 '@.Replace('{CURRENT_PATH}', $currentPath)
 
-        $legacyAliases = @(pwsh -NoProfile -Command $legacyScript | ConvertFrom-Json)
+        $legacyAliases = @(Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyAliases.json') -Raw | ConvertFrom-Json)
         $currentAliases = @(pwsh -NoProfile -Command $currentScript | ConvertFrom-Json)
 
         $missing = @($legacyAliases | Where-Object { $_ -notin $currentAliases } | Sort-Object)
