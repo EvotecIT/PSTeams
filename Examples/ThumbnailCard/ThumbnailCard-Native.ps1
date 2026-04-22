@@ -1,4 +1,4 @@
-﻿Import-Module .\PSTeams.psd1 -Force
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
 
 # Please notice that
 # - Images are not supported in buttons, you can send them but it's not displayed

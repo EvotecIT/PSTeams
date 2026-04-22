@@ -54,4 +54,25 @@ public class TeamsAdaptiveCardTests {
         Assert.Single(card.Actions);
         Assert.IsType<TeamsAdaptiveColumnSet>(card.Body[0]);
     }
+
+    [Fact]
+    public void CardCanHoldSubmitAndShowCardActions() {
+        var card = new TeamsAdaptiveCard();
+        card.Actions.Add(new TeamsAdaptiveSubmitAction { Title = "Approve" });
+        card.Actions.Add(new TeamsAdaptiveShowCardAction {
+            Title = "Details",
+            Card = new Dictionary<string, object?> {
+                ["$schema"] = "http://adaptivecards.io/schemas/adaptive-card.json",
+                ["type"] = "AdaptiveCard",
+                ["version"] = "1.2",
+                ["body"] = new object[] {
+                    new TeamsAdaptiveTextBlock { Text = "Nested details" }
+                }
+            }
+        });
+
+        Assert.Equal(2, card.Actions.Count);
+        Assert.IsType<TeamsAdaptiveSubmitAction>(card.Actions[0]);
+        Assert.IsType<TeamsAdaptiveShowCardAction>(card.Actions[1]);
+    }
 }

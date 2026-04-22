@@ -1,4 +1,6 @@
-﻿Send-TeamsMessage -Verbose {
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+
+Send-TeamsMessage -Verbose {
     New-TeamsSection {
         ActivityTitle -Title "**Elon Musk**"
         ActivitySubtitle -Subtitle "@elonmusk - 9/12/2016 at 5:33pm"

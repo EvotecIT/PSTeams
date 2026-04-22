@@ -18,6 +18,69 @@ public class WebhookMessageRendererTests {
     }
 
     [Fact]
+    public void RenderSupportsConnectorCardSectionsFactsAndButtons() {
+        var request = new TeamsMessageRequest {
+            Title = "Build failed",
+            Text = "Pipeline 42",
+            ThemeColor = "#1E90FF",
+            UseConnectorCardFormat = true
+        };
+        request.Sections.Add(new TeamsMessageSection {
+            Title = "Build summary",
+            ActivityText = "Pipeline failed",
+            Facts = {
+                new TeamsMessageFact { Name = "Status", Value = "Failed" }
+            },
+            Buttons = {
+                new TeamsMessageButton {
+                    Name = "Open build",
+                    Link = "https://example.test/build/42",
+                    ButtonType = TeamsMessageButtonType.OpenUri
+                }
+            }
+        });
+
+        var json = WebhookMessageRenderer.Render(request);
+
+        Assert.Contains("\"themeColor\":\"#1E90FF\"", json);
+        Assert.Contains("\"sections\":[", json);
+        Assert.Contains("\"title\":\"Build summary\"", json);
+        Assert.Contains("\"name\":\"Status\"", json);
+        Assert.Contains("\"@type\":\"OpenURI\"", json);
+        Assert.Contains("\"uri\":\"https://example.test/build/42\"", json);
+    }
+
+    [Fact]
+    public void RenderSupportsConnectorCardSectionImagesAndHeroImageMarkdown() {
+        var request = new TeamsMessageRequest {
+            Title = "Build failed",
+            UseConnectorCardFormat = true
+        };
+        request.Sections.Add(new TeamsMessageSection {
+            ActivityTitle = "Build title",
+            ActivitySubtitle = "Build subtitle",
+            ActivityText = "Build text",
+            ActivityImage = "https://example.test/activity.png",
+            Text = "Original text",
+            Images = {
+                "https://example.test/image.png"
+            },
+            HeroImages = {
+                "![Hero](https://example.test/hero.png)"
+            }
+        });
+
+        var json = WebhookMessageRenderer.Render(request);
+
+        Assert.Contains("\"activityTitle\":\"Build title\"", json);
+        Assert.Contains("\"activitySubtitle\":\"Build subtitle\"", json);
+        Assert.Contains("\"activityText\":\"Build text\"", json);
+        Assert.Contains("\"activityImage\":\"https://example.test/activity.png\"", json);
+        Assert.Contains("\"images\":[{\"image\":\"https://example.test/image.png\"}]", json);
+        Assert.Contains("![Hero](https://example.test/hero.png) Original text", json);
+    }
+
+    [Fact]
     public void RenderWrapsAdaptiveCardAsAttachmentMessage() {
         var request = new TeamsMessageRequest {
             Summary = "Build notification",
@@ -46,6 +109,24 @@ public class WebhookMessageRendererTests {
             AdaptiveCard = new TeamsAdaptiveCard {
                 Body = {
                     new TeamsAdaptiveContainer {
+                        Id = "panel",
+                        Style = "Emphasis",
+                        MinimumHeight = "120px",
+                        Bleed = true,
+                        VerticalContentAlignment = "center",
+                        HorizontalAlignment = "Center",
+                        Height = "Stretch",
+                        Spacing = "Medium",
+                        Separator = true,
+                        IsVisible = false,
+                        BackgroundImage = new Dictionary<string, object?> {
+                            ["fillMode"] = "Cover",
+                            ["url"] = "https://example.test/background.png"
+                        },
+                        SelectAction = new TeamsAdaptiveOpenUrlAction {
+                            Title = "Open panel",
+                            Url = "https://example.test/panel"
+                        },
                         Items = {
                             new TeamsAdaptiveImage {
                                 Url = "https://example.test/build.png",
@@ -66,6 +147,15 @@ public class WebhookMessageRendererTests {
         var json = WebhookMessageRenderer.Render(request);
 
         Assert.Contains("\"type\":\"Container\"", json);
+        Assert.Contains("\"id\":\"panel\"", json);
+        Assert.Contains("\"style\":\"Emphasis\"", json);
+        Assert.Contains("\"minHeight\":\"120px\"", json);
+        Assert.Contains("\"bleed\":true", json);
+        Assert.Contains("\"verticalContentAlignment\":\"center\"", json);
+        Assert.Contains("\"backgroundImage\":{\"fillMode\":\"Cover\",\"url\":\"https://example.test/background.png\"}", json);
+        Assert.Contains("\"selectAction\":{\"type\":\"Action.OpenUrl\"", json);
+        Assert.Contains("\"title\":\"Open panel\"", json);
+        Assert.Contains("\"url\":\"https://example.test/panel\"", json);
         Assert.Contains("\"type\":\"Image\"", json);
         Assert.Contains("\"url\":\"https://example.test/build.png\"", json);
         Assert.Contains("\"type\":\"FactSet\"", json);
@@ -80,9 +170,31 @@ public class WebhookMessageRendererTests {
             AdaptiveCard = new TeamsAdaptiveCard {
                 Body = {
                     new TeamsAdaptiveColumnSet {
+                        Style = "Good",
+                        MinimumHeight = "80px",
+                        Bleed = true,
+                        HorizontalAlignment = "Center",
+                        Height = "Stretch",
+                        Spacing = "Medium",
+                        Separator = true,
                         Columns = {
                             new TeamsAdaptiveColumn {
                                 Width = "stretch",
+                                Height = "Stretch",
+                                MinimumHeight = "60px",
+                                HorizontalAlignment = "Right",
+                                VerticalContentAlignment = "Bottom",
+                                Spacing = "Small",
+                                Style = "Attention",
+                                IsVisible = false,
+                                Separator = true,
+                                SelectAction = new TeamsAdaptiveToggleVisibilityAction {
+                                    Id = "toggle-column",
+                                    Title = "Toggle column",
+                                    TargetElements = {
+                                        "detailsBlock"
+                                    }
+                                },
                                 Items = {
                                     new TeamsAdaptiveTextBlock { Text = "Pipeline failed" }
                                 }
@@ -116,8 +228,13 @@ public class WebhookMessageRendererTests {
         var json = WebhookMessageRenderer.Render(request);
 
         Assert.Contains("\"type\":\"ColumnSet\"", json);
+        Assert.Contains("\"style\":\"Good\"", json);
+        Assert.Contains("\"minHeight\":\"80px\"", json);
+        Assert.Contains("\"bleed\":true", json);
         Assert.Contains("\"type\":\"Column\"", json);
         Assert.Contains("\"width\":\"stretch\"", json);
+        Assert.Contains("\"verticalContentAlignment\":\"Bottom\"", json);
+        Assert.Contains("\"selectAction\":{\"type\":\"Action.ToggleVisibility\",\"id\":\"toggle-column\",\"title\":\"Toggle column\",\"targetElements\":[\"detailsBlock\"]}", json);
         Assert.Contains("\"type\":\"ActionSet\"", json);
         Assert.Contains("\"type\":\"Action.OpenUrl\"", json);
         Assert.Contains("\"url\":\"https://example.test/build/42\"", json);
@@ -217,5 +334,30 @@ public class WebhookMessageRendererTests {
         Assert.Contains("\"imageSize\":\"Medium\"", json);
         Assert.Contains("\"type\":\"Action.ToggleVisibility\"", json);
         Assert.Contains("\"targetElements\":[\"detailsBlock\",\"detailsFactSet\"]", json);
+    }
+
+    [Fact]
+    public void WrapperCardRendererSupportsTypedWrapperModels() {
+        var heroJson = TeamsWrapperCardRenderer.Render(new TeamsHeroCard {
+            Title = "Hero"
+        });
+
+        var thumbnailJson = TeamsWrapperCardRenderer.Render(new TeamsThumbnailCard {
+            Title = "Thumb"
+        });
+
+        var listCard = new TeamsListCard {
+            Title = "List"
+        };
+        listCard.Items.Add(new TeamsListCardItem {
+            Kind = TeamsListCardItemKind.ResultItem,
+            Title = "Item"
+        });
+
+        var listJson = TeamsWrapperCardRenderer.Render(listCard);
+
+        Assert.Contains("\"contentType\":\"application/vnd.microsoft.card.hero\"", heroJson);
+        Assert.Contains("\"contentType\":\"application/vnd.microsoft.card.thumbnail\"", thumbnailJson);
+        Assert.Contains("\"contentType\":\"application/vnd.microsoft.teams.card.list\"", listJson);
     }
 }

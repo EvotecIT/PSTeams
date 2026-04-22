@@ -18,10 +18,38 @@ permissions:
     contents: read
 
 env:
+    DOTNET_VERSION: '10.x'
     BUILD_CONFIGURATION: 'Debug'
 
 jobs:
+    refresh-psd1:
+        name: 'Refresh PSD1'
+        runs-on: windows-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PowerShell modules
+              shell: pwsh
+              run: |
+                  Install-Module PSPublishModule -Force -Scope CurrentUser -AllowClobber
+
+            - name: Refresh module manifest
+              shell: pwsh
+              env:
+                  RefreshPSD1Only: 'true'
+              run: |
+                  ./Module/Build/Build-Module.ps1
+
+            - name: Upload refreshed manifest
+              uses: actions/upload-artifact@v4
+              with:
+                  name: psd1
+                  path: Module/PSTeams/PSTeams.psd1
+
     test-windows-ps5:
+        needs: refresh-psd1
         name: 'Windows PowerShell 5.1'
         runs-on: windows-latest
         timeout-minutes: 10
@@ -29,18 +57,23 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Download manifest
+              uses: actions/download-artifact@v4
+              with:
+                  name: psd1
+                  path: Module/PSTeams
+
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: |
-                      8.x
-                      10.x
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
 
             - name: Install PowerShell modules
               shell: powershell
               run: |
                   Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
                   Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+                  Install-Module -Name PSWriteColor -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
 
             - name: Build .NET solution
               run: |
@@ -49,9 +82,10 @@ jobs:
 
             - name: Run PowerShell tests
               shell: powershell
-              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+              run: ./Module/PSTeams/PSTeams.Tests.ps1
 
     test-windows-ps7:
+        needs: refresh-psd1
         name: 'Windows PowerShell 7'
         runs-on: windows-latest
         timeout-minutes: 10
@@ -59,18 +93,23 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Download manifest
+              uses: actions/download-artifact@v4
+              with:
+                  name: psd1
+                  path: Module/PSTeams
+
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: |
-                      8.x
-                      10.x
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
 
             - name: Install PowerShell modules
               shell: pwsh
               run: |
                   Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
                   Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+                  Install-Module -Name PSWriteColor -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
 
             - name: Build .NET solution
               run: |
@@ -79,9 +118,10 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+              run: ./Module/PSTeams/PSTeams.Tests.ps1
 
     test-ubuntu:
+        needs: refresh-psd1
         name: 'Ubuntu PowerShell 7'
         runs-on: ubuntu-latest
         timeout-minutes: 10
@@ -89,12 +129,16 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Download manifest
+              uses: actions/download-artifact@v4
+              with:
+                  name: psd1
+                  path: Module/PSTeams
+
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: |
-                      8.x
-                      10.x
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
 
             - name: Install PowerShell
               run: |
@@ -109,6 +153,7 @@ jobs:
               run: |
                   Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
                   Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+                  Install-Module -Name PSWriteColor -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
 
             - name: Build .NET solution
               run: |
@@ -117,9 +162,10 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+              run: ./Module/PSTeams/PSTeams.Tests.ps1
 
     test-macos:
+        needs: refresh-psd1
         name: 'macOS PowerShell 7'
         runs-on: macos-latest
         timeout-minutes: 10
@@ -127,12 +173,16 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Download manifest
+              uses: actions/download-artifact@v4
+              with:
+                  name: psd1
+                  path: Module/PSTeams
+
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: |
-                      8.x
-                      10.x
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
 
             - name: Install PowerShell
               shell: bash
@@ -151,6 +201,7 @@ jobs:
               run: |
                   Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
                   Install-Module -Name Pester -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
+                  Install-Module -Name PSWriteColor -Repository PSGallery -Force -SkipPublisherCheck -AllowClobber
 
             - name: Build .NET solution
               run: |
@@ -159,4 +210,4 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: Invoke-Pester -Path ./Module/Tests -Output Detailed
+              run: ./Module/PSTeams/PSTeams.Tests.ps1

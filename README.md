@@ -22,10 +22,10 @@
 
 ## Main Branch Note
 
-The `main` branch is now the new `TeamsX` direction: reusable C# library plus binary PowerShell cmdlets.
+The `main` branch keeps shipping `PSTeams`, but the implementation model has changed.
 
-The old script-function-heavy `PSTeams` surface is preserved on the `legacy` branch, but it is not being continued here.
-New work on `main` should target `TeamsX` / `TeamsX.PowerShell` and expose cmdlets, not PowerShell wrapper functions.
+`TeamsX` is now the reusable .NET library, `TeamsX.PowerShell` provides thin C# cmdlets over that library, and `Module\PSTeams` is the real shipping module shell.
+Migration is 1:1: existing PowerShell functions stay only until equivalent cmdlets are ready, and then those script implementations can be removed.
 
 [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**.
 It allows sending notifications to _Microsoft Teams_ via **WebHook Notifications**. It's pretty flexible and provides a bunch of options.
@@ -432,7 +432,94 @@ That's it. Whenever there's a new version you simply run the command and you can
 Remember, that you may need to close, reopen the PowerShell session if you have already used the module before updating it.
 **The important thing** is if something works for you on production, keep using it till you test the new version on a test computer.
 I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
-Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only used during development. When published to PSGallery / Releases it's a merged release without any dependencies.
+Runtime dependency on `PSSharedGoods` has been removed from the module shell on `main`. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
+
+On `main`, the public adaptive surface is now binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
+
+`main` also now includes a starter Microsoft Graph delivery path in `TeamsX`, exposed through `New-TeamsGraphTarget`. This lets the typed `Send-TeamsMessage -Message ... -Target ...` path post to Teams chats and channels without introducing large SDK dependencies.
+
+If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
+
+```powershell
+$card = New-TeamsAdaptiveCard `
+    -FallbackText 'Build failed' `
+    -MinimumHeight 140 `
+    -Language 'en' `
+    -VerticalContentAlignment center `
+    -BackgroundUrl 'https://example.test/background.png' `
+    -BackgroundFillMode Cover `
+    -AllowImageExpand `
+    -FullWidth `
+    -Body @(
+        New-TeamsAdaptiveContainer `
+            -Style Emphasis `
+            -Bleed `
+            -MinimumHeight 120 `
+            -Spacing Medium `
+            -Items @(
+                New-TeamsAdaptiveColumnSet `
+                    -Style Good `
+                    -Bleed `
+                    -Columns @(
+                        New-TeamsAdaptiveColumn -WidthInWeight 2 -Items @(
+                            New-TeamsAdaptiveTextBlock -Text 'Pipeline failed' -Weight Bolder -Color Attention
+                        )
+                        New-TeamsAdaptiveColumn -Width auto -Items @(
+                            New-TeamsAdaptiveImage -Url 'https://example.test/status.png' -AltText 'Status'
+                        )
+                    )
+            )
+    ) `
+    -Actions @(
+        New-TeamsAdaptiveOpenUrlAction -Title 'Open build' -Url 'https://example.test/build/42'
+        New-TeamsAdaptiveSubmitAction -Title 'Acknowledge'
+        New-TeamsAdaptiveShowCardAction -Title 'Details' -Body @(
+            New-TeamsAdaptiveTextBlock -Text 'Nested details'
+        ) -Actions @(
+            New-TeamsAdaptiveSubmitAction -Title 'Confirm'
+        )
+    )
+
+$message = New-TeamsMessage -Summary 'Build notification' -AdaptiveCard $card
+$json = $message | ConvertTo-TeamsJson
+```
+
+Dedicated typed examples live under `Examples\MessageCard\MessageCard-Typed.ps1` and `Examples\Adaptive Card\AdaptiveCard-TypedActions.ps1`.
+
+Typed wrapper-card models are now available as well:
+
+```powershell
+$target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
+$heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
+    New-TeamsCardImage -Url 'https://example.test/monorail.jpg' -AlternateText 'Monorail'
+) -Buttons @(
+    New-CardListButton -Type OpenUrl -Title 'Official website' -Value 'https://example.test'
+)
+
+Send-TeamsMessage -HeroCard $heroCard -Target $target
+
+$json = $heroCard | ConvertTo-TeamsJson
+$wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
+```
+
+Typed wrapper-card direct sending currently targets incoming and workflow webhooks. Graph delivery remains limited to typed messages and adaptive-card attachments.
+
+For Graph chat or channel delivery, the starter flow looks like this:
+
+```powershell
+$message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42 stopped in the release stage.'
+$target = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVariableName 'TEAMSX_GRAPH_TOKEN'
+
+Send-TeamsMessage -Message $message -Target $target
+```
+
+Current Graph scope on `main`:
+
+- plain typed messages render to Graph HTML message bodies
+- adaptive cards render as Graph attachments
+- adaptive-card actions should currently be limited to `Action.OpenUrl`
+- Graph targets can use a plain token, a secure string, or an environment-variable-backed token provider
+- normal chat/channel posting should use delegated Microsoft Graph tokens; application permissions on these endpoints are documented as migration-only
 
 ## Documentation for Message Cards (for development)
 
