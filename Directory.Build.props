@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Przemyslaw Klys</Authors>
+    <Company>Evotec</Company>
+    <LangVersion>Latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

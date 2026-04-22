@@ -20,6 +20,13 @@
 
 # PSTeams - PowerShell Module
 
+## Main Branch Note
+
+The `main` branch is now the new `TeamsX` direction: reusable C# library plus binary PowerShell cmdlets.
+
+The old script-function-heavy `PSTeams` surface is preserved on the `legacy` branch, but it is not being continued here.
+New work on `main` should target `TeamsX` / `TeamsX.PowerShell` and expose cmdlets, not PowerShell wrapper functions.
+
 [PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**.
 It allows sending notifications to _Microsoft Teams_ via **WebHook Notifications**. It's pretty flexible and provides a bunch of options.
 Initially it only supported one sort of `Office 365 Connector Card` but since version `2.X.X` it supports `Adaptive Cards`, `Hero Cards`, `List Cards` and `Thumbnail Cards`.

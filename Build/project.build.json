@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/EvotecIT/PSPublishModule/main/Schemas/project.build.schema.json",
+  "RootPath": "..",
+  "ExpectedVersionMap": {
+    "TeamsX": "0.1.X"
+  },
+  "ExpectedVersionMapAsInclude": true,
+  "ExpectedVersionMapUseWildcards": false,
+  "ExcludeProjects": [
+    "TeamsX.PowerShell",
+    "TeamsX.Tests"
+  ],
+  "NugetSource": [],
+  "IncludePrerelease": true,
+  "Configuration": "Release",
+  "OutputPath": null,
+  "StagingPath": "Artefacts/ProjectBuild",
+  "CleanStaging": true,
+  "PlanOutputPath": null,
+  "UpdateVersions": false,
+  "Build": true,
+  "PublishNuget": false,
+  "PublishGitHub": false,
+  "CreateReleaseZip": true,
+  "CertificateThumbprint": "483292C9E317AA13B07BB7A96AE9D1A5ED9E7703",
+  "CertificateStore": "CurrentUser",
+  "TimeStampServer": "http://timestamp.digicert.com",
+  "PublishSource": "https://api.nuget.org/v3/index.json",
+  "PublishApiKeyFilePath": "C:\\Support\\Important\\NugetOrgEvotec.txt",
+  "SkipDuplicate": true,
+  "PublishFailFast": true,
+  "GitHubAccessTokenFilePath": "C:\\Support\\Important\\GithubAPI.txt",
+  "GitHubUsername": "EvotecIT",
+  "GitHubRepositoryName": "PSTeams",
+  "GitHubIsPreRelease": true,
+  "GitHubIncludeProjectNameInTag": false,
+  "GitHubGenerateReleaseNotes": true,
+  "GitHubReleaseMode": "Single",
+  "GitHubPrimaryProject": "TeamsX",
+  "GitHubTagTemplate": "{Repo}-v{UtcTimestamp}",
+  "GitHubReleaseName": "{Repo} {UtcDateTime}"
+}
