@@ -9,16 +9,15 @@ $binaryModules = @(
     $binaryModuleName
 )
 
-# Keep the source-tree module usable during development. Production packaging is handled by Build-Module.ps1.
+# Keep the source-tree module usable during development. Prefer the PowerShell 7.x support build.
+# Production packaging is handled by Build-Module.ps1.
 $development = $true
 $developmentPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\TeamsX.PowerShell\bin\Debug'
 $developmentFolderDefault = 'net472'
-$preferredDevelopmentCoreFolders = if ([System.Environment]::Version.Major -ge 10) {
-    @('net10.0', 'net8.0', 'netstandard2.0')
-} elseif ([System.Environment]::Version.Major -ge 8) {
-    @('net8.0', 'netstandard2.0')
+$preferredDevelopmentCoreFolders = if ([System.Environment]::Version.Major -ge 8) {
+    @('net8.0', 'net10.0', 'netstandard2.0')
 } else {
-    @('netstandard2.0')
+    @('net8.0', 'netstandard2.0')
 }
 
 $developmentFolderCore = foreach ($folder in $preferredDevelopmentCoreFolders) {

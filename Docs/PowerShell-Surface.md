@@ -61,7 +61,7 @@
 
 - `FunctionsToExport` in `Module\PSTeams\PSTeams.psd1` is now empty.
 - The whole `New-Adaptive*` surface is binary-backed on `main`.
-- `Module\PSTeams\PSTeams.psm1` now prefers the highest compatible local PowerShell Core build, including `net10.0` when the current host runtime can load it.
+- `Module\PSTeams\PSTeams.psm1` now follows the `DnsClientX`-style development loader and prefers `net8.0` for PowerShell 7.x, with `net10.0` only as a fallback development build when present.
 - Remaining work is now quality and parity polish: warnings cleanup, docs/examples refresh, and feature expansion on the typed cmdlet surface.
 - `TeamsX` now includes a Graph sender starter for channel and chat posts, exposed through `New-TeamsGraphTarget`.
 
