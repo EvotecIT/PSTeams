@@ -436,35 +436,60 @@ Send-TeamsMessage `
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
 
-## Installing/Updating on Windows / Linux / MacOS
+## Installing and Updating
 
-Installation doesn't require administrative rights. You can install it using following:
+PSTeams works on Windows, Linux, and macOS through PowerShell Gallery. Installation does not require administrative rights when you install for the current user.
 
-```powershell
-Install-Module PSTeams
-```
-
-But if you don't have administrative rights on your machine:
+Install for the current user:
 
 ```powershell
 Install-Module PSTeams -Scope CurrentUser
 ```
 
-To update
+Install for all users from an elevated PowerShell session:
+
+```powershell
+Install-Module PSTeams
+```
+
+Update an existing installation:
 
 ```powershell
 Update-Module -Name PSTeams
 ```
 
-That's it. Whenever there's a new version you simply run the command and you can enjoy it.
-Remember, that you may need to close, reopen the PowerShell session if you have already used the module before updating it.
-**The important thing** is if something works for you on production, keep using it till you test the new version on a test computer.
-I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
+After updating, restart any PowerShell session that already imported PSTeams so the new binary module is loaded.
+If PSTeams is used in production automations, test new versions before rolling them out broadly.
 Runtime dependency on `PSSharedGoods` has been removed from the module shell. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
 
-The public adaptive surface is binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
+## Quick Start
 
-PSTeams also includes a starter Microsoft Graph delivery path in `TeamsX`, exposed through `New-TeamsGraphTarget`. This lets the typed `Send-TeamsMessage -Message ... -Target ...` path post to Teams chats and channels without introducing large SDK dependencies.
+Send a classic connector-card notification through an incoming webhook:
+
+```powershell
+$target = New-TeamsWebhookTarget -Uri $Env:TEAMS_WEBHOOK_URL
+$section = New-TeamsSection `
+    -ActivityTitle 'PSTeams' `
+    -ActivitySubtitle 'Build notification' `
+    -ActivityText 'The release pipeline completed successfully.' `
+    -ActivityDetails @(
+        New-TeamsFact -Name 'Environment' -Value 'Production'
+        New-TeamsFact -Name 'Result' -Value 'Passed'
+    )
+
+$message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
+Send-TeamsMessage -Message $message -Target $target
+```
+
+Render the same message as JSON when you want to validate payloads in tests or CI:
+
+```powershell
+$message | ConvertTo-TeamsJson
+```
+
+## Typed Adaptive Cards
+
+The public adaptive surface is binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
 
 If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
 
@@ -514,6 +539,8 @@ $json = $message | ConvertTo-TeamsJson
 
 Dedicated typed examples live under `Examples\MessageCard\MessageCard-Typed.ps1` and `Examples\Adaptive Card\AdaptiveCard-TypedActions.ps1`.
 
+## Typed Wrapper Cards
+
 Typed wrapper-card models are now available as well:
 
 ```powershell
@@ -532,6 +559,10 @@ $wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wr
 
 Typed wrapper-card direct sending currently targets incoming and workflow webhooks. Graph delivery remains limited to typed messages and adaptive-card attachments.
 
+## Microsoft Graph Delivery
+
+PSTeams includes a starter Microsoft Graph delivery path in `TeamsX`, exposed through `New-TeamsGraphTarget`. This lets the typed `Send-TeamsMessage -Message ... -Target ...` path post to Teams chats and channels without introducing large SDK dependencies.
+
 For Graph chat or channel delivery, the starter flow looks like this:
 
 ```powershell
@@ -541,7 +572,7 @@ $target = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVaria
 Send-TeamsMessage -Message $message -Target $target
 ```
 
-Current Graph scope on `main`:
+Current Graph scope:
 
 - plain typed messages render to Graph HTML message bodies
 - adaptive cards render as Graph attachments
