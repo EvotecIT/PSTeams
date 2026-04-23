@@ -1,4 +1,4 @@
-﻿Import-Module .\PSTeams.psd1 -Force
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
 
 # Lets prepare dummmy object array with few elements
 $Objects = @(

@@ -36,8 +36,36 @@ public sealed class CmdletNewTeamsAdaptiveRichTextBlock : PSCmdlet {
     [Parameter(Mandatory = true, ParameterSetName = "Inline")]
     public TeamsAdaptiveTextRun[] Inlines { get; set; } = Array.Empty<TeamsAdaptiveTextRun>();
 
+    [Parameter(Mandatory = false)]
+    [ValidateSet("None", "Small", "Default", "Medium", "Large", "ExtraLarge", "Padding")]
+    public string? Spacing { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public SwitchParameter Separator { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("Left", "Center", "Right")]
+    public string? HorizontalAlignment { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("Stretch", "Automatic")]
+    public string? Height { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? Id { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public SwitchParameter Hidden { get; set; }
+
     protected override void ProcessRecord() {
-        var block = new TeamsAdaptiveRichTextBlock();
+        var block = new TeamsAdaptiveRichTextBlock {
+            Id = Id,
+            Spacing = Spacing,
+            Separator = Separator.IsPresent ? true : null,
+            HorizontalAlignment = HorizontalAlignment,
+            Height = Height,
+            IsVisible = Hidden.IsPresent ? false : null
+        };
 
         if (ParameterSetName == "Inline") {
             foreach (var inline in Inlines ?? Array.Empty<TeamsAdaptiveTextRun>()) {

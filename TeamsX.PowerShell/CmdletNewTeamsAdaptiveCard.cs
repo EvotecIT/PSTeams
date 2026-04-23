@@ -18,9 +18,76 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
     [Parameter(Mandatory = false)]
     public string Version { get; set; } = "1.2";
 
+    [Parameter(Mandatory = false)]
+    public string? FallbackText { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public int MinimumHeight { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? Speak { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? Language { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("top", "center", "bottom")]
+    public string? VerticalContentAlignment { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? BackgroundUrl { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("Cover", "RepeatHorizontally", "RepeatVertically", "Repeat")]
+    public string? BackgroundFillMode { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("left", "center", "right")]
+    public string? BackgroundHorizontalAlignment { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("top", "center", "bottom")]
+    public string? BackgroundVerticalAlignment { get; set; }
+
+    [Parameter(Mandatory = false)]
+    [ValidateSet("Action.Submit", "Action.OpenUrl", "Action.ToggleVisibility")]
+    public string? SelectAction { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? SelectActionId { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? SelectActionUrl { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string? SelectActionTitle { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public string[]? SelectActionTargetElement { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public SwitchParameter FullWidth { get; set; }
+
+    [Parameter(Mandatory = false)]
+    public SwitchParameter AllowImageExpand { get; set; }
+
     protected override void ProcessRecord() {
         var card = new TeamsAdaptiveCard {
-            Version = Version
+            Version = Version,
+            FallbackText = FallbackText,
+            MinimumHeight = MinimumHeight > 0 ? $"{MinimumHeight}px" : null,
+            Speak = Speak,
+            Language = Language,
+            VerticalContentAlignment = VerticalContentAlignment,
+            BackgroundImage = BuildBackgroundImage(),
+            SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
+                SelectAction,
+                SelectActionId,
+                SelectActionUrl,
+                SelectActionTitle,
+                SelectActionTargetElement),
+            AllowImageExpand = AllowImageExpand.IsPresent ? true : null,
+            FullWidth = FullWidth.IsPresent
         };
 
         foreach (var element in Body ?? Array.Empty<TeamsAdaptiveCardElement>()) {
@@ -42,5 +109,33 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
         }
 
         WriteObject(card);
+    }
+
+    private Dictionary<string, object?>? BuildBackgroundImage() {
+        if (string.IsNullOrWhiteSpace(BackgroundUrl) &&
+            string.IsNullOrWhiteSpace(BackgroundFillMode) &&
+            string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment) &&
+            string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
+            return null;
+        }
+
+        var backgroundImage = new Dictionary<string, object?>();
+        if (!string.IsNullOrWhiteSpace(BackgroundFillMode)) {
+            backgroundImage["fillMode"] = BackgroundFillMode;
+        }
+
+        if (!string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment)) {
+            backgroundImage["horizontalAlignment"] = BackgroundHorizontalAlignment;
+        }
+
+        if (!string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
+            backgroundImage["verticalAlignment"] = BackgroundVerticalAlignment;
+        }
+
+        if (!string.IsNullOrWhiteSpace(BackgroundUrl)) {
+            backgroundImage["url"] = BackgroundUrl;
+        }
+
+        return backgroundImage;
     }
 }

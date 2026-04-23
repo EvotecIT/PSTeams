@@ -1,12 +1,12 @@
 namespace TeamsX;
 
 public sealed class TeamsClient {
-    public static TeamsClient Default { get; } = new(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared });
+    public static TeamsClient Default { get; } = new(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared, GraphTeamsMessageSender.Shared });
 
     private readonly IReadOnlyList<ITeamsMessageSender> _senders;
 
     public TeamsClient()
-        : this(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared }) {
+        : this(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared, GraphTeamsMessageSender.Shared }) {
     }
 
     public TeamsClient(IEnumerable<ITeamsMessageSender> senders) {
@@ -36,6 +36,39 @@ public sealed class TeamsClient {
         return sender.SendAsync(message, target, cancellationToken);
     }
 
+    public Task<TeamsDeliveryResult> SendAsync(
+        TeamsHeroCard card,
+        TeamsMessageTarget target,
+        CancellationToken cancellationToken = default) {
+        if (card is null) {
+            throw new ArgumentNullException(nameof(card));
+        }
+
+        return SendWrapperCardAsync(TeamsWrapperCardRenderer.Render(card), target, cancellationToken);
+    }
+
+    public Task<TeamsDeliveryResult> SendAsync(
+        TeamsThumbnailCard card,
+        TeamsMessageTarget target,
+        CancellationToken cancellationToken = default) {
+        if (card is null) {
+            throw new ArgumentNullException(nameof(card));
+        }
+
+        return SendWrapperCardAsync(TeamsWrapperCardRenderer.Render(card), target, cancellationToken);
+    }
+
+    public Task<TeamsDeliveryResult> SendAsync(
+        TeamsListCard card,
+        TeamsMessageTarget target,
+        CancellationToken cancellationToken = default) {
+        if (card is null) {
+            throw new ArgumentNullException(nameof(card));
+        }
+
+        return SendWrapperCardAsync(TeamsWrapperCardRenderer.Render(card), target, cancellationToken);
+    }
+
     public Task<TeamsDeliveryResult> SendJsonAsync(
         string jsonBody,
         TeamsMessageTarget target,
@@ -55,5 +88,22 @@ public sealed class TeamsClient {
         }
 
         return sender.SendJsonAsync(jsonBody, target, cancellationToken);
+    }
+
+    private Task<TeamsDeliveryResult> SendWrapperCardAsync(
+        string attachmentBodyJson,
+        TeamsMessageTarget target,
+        CancellationToken cancellationToken) {
+        if (target is null) {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        if (target.DeliveryMethod is not TeamsDeliveryMethod.IncomingWebhook and not TeamsDeliveryMethod.WorkflowWebhook) {
+            throw new InvalidOperationException(
+                $"Typed wrapper cards are currently supported only for incoming and workflow webhooks. Delivery method '{target.DeliveryMethod}' is not supported.");
+        }
+
+        var wrappedBody = TeamsWrapperCardRenderer.WrapAsMessage(attachmentBodyJson);
+        return SendJsonAsync(wrappedBody, target, cancellationToken);
     }
 }

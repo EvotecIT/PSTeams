@@ -1,4 +1,6 @@
-﻿$Wrapper = @"
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+
+$Wrapper = @"
 {
     "contentType": "application/vnd.microsoft.teams.card.list",
     "content": {

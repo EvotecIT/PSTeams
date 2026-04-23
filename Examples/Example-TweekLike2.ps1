@@ -1,4 +1,4 @@
-﻿Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
 
 $TeamsID = 'https://outlook.office.com/webhook/a5c7c'
 

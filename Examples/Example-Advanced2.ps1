@@ -1,4 +1,4 @@
-﻿Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
 
 # This is fake TeamsID - you need to use yours
 $TeamsID = 'https://outlook.office.ad05-32e40'

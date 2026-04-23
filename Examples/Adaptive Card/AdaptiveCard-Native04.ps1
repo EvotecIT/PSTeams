@@ -1,4 +1,4 @@
-﻿Import-Module .\PSTeams.psd1 -Force
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
 
 New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
     New-AdaptiveTextBlock -Size ExtraLarge -Weight Bolder -Text 'Test' -Color Attention -HorizontalAlignment Center

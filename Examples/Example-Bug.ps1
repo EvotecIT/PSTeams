@@ -1,4 +1,6 @@
-﻿Send-TeamsMessage -Verbose -Color DimGray {
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+
+Send-TeamsMessage -Verbose -Color DimGray {
     New-TeamsSection -Title 'This is 2nd section within 1 message' {
         New-TeamsList -Name 'Testing List' {
             New-TeamsListItem -Text 'First ordered list item' -Level 0

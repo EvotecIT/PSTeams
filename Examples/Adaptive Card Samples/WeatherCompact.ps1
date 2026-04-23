@@ -1,4 +1,4 @@
-﻿Import-Module .\PSTeams.psd1 -Force
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
 
 # Based on: https://adaptivecards.io/samples/WeatherCompact.html
 

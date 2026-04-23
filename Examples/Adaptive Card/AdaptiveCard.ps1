@@ -1,4 +1,6 @@
-﻿New-AdaptiveCard -Uri $Env:TEAMSPESTERID {
+. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+
+New-AdaptiveCard -Uri $Env:TEAMSPESTERID {
     New-AdaptiveContainer {
         New-AdaptiveTextBlock -Text 'Publish Adaptive Card schema' -Weight Bolder -Size Medium
         New-AdaptiveColumnSet {

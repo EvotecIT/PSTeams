@@ -2,7 +2,7 @@ param (
     $TeamsID = $Env:TEAMSPESTERID
 )
 
-Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
 
 Send-TeamsMessage `
     -URI $TeamsID `

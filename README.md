@@ -1,37 +1,116 @@
-<p align="center">
-  <a href="https://dev.azure.com/evotecpl/PSTeams/_build/latest?definitionId=3"><img src="https://dev.azure.com/evotecpl/PSTeams/_apis/build/status/EvotecIT.PSTeams"></a>
-  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/v/PSTeams.svg"></a>
-  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/v/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&include_prereleases"></a>
-  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/license/EvotecIT/PSTeams.svg"></a>
-</p>
+# PSTeams - Microsoft Teams Notifications for PowerShell and .NET
 
-<p align="center">
-  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/p/PSTeams.svg"></a>
-  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/top/evotecit/PSTeams.svg"></a>
-  <a href="https://github.com/EvotecIT/PSTeams"><img src="https://img.shields.io/github/languages/code-size/evotecit/PSTeams.svg"></a>
-  <a href="https://www.powershellgallery.com/packages/PSTeams"><img src="https://img.shields.io/powershellgallery/dt/PSTeams.svg"></a>
-</p>
+PSTeams is available as a PowerShell module from PowerShell Gallery and is powered by a reusable C# library named `TeamsX`.
 
-<p align="center">
-  <a href="https://twitter.com/PrzemyslawKlys"><img src="https://img.shields.io/twitter/follow/PrzemyslawKlys.svg?label=Twitter%20%40PrzemyslawKlys&style=social"></a>
-  <a href="https://evotec.xyz/hub"><img src="https://img.shields.io/badge/Blog-evotec.xyz-2A6496.svg"></a>
-  <a href="https://www.linkedin.com/in/pklys"><img src="https://img.shields.io/badge/LinkedIn-pklys-0077B5.svg?logo=LinkedIn"></a>
-</p>
+## PowerShell Module
 
-# PSTeams - PowerShell Module
+[![powershell gallery version](https://img.shields.io/powershellgallery/v/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
+[![powershell gallery preview](https://img.shields.io/powershellgallery/v/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&include_prereleases)](https://www.powershellgallery.com/packages/PSTeams)
+[![powershell gallery platforms](https://img.shields.io/powershellgallery/p/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
+[![powershell gallery downloads](https://img.shields.io/powershellgallery/dt/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
 
-## Main Branch Note
+## Project Information
 
-The `main` branch is now the new `TeamsX` direction: reusable C# library plus binary PowerShell cmdlets.
+[![Test .NET](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml)
+[![Test PowerShell](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml)
+[![top language](https://img.shields.io/github/languages/top/evotecit/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
+[![code size](https://img.shields.io/github/languages/code-size/evotecit/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
+[![license](https://img.shields.io/github/license/EvotecIT/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
 
-The old script-function-heavy `PSTeams` surface is preserved on the `legacy` branch, but it is not being continued here.
-New work on `main` should target `TeamsX` / `TeamsX.PowerShell` and expose cmdlets, not PowerShell wrapper functions.
+## Author and Social
 
-[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) is a **PowerShell Module** working on **Windows** / **Linux** and **Mac**.
-It allows sending notifications to _Microsoft Teams_ via **WebHook Notifications**. It's pretty flexible and provides a bunch of options.
-Initially it only supported one sort of `Office 365 Connector Card` but since version `2.X.X` it supports `Adaptive Cards`, `Hero Cards`, `List Cards` and `Thumbnail Cards`.
-All those new cards have their own cmdlets and the old version of creating Teams Cards stays as is for compatibility reasons.
-The most fun you will get from playing with `Adaptive Cards`, but rest has their use case.
+[![Twitter follow](https://img.shields.io/twitter/follow/PrzemyslawKlys.svg?label=Twitter%20%40PrzemyslawKlys&style=social)](https://twitter.com/PrzemyslawKlys)
+[![Blog](https://img.shields.io/badge/Blog-evotec.xyz-2A6496.svg)](https://evotec.xyz/hub)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-pklys-0077B5.svg?logo=LinkedIn)](https://www.linkedin.com/in/pklys)
+
+## What it's all about
+
+[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) helps you send rich notifications to Microsoft Teams from PowerShell on Windows, Linux, and macOS. It can build and send classic Office 365 connector cards, Adaptive Cards, Hero Cards, List Cards, and Thumbnail Cards.
+
+PSTeams uses a cleaner architecture:
+
+- `TeamsX` is the reusable C# library for composing and delivering Microsoft Teams messages.
+- `TeamsX.PowerShell` exposes thin binary PowerShell cmdlets over that library.
+- `PSTeams` remains the PowerShell module users install and import.
+
+## Capabilities
+
+- Send Microsoft Teams notifications through incoming webhooks and workflow webhooks.
+- Compose classic connector-card messages with sections, facts, images, buttons, and activity fields.
+- Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
+- Compose Hero, Thumbnail, and List cards with typed cmdlets.
+- Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
+- Use a starter Microsoft Graph delivery path for Teams chats and channels without adding a large Graph SDK dependency.
+- Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
+
+## Installing and Updating
+
+PSTeams works on Windows, Linux, and macOS through PowerShell Gallery. Installation does not require administrative rights when you install for the current user.
+
+Install for the current user:
+
+```powershell
+Install-Module PSTeams -Scope CurrentUser
+```
+
+Install for all users from an elevated PowerShell session:
+
+```powershell
+Install-Module PSTeams
+```
+
+Update an existing installation:
+
+```powershell
+Update-Module -Name PSTeams
+```
+
+After updating, restart any PowerShell session that already imported PSTeams so the new binary module is loaded.
+If PSTeams is used in production automations, test new versions before rolling them out broadly.
+Runtime dependency on `PSSharedGoods` has been removed from the module shell. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
+
+## Quick Start
+
+Send a classic connector-card notification through an incoming webhook:
+
+```powershell
+$target = New-TeamsWebhookTarget -Uri $Env:TEAMS_WEBHOOK_URL
+$section = New-TeamsSection `
+    -ActivityTitle 'PSTeams' `
+    -ActivitySubtitle 'Build notification' `
+    -ActivityText 'The release pipeline completed successfully.' `
+    -ActivityDetails @(
+        New-TeamsFact -Name 'Environment' -Value 'Production'
+        New-TeamsFact -Name 'Result' -Value 'Passed'
+    )
+
+$message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
+Send-TeamsMessage -Message $message -Target $target
+```
+
+Render the same message as JSON when you want to validate payloads in tests or CI:
+
+```powershell
+$message | ConvertTo-TeamsJson
+```
+
+## Supported .NET and PowerShell Versions
+
+### TeamsX Library
+
+- .NET 8.0 and .NET 10.0 for modern cross-platform use
+- .NET Standard 2.0 for compatibility
+- .NET Framework 4.7.2 for Windows PowerShell 5.1 scenarios
+
+### PowerShell Module
+
+- PowerShell 7.x uses the .NET 8.0 binary build by default during development.
+- Windows PowerShell 5.1 uses the .NET Framework 4.7.2 binary build during development.
+- Packaged module builds are produced by `Module\PSTeams\Build\Build-Module.ps1`, following the same module-build approach used by other Evotec modules such as DnsClientX.
+
+## Legacy Branch
+
+The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `TeamsX`, `TeamsX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
 
 ## Links/Blogs
 
@@ -408,31 +487,98 @@ Send-TeamsMessage `
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
 
-## Installing/Updating on Windows / Linux / MacOS
+## Typed Adaptive Cards
 
-Installation doesn't require administrative rights. You can install it using following:
+The public adaptive surface is binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
 
-```powershell
-Install-Module PSTeams
-```
-
-But if you don't have administrative rights on your machine:
+If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
 
 ```powershell
-Install-Module PSTeams -Scope CurrentUser
+$card = New-TeamsAdaptiveCard `
+    -FallbackText 'Build failed' `
+    -MinimumHeight 140 `
+    -Language 'en' `
+    -VerticalContentAlignment center `
+    -BackgroundUrl 'https://example.test/background.png' `
+    -BackgroundFillMode Cover `
+    -AllowImageExpand `
+    -FullWidth `
+    -Body @(
+        New-TeamsAdaptiveContainer `
+            -Style Emphasis `
+            -Bleed `
+            -MinimumHeight 120 `
+            -Spacing Medium `
+            -Items @(
+                New-TeamsAdaptiveColumnSet `
+                    -Style Good `
+                    -Bleed `
+                    -Columns @(
+                        New-TeamsAdaptiveColumn -WidthInWeight 2 -Items @(
+                            New-TeamsAdaptiveTextBlock -Text 'Pipeline failed' -Weight Bolder -Color Attention
+                        )
+                        New-TeamsAdaptiveColumn -Width auto -Items @(
+                            New-TeamsAdaptiveImage -Url 'https://example.test/status.png' -AltText 'Status'
+                        )
+                    )
+            )
+    ) `
+    -Actions @(
+        New-TeamsAdaptiveOpenUrlAction -Title 'Open build' -Url 'https://example.test/build/42'
+        New-TeamsAdaptiveSubmitAction -Title 'Acknowledge'
+        New-TeamsAdaptiveShowCardAction -Title 'Details' -Body @(
+            New-TeamsAdaptiveTextBlock -Text 'Nested details'
+        ) -Actions @(
+            New-TeamsAdaptiveSubmitAction -Title 'Confirm'
+        )
+    )
+
+$message = New-TeamsMessage -Summary 'Build notification' -AdaptiveCard $card
+$json = $message | ConvertTo-TeamsJson
 ```
 
-To update
+Dedicated typed examples live under `Examples\MessageCard\MessageCard-Typed.ps1` and `Examples\Adaptive Card\AdaptiveCard-TypedActions.ps1`.
+
+## Typed Wrapper Cards
+
+Typed wrapper-card models are now available as well:
 
 ```powershell
-Update-Module -Name PSTeams
+$target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
+$heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
+    New-TeamsCardImage -Url 'https://example.test/monorail.jpg' -AlternateText 'Monorail'
+) -Buttons @(
+    New-CardListButton -Type OpenUrl -Title 'Official website' -Value 'https://example.test'
+)
+
+Send-TeamsMessage -HeroCard $heroCard -Target $target
+
+$json = $heroCard | ConvertTo-TeamsJson
+$wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
 ```
 
-That's it. Whenever there's a new version you simply run the command and you can enjoy it.
-Remember, that you may need to close, reopen the PowerShell session if you have already used the module before updating it.
-**The important thing** is if something works for you on production, keep using it till you test the new version on a test computer.
-I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
-Dependencies: **PSSharedGoods**, **PSWriteColor** and **Connectimo** are only used during development. When published to PSGallery / Releases it's a merged release without any dependencies.
+Typed wrapper-card direct sending currently targets incoming and workflow webhooks. Graph delivery remains limited to typed messages and adaptive-card attachments.
+
+## Microsoft Graph Delivery
+
+PSTeams includes a starter Microsoft Graph delivery path in `TeamsX`, exposed through `New-TeamsGraphTarget`. This lets the typed `Send-TeamsMessage -Message ... -Target ...` path post to Teams chats and channels without introducing large SDK dependencies.
+
+For Graph chat or channel delivery, the starter flow looks like this:
+
+```powershell
+$message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42 stopped in the release stage.'
+$target = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVariableName 'TEAMSX_GRAPH_TOKEN'
+
+Send-TeamsMessage -Message $message -Target $target
+```
+
+Current Graph scope:
+
+- plain typed messages render to Graph HTML message bodies
+- adaptive cards render as Graph attachments
+- adaptive-card actions should currently be limited to `Action.OpenUrl`
+- Graph targets can use a plain token, a secure string, or an environment-variable-backed token provider
+- normal chat/channel posting should use delegated Microsoft Graph tokens; application permissions on these endpoints are documented as migration-only
 
 ## Documentation for Message Cards (for development)
 

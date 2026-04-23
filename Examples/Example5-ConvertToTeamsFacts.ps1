@@ -1,4 +1,4 @@
-Import-Module $PSScriptRoot\..\PSTeams.psd1 -Force #-Verbose
+. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
 
 Get-ChildItem | Select-Object -First 2 | ConvertTo-TeamsFact
 

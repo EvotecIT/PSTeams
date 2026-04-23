@@ -22,6 +22,10 @@
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\TeamsX\TeamsX.csproj" />
   </ItemGroup>
