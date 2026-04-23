@@ -10,7 +10,7 @@ public static class TeamsColorUtility {
             return null;
         }
 
-        var candidate = color.Trim();
+        var candidate = color!.Trim();
         if (candidate.StartsWith("#", StringComparison.Ordinal)) {
             return IsHexColor(candidate)
                 ? candidate.ToUpperInvariant()

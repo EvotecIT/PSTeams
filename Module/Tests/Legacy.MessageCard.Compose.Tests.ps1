@@ -36,6 +36,49 @@ Describe 'Legacy connector-card migration cmdlets' {
         $section.Facts.Count | Should -Be 1
     }
 
+    It 'preserves action-card link targets and date-input subtypes from legacy dictionaries' {
+        $section = New-TeamsSection {
+            [ordered]@{
+                type    = 'button'
+                name    = 'Add comment'
+                '@type' = 'ActionCard'
+                Inputs  = @(
+                    [ordered]@{
+                        '@type' = 'TextInput'
+                    }
+                )
+                actions = @(
+                    [ordered]@{
+                        '@type' = 'HttpPOST'
+                        target  = 'https://example.test/comment'
+                    }
+                )
+            }
+            [ordered]@{
+                type    = 'button'
+                name    = 'Choose date'
+                '@type' = 'ActionCard'
+                Inputs  = @(
+                    [ordered]@{
+                        '@type' = 'DateInput'
+                    }
+                )
+                actions = @(
+                    [ordered]@{
+                        '@type' = 'HttpPOST'
+                        target  = 'https://example.test/date'
+                    }
+                )
+            }
+        }
+
+        $section.Buttons.Count | Should -Be 2
+        $section.Buttons[0].ButtonType.ToString() | Should -Be 'TextInput'
+        $section.Buttons[0].Link | Should -Be 'https://example.test/comment'
+        $section.Buttons[1].ButtonType.ToString() | Should -Be 'DateInput'
+        $section.Buttons[1].Link | Should -Be 'https://example.test/date'
+    }
+
     It 'creates legacy list facts from migrated cmdlets' {
         $fact = New-TeamsList -Name 'Checklist' {
             New-TeamsListItem -Text 'Top level' -Level 0

@@ -89,9 +89,9 @@ Describe 'TeamsX binary cmdlets through PSTeams' {
         $chat = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessToken 'token-2' -DisplayName 'Ops chat' -GraphBaseUri 'https://graph.example.test/'
 
         $channel.DeliveryMethod.ToString() | Should -Be 'GraphChannelMessage'
-        $channel.TargetUri.ToString() | Should -Be 'https://graph.example.test/v1.0/teams/team-42/channels/channel-99/messages'
+        $channel.TargetUri.AbsoluteUri | Should -Be 'https://graph.example.test/v1.0/teams/team-42/channels/channel-99/messages'
         $chat.DeliveryMethod.ToString() | Should -Be 'GraphChatMessage'
-        $chat.TargetUri.ToString() | Should -Be 'https://graph.example.test/v1.0/chats/19%3Atestchat%40thread.v2/messages'
+        $chat.TargetUri.AbsoluteUri | Should -Be 'https://graph.example.test/v1.0/chats/19%3Atestchat%40thread.v2/messages'
     }
 
     It 'creates graph targets backed by environment variables and secure strings' {
@@ -144,6 +144,15 @@ Describe 'TeamsX binary cmdlets through PSTeams' {
         $json | Should -Match '"hideOriginalBody":true'
         $json | Should -Match '"title":"Build failed"'
         $json | Should -Match '"text":"Pipeline 42"'
+    }
+
+    It 'treats null sections input as empty when building a typed Teams message' {
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+
+        $sections = $null
+        { $message = New-TeamsMessage -Title 'Build failed' -Sections $sections } | Should -Not -Throw
+        $message.Sections.Count | Should -Be 0
+        $message.UseConnectorCardFormat | Should -BeFalse
     }
 
     It 'renders typed wrapper-card objects through ConvertTo-TeamsJson' {

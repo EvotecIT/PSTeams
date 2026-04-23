@@ -123,7 +123,7 @@ public sealed class CmdletNewTeamsSection : PSCmdlet {
                     section.Buttons.Add(new TeamsMessageButton {
                         Name = GetDictionaryString(dictionary, "name") ?? GetDictionaryString(dictionary, "Name"),
                         Link = GetButtonLink(dictionary),
-                        ButtonType = ParseButtonType(GetDictionaryString(dictionary, "@type"))
+                        ButtonType = ParseButtonType(dictionary)
                     });
                     return;
                 case "fact":
@@ -224,16 +224,53 @@ public sealed class CmdletNewTeamsSection : PSCmdlet {
             }
         }
 
+        if (dictionary.Contains("actions")) {
+            var actionsValue = dictionary["actions"];
+            if (actionsValue is IEnumerable actions && actionsValue is not string) {
+                foreach (var entry in actions) {
+                    if (entry is IDictionary actionDictionary) {
+                        var nestedTarget = GetButtonLink(actionDictionary);
+                        if (!string.IsNullOrWhiteSpace(nestedTarget)) {
+                            return nestedTarget;
+                        }
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
-    private static TeamsMessageButtonType ParseButtonType(string? payloadType) {
+    private static TeamsMessageButtonType ParseButtonType(IDictionary dictionary) {
+        var payloadType = GetDictionaryString(dictionary, "@type");
         return payloadType switch {
-            "ActionCard" => TeamsMessageButtonType.TextInput,
+            "ActionCard" => GetActionCardButtonType(dictionary),
             "HttpPOST" => TeamsMessageButtonType.HttpPost,
             "OpenURI" => TeamsMessageButtonType.OpenUri,
             _ => TeamsMessageButtonType.ViewAction
         };
+    }
+
+    private static TeamsMessageButtonType GetActionCardButtonType(IDictionary dictionary) {
+        if (dictionary.Contains("Inputs")) {
+            var inputs = dictionary["Inputs"];
+            if (inputs is IEnumerable enumerable && inputs is not string) {
+                foreach (var entry in enumerable) {
+                    if (entry is IDictionary inputDictionary) {
+                        var inputType = GetDictionaryString(inputDictionary, "@type");
+                        if (string.Equals(inputType, "DateInput", StringComparison.OrdinalIgnoreCase)) {
+                            return TeamsMessageButtonType.DateInput;
+                        }
+
+                        if (string.Equals(inputType, "TextInput", StringComparison.OrdinalIgnoreCase)) {
+                            return TeamsMessageButtonType.TextInput;
+                        }
+                    }
+                }
+            }
+        }
+
+        return TeamsMessageButtonType.TextInput;
     }
 
     private static void ValidateActivityImagePath(FileInfo path) {

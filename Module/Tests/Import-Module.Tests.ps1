@@ -123,28 +123,22 @@ Describe 'PSTeams module migration shell' {
     }
 
     It 'preserves every legacy command name on main' {
-        $currentPath = (Resolve-Path "$PSScriptRoot\..\PSTeams\PSTeams.psd1").Path.Replace("'", "''")
-        $currentScript = @'
-Import-Module '{CURRENT_PATH}' -Force
-Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object | ConvertTo-Json
-'@.Replace('{CURRENT_PATH}', $currentPath)
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force | Out-Null
 
-        $legacyNames = @(Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyCommands.json') -Raw | ConvertFrom-Json)
-        $currentNames = @(pwsh -NoProfile -Command $currentScript | ConvertFrom-Json)
+        $legacyNamesJson = Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyCommands.json') -Raw
+        $legacyNames = @(ConvertFrom-Json $legacyNamesJson | ForEach-Object { $_ })
+        $currentNames = @(Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object)
 
         $missing = @($legacyNames | Where-Object { $_ -notin $currentNames } | Sort-Object)
         $missing | Should -BeNullOrEmpty
     }
 
     It 'preserves every legacy alias target on main' {
-        $currentPath = (Resolve-Path "$PSScriptRoot\..\PSTeams\PSTeams.psd1").Path.Replace("'", "''")
-        $currentScript = @'
-Import-Module '{CURRENT_PATH}' -Force
-Get-Alias | Where-Object Source -eq 'PSTeams' | ForEach-Object { '{0}=>{1}' -f $_.Name, $_.Definition } | Sort-Object | ConvertTo-Json
-'@.Replace('{CURRENT_PATH}', $currentPath)
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force | Out-Null
 
-        $legacyAliases = @(Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyAliases.json') -Raw | ConvertFrom-Json)
-        $currentAliases = @(pwsh -NoProfile -Command $currentScript | ConvertFrom-Json)
+        $legacyAliasesJson = Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyAliases.json') -Raw
+        $legacyAliases = @(ConvertFrom-Json $legacyAliasesJson | ForEach-Object { $_ })
+        $currentAliases = @(Get-Alias | Where-Object Source -eq 'PSTeams' | ForEach-Object { '{0}=>{1}' -f $_.Name, $_.Definition } | Sort-Object)
 
         $missing = @($legacyAliases | Where-Object { $_ -notin $currentAliases } | Sort-Object)
         $missing | Should -BeNullOrEmpty

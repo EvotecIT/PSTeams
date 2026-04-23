@@ -32,6 +32,7 @@ public sealed class CmdletNewTeamsMessage : PSCmdlet {
     public SwitchParameter UseConnectorCardFormat { get; set; }
 
     protected override void ProcessRecord() {
+        var sections = Sections ?? Array.Empty<TeamsMessageSection>();
         var request = new TeamsMessageRequest {
             Title = Title,
             Text = Text,
@@ -39,10 +40,10 @@ public sealed class CmdletNewTeamsMessage : PSCmdlet {
             AdaptiveCard = AdaptiveCard,
             ThemeColor = ResolveThemeColor(),
             HideOriginalBody = HideOriginalBody.IsPresent,
-            UseConnectorCardFormat = ShouldUseConnectorCardFormat()
+            UseConnectorCardFormat = ShouldUseConnectorCardFormat(sections)
         };
 
-        foreach (var section in Sections) {
+        foreach (var section in sections) {
             if (section is not null) {
                 request.Sections.Add(section);
             }
@@ -59,13 +60,13 @@ public sealed class CmdletNewTeamsMessage : PSCmdlet {
         return TeamsColorUtility.NormalizeToHex(ThemeColor);
     }
 
-    private bool ShouldUseConnectorCardFormat() {
+    private bool ShouldUseConnectorCardFormat(TeamsMessageSection[] sections) {
         if (UseConnectorCardFormat.IsPresent) {
             return true;
         }
 
         return AdaptiveCard is null &&
-               (Sections.Length > 0 ||
+               (sections.Length > 0 ||
                 !string.IsNullOrWhiteSpace(ThemeColor) ||
                 HideOriginalBody.IsPresent);
     }

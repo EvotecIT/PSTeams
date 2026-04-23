@@ -106,7 +106,7 @@ public static class WebhookMessageRenderer {
         if (section.HeroImages.Count > 0) {
             var fragments = new List<string>(section.HeroImages);
             if (!string.IsNullOrWhiteSpace(text)) {
-                fragments.Add(text);
+                fragments.Add(text!);
             }
 
             text = string.Join(" ", fragments);
