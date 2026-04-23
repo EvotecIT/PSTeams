@@ -62,13 +62,13 @@ public sealed class CmdletNewCardList : PSCmdlet {
         }
 
         if (value is IDictionary dictionary) {
-            if (CmdletNewHeroCard.TryCreateCardButton(dictionary, out var fallbackButton)) {
-                ApplyItem(card, fallbackButton);
+            if (TryCreateListItem(dictionary, out var fallbackItem)) {
+                ApplyItem(card, fallbackItem);
                 return;
             }
 
-            if (TryCreateListItem(dictionary, out var fallbackItem)) {
-                ApplyItem(card, fallbackItem);
+            if (CmdletNewHeroCard.TryCreateCardButton(dictionary, out var fallbackButton)) {
+                ApplyItem(card, fallbackButton);
             }
         }
     }

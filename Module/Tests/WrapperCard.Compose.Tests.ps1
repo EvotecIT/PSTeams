@@ -74,6 +74,25 @@ Describe 'Wrapper-card migration cmdlets' {
         $body | Should -Match '"title":"Show"'
     }
 
+    It 'prefers legacy list-item dictionaries over generic button fallback' {
+        $body = New-CardList -Title 'Card Title' {
+            [ordered]@{
+                type     = 'file'
+                title    = 'Report'
+                subtitle = 'teams > new > design'
+                tap      = [ordered]@{
+                    type  = 'openUrl'
+                    value = 'editOnline https://contoso.example/report.xlsx'
+                }
+            }
+        }
+
+        $body | Should -Match '"items":\['
+        $body | Should -Match '"type":"file"'
+        $body | Should -Match '"value":"editOnline https://contoso.example/report.xlsx"'
+        $body | Should -Not -Match '"buttons":\[\{"type":"file"'
+    }
+
     It 'supports ListCard sending in WhatIf mode' {
         $result = New-CardList -Title 'Card Title' -Uri 'https://example.test/webhook' -WhatIf {
             New-CardListItem -Type File -Title 'Report' -SubTitle 'teams > new > design' -TapType OpenUrl -TapValue 'https://contoso.example/report.xlsx' -TapAction editOnline
