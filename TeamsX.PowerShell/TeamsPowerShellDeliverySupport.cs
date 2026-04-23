@@ -6,9 +6,9 @@ using TeamsX;
 namespace TeamsX.PowerShell;
 
 internal static class TeamsPowerShellDeliverySupport {
-    public static TeamsClient CreateClient(Uri? proxy) {
+    public static TeamsClientLease CreateClientLease(Uri? proxy) {
         if (proxy is null) {
-            return TeamsClient.Default;
+            return TeamsClientLease.SharedDefault;
         }
 
         var handler = new HttpClientHandler {
@@ -18,7 +18,9 @@ internal static class TeamsPowerShellDeliverySupport {
         var httpClient = new HttpClient(handler, disposeHandler: true);
         var sender = new WebhookTeamsMessageSender(httpClient, disposeHttpClient: true);
 
-        return new TeamsClient(new ITeamsMessageSender[] { sender });
+        return new TeamsClientLease(
+            new TeamsClient(new ITeamsMessageSender[] { sender }),
+            sender);
     }
 
     public static void WriteDeliveryIssue(PSCmdlet cmdlet, TeamsDeliveryResult result, string commandName) {
@@ -59,5 +61,24 @@ internal static class TeamsPowerShellDeliverySupport {
         var body = responseBody!;
         return body.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0 ||
                body.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+}
+
+internal sealed class TeamsClientLease : IDisposable {
+    public static TeamsClientLease SharedDefault { get; } = new(TeamsClient.Default);
+
+    private readonly IDisposable[] _disposables;
+
+    public TeamsClientLease(TeamsClient client, params IDisposable[] disposables) {
+        Client = client ?? throw new ArgumentNullException(nameof(client));
+        _disposables = disposables ?? Array.Empty<IDisposable>();
+    }
+
+    public TeamsClient Client { get; }
+
+    public void Dispose() {
+        foreach (var disposable in _disposables) {
+            disposable.Dispose();
+        }
     }
 }

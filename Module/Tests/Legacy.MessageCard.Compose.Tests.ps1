@@ -104,6 +104,46 @@ Describe 'Legacy connector-card migration cmdlets' {
         $body | Should -Match '!\[Hero\]\(https://example.test/hero.png\)'
     }
 
+    It 'preserves raw dictionary sections in the legacy Send-TeamsMessage scriptblock path' {
+        $body = Send-TeamsMessage -Uri 'https://example.test/webhook' -MessageTitle 'Build failed' -Suppress:$false -WhatIf {
+            [ordered]@{
+                title           = 'Build summary'
+                text            = 'Pipeline failed'
+                startGroup      = $true
+                facts           = @(
+                    [ordered]@{
+                        name  = 'Status'
+                        value = 'Failed'
+                    }
+                )
+                images          = @(
+                    [ordered]@{
+                        image = 'https://example.test/image.png'
+                    }
+                )
+                potentialAction = @(
+                    [ordered]@{
+                        name    = 'Open build'
+                        '@type' = 'OpenURI'
+                        Targets = @(
+                            [ordered]@{
+                                os  = 'default'
+                                uri = 'https://example.test/build/42'
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        $body | Should -Match '"title":"Build summary"'
+        $body | Should -Match '"text":"Pipeline failed"'
+        $body | Should -Match '"startGroup":true'
+        $body | Should -Match '"name":"Status"'
+        $body | Should -Match '"image":"https://example.test/image.png"'
+        $body | Should -Match '"@type":"OpenURI"'
+    }
+
     It 'wraps raw attachment bodies without sending when using WhatIf' {
         $body = Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Body '{"contentType":"application/vnd.microsoft.card.hero"}' -Wrap -Supress:$false -WhatIf
 

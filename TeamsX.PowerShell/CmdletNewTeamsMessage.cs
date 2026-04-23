@@ -39,7 +39,7 @@ public sealed class CmdletNewTeamsMessage : PSCmdlet {
             AdaptiveCard = AdaptiveCard,
             ThemeColor = ResolveThemeColor(),
             HideOriginalBody = HideOriginalBody.IsPresent,
-            UseConnectorCardFormat = UseConnectorCardFormat.IsPresent || (AdaptiveCard is null && Sections.Length > 0)
+            UseConnectorCardFormat = ShouldUseConnectorCardFormat()
         };
 
         foreach (var section in Sections) {
@@ -57,5 +57,16 @@ public sealed class CmdletNewTeamsMessage : PSCmdlet {
         }
 
         return TeamsColorUtility.NormalizeToHex(ThemeColor);
+    }
+
+    private bool ShouldUseConnectorCardFormat() {
+        if (UseConnectorCardFormat.IsPresent) {
+            return true;
+        }
+
+        return AdaptiveCard is null &&
+               (Sections.Length > 0 ||
+                !string.IsNullOrWhiteSpace(ThemeColor) ||
+                HideOriginalBody.IsPresent);
     }
 }

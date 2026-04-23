@@ -17,6 +17,10 @@ public static class TeamsColorUtility {
                 : throw new ArgumentException("The Input value is not a valid colorname nor an valid color hex code.", nameof(color));
         }
 
+        if (TeamsLegacyColorPalette.Colors.TryGetValue(candidate, out var legacyHex)) {
+            return legacyHex;
+        }
+
         var resolved = Color.FromName(candidate);
         if (resolved.ToArgb() == 0 &&
             !string.Equals(candidate, "Transparent", StringComparison.OrdinalIgnoreCase)) {

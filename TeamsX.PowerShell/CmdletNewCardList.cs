@@ -74,10 +74,10 @@ public sealed class CmdletNewCardList : PSCmdlet {
     }
 
     private void SendAttachmentBody(string attachmentBody, Uri uri) {
-        var client = TeamsPowerShellDeliverySupport.CreateClient(null);
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(null);
         var target = TeamsMessageTarget.ForIncomingWebhook(uri);
         var wrappedBody = TeamsWrapperCardRenderer.WrapAsMessage(attachmentBody);
-        var result = client.SendJsonAsync(wrappedBody, target).GetAwaiter().GetResult();
+        var result = clientLease.Client.SendJsonAsync(wrappedBody, target).GetAwaiter().GetResult();
 
         TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "New-CardList");
     }

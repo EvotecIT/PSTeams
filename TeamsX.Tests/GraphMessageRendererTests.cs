@@ -82,4 +82,22 @@ public class GraphMessageRendererTests {
 
         Assert.Throws<NotSupportedException>(action);
     }
+
+    [Fact]
+    public void RenderHtmlMessageUsesSummaryWhenSectionsRenderEmptyFragments() {
+        var request = new TeamsMessageRequest {
+            Summary = "Fallback summary"
+        };
+        request.Sections.Add(new TeamsMessageSection {
+            StartGroup = true
+        });
+
+        var json = GraphMessageRenderer.Render(request, TeamsDeliveryMethod.GraphChatMessage);
+        using var document = JsonDocument.Parse(json);
+
+        var body = document.RootElement.GetProperty("body");
+        var html = body.GetProperty("content").GetString();
+
+        Assert.Contains("Fallback summary", html);
+    }
 }

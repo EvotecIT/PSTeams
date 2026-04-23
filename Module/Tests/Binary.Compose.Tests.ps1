@@ -134,6 +134,18 @@ Describe 'TeamsX binary cmdlets through PSTeams' {
         $json | Should -Match '"@type":"OpenURI"'
     }
 
+    It 'renders connector-card JSON when connector-only fields are set without sections' {
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+
+        $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42' -Color AlbescentWhite -HideOriginalBody
+        $json = $message | ConvertTo-TeamsJson
+
+        $json | Should -Match '"themeColor":"#E3DAC9"'
+        $json | Should -Match '"hideOriginalBody":true'
+        $json | Should -Match '"title":"Build failed"'
+        $json | Should -Match '"text":"Pipeline 42"'
+    }
+
     It 'renders typed wrapper-card objects through ConvertTo-TeamsJson' {
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
 

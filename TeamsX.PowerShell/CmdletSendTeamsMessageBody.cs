@@ -42,9 +42,9 @@ public sealed class CmdletSendTeamsMessageBody : PSCmdlet {
             return;
         }
 
-        var client = TeamsPowerShellDeliverySupport.CreateClient(Proxy);
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = client.SendJsonAsync(jsonBody, target).GetAwaiter().GetResult();
+        var result = clientLease.Client.SendJsonAsync(jsonBody, target).GetAwaiter().GetResult();
 
         WriteVerbose($"Send-TeamsMessageBody - Execute {result.ResponseBody}");
         TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "Send-TeamsMessageBody");

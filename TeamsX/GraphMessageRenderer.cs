@@ -74,7 +74,10 @@ internal static class GraphMessageRenderer {
         }
 
         foreach (var section in request.Sections) {
-            fragments.Add(RenderSection(section));
+            var sectionFragment = RenderSection(section);
+            if (!string.IsNullOrWhiteSpace(sectionFragment)) {
+                fragments.Add(sectionFragment);
+            }
         }
 
         if (fragments.Count == 0 && !string.IsNullOrWhiteSpace(request.Summary)) {

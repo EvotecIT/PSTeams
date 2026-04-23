@@ -1,4 +1,5 @@
 using System.Management.Automation;
+using System.Collections;
 using TeamsX;
 
 namespace TeamsX.PowerShell;
@@ -127,9 +128,9 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
             return;
         }
 
-        var client = TeamsPowerShellDeliverySupport.CreateClient(Proxy);
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = client.SendAsync(request, target).GetAwaiter().GetResult();
+        var result = clientLease.Client.SendAsync(request, target).GetAwaiter().GetResult();
 
         WriteVerbose($"Send-TeamsMessage - Execute {result.ResponseBody}");
         TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "Send-TeamsMessage");
@@ -150,7 +151,7 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
 
         return SectionsInput
             .Invoke()
-            .Select(item => item?.BaseObject)
+            .Select(item => ConvertLegacySection(item?.BaseObject))
             .OfType<TeamsMessageSection>()
             .ToArray();
     }
@@ -184,5 +185,210 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
             "TypedListCard" => "Teams ListCard",
             _ => "Teams message"
         };
+    }
+
+    private static TeamsMessageSection? ConvertLegacySection(object? value) {
+        return value switch {
+            null => null,
+            TeamsMessageSection section => section,
+            IDictionary dictionary => ConvertLegacySectionDictionary(dictionary),
+            _ => null
+        };
+    }
+
+    private static TeamsMessageSection ConvertLegacySectionDictionary(IDictionary dictionary) {
+        var section = new TeamsMessageSection {
+            Title = ReadString(dictionary, "title"),
+            ActivityTitle = ReadString(dictionary, "activityTitle"),
+            ActivitySubtitle = ReadString(dictionary, "activitySubtitle"),
+            ActivityImage = ReadString(dictionary, "activityImage"),
+            ActivityText = ReadString(dictionary, "activityText"),
+            Text = ReadString(dictionary, "text"),
+            StartGroup = ReadBool(dictionary, "startGroup")
+        };
+
+        foreach (var fact in ReadDictionaryArray(dictionary, "facts")) {
+            section.Facts.Add(new TeamsMessageFact {
+                Name = ReadString(fact, "name"),
+                Value = ReadString(fact, "value")
+            });
+        }
+
+        foreach (var action in ReadObjectArray(dictionary, "potentialAction")) {
+            var button = ConvertLegacyButton(action);
+            if (button is not null) {
+                section.Buttons.Add(button);
+            }
+        }
+
+        foreach (var image in ReadObjectArray(dictionary, "images")) {
+            var imageUri = image switch {
+                string value => value,
+                IDictionary imageDictionary => ReadString(imageDictionary, "image"),
+                _ => null
+            };
+
+            if (!string.IsNullOrWhiteSpace(imageUri)) {
+                section.Images.Add(imageUri!);
+            }
+        }
+
+        return section;
+    }
+
+    private static TeamsMessageButton? ConvertLegacyButton(object? value) {
+        if (value is TeamsMessageButton button) {
+            return button;
+        }
+
+        if (value is not IDictionary dictionary) {
+            return null;
+        }
+
+        var buttonTypeName = ReadString(dictionary, "@type") ?? ReadString(dictionary, "type");
+        var buttonType = ResolveLegacyButtonType(buttonTypeName, dictionary);
+        var buttonLink = ResolveLegacyButtonLink(dictionary);
+
+        return new TeamsMessageButton {
+            Name = ReadString(dictionary, "name") ?? ReadString(dictionary, "Name"),
+            Link = buttonLink,
+            ButtonType = buttonType
+        };
+    }
+
+    private static TeamsMessageButtonType ResolveLegacyButtonType(string? typeName, IDictionary dictionary) {
+        if (string.Equals(typeName, "ActionCard", StringComparison.OrdinalIgnoreCase)) {
+            var inputType = ReadNestedActionInputType(dictionary);
+            if (string.Equals(inputType, "TextInput", StringComparison.OrdinalIgnoreCase)) {
+                return TeamsMessageButtonType.TextInput;
+            }
+
+            if (string.Equals(inputType, "DateInput", StringComparison.OrdinalIgnoreCase)) {
+                return TeamsMessageButtonType.DateInput;
+            }
+
+            return TeamsMessageButtonType.HttpPost;
+        }
+
+        return typeName?.ToUpperInvariant() switch {
+            "VIEWACTION" => TeamsMessageButtonType.ViewAction,
+            "HTTPPOST" => TeamsMessageButtonType.HttpPost,
+            "OPENURI" => TeamsMessageButtonType.OpenUri,
+            _ => TeamsMessageButtonType.ViewAction
+        };
+    }
+
+    private static string? ReadNestedActionInputType(IDictionary dictionary) {
+        foreach (var input in ReadObjectArray(dictionary, "Inputs")) {
+            if (input is IDictionary inputDictionary) {
+                return ReadString(inputDictionary, "@type");
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ResolveLegacyButtonLink(IDictionary dictionary) {
+        var directTarget = ReadFirstString(dictionary, "target", "Target");
+        if (!string.IsNullOrWhiteSpace(directTarget)) {
+            return directTarget;
+        }
+
+        foreach (var target in ReadObjectArray(dictionary, "Targets")) {
+            if (target is IDictionary targetDictionary) {
+                var uri = ReadString(targetDictionary, "uri");
+                if (!string.IsNullOrWhiteSpace(uri)) {
+                    return uri;
+                }
+            }
+        }
+
+        foreach (var action in ReadObjectArray(dictionary, "actions")) {
+            if (action is IDictionary actionDictionary) {
+                var actionTarget = ReadFirstString(actionDictionary, "target", "Target");
+                if (!string.IsNullOrWhiteSpace(actionTarget)) {
+                    return actionTarget;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<IDictionary> ReadDictionaryArray(IDictionary dictionary, string key) {
+        return ReadObjectArray(dictionary, key).OfType<IDictionary>();
+    }
+
+    private static IEnumerable<object> ReadObjectArray(IDictionary dictionary, string key) {
+        if (!TryGetValue(dictionary, key, out var value) || value is null) {
+            return Array.Empty<object>();
+        }
+
+        if (value is string) {
+            return new object[] { value };
+        }
+
+        if (value is IEnumerable enumerable) {
+            return enumerable.Cast<object>();
+        }
+
+        return new object[] { value };
+    }
+
+    private static string? ReadFirstString(IDictionary dictionary, params string[] keys) {
+        foreach (var key in keys) {
+            if (!TryGetValue(dictionary, key, out var value) || value is null) {
+                continue;
+            }
+
+            if (value is string text) {
+                return text;
+            }
+
+            if (value is IEnumerable enumerable and not string) {
+                foreach (var item in enumerable) {
+                    if (item is string itemText && !string.IsNullOrWhiteSpace(itemText)) {
+                        return itemText;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadString(IDictionary dictionary, string key) {
+        if (!TryGetValue(dictionary, key, out var value) || value is null) {
+            return null;
+        }
+
+        return value switch {
+            string text => text,
+            _ => value.ToString()
+        };
+    }
+
+    private static bool ReadBool(IDictionary dictionary, string key) {
+        if (!TryGetValue(dictionary, key, out var value) || value is null) {
+            return false;
+        }
+
+        return value switch {
+            bool result => result,
+            string text when bool.TryParse(text, out var parsed) => parsed,
+            _ => false
+        };
+    }
+
+    private static bool TryGetValue(IDictionary dictionary, string key, out object? value) {
+        foreach (DictionaryEntry entry in dictionary) {
+            if (string.Equals(entry.Key?.ToString(), key, StringComparison.OrdinalIgnoreCase)) {
+                value = entry.Value;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
     }
 }

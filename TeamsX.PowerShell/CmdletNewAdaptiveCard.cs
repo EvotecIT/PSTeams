@@ -134,9 +134,9 @@ public sealed class CmdletNewAdaptiveCard : PSCmdlet {
             return;
         }
 
-        var client = TeamsPowerShellDeliverySupport.CreateClient(null);
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(null);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = client.SendJsonAsync(jsonBody, target).GetAwaiter().GetResult();
+        var result = clientLease.Client.SendJsonAsync(jsonBody, target).GetAwaiter().GetResult();
 
         TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "New-AdaptiveCard");
 
