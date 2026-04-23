@@ -43,6 +43,57 @@ PSTeams uses a cleaner architecture:
 - Use a starter Microsoft Graph delivery path for Teams chats and channels without adding a large Graph SDK dependency.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
+## Installing and Updating
+
+PSTeams works on Windows, Linux, and macOS through PowerShell Gallery. Installation does not require administrative rights when you install for the current user.
+
+Install for the current user:
+
+```powershell
+Install-Module PSTeams -Scope CurrentUser
+```
+
+Install for all users from an elevated PowerShell session:
+
+```powershell
+Install-Module PSTeams
+```
+
+Update an existing installation:
+
+```powershell
+Update-Module -Name PSTeams
+```
+
+After updating, restart any PowerShell session that already imported PSTeams so the new binary module is loaded.
+If PSTeams is used in production automations, test new versions before rolling them out broadly.
+Runtime dependency on `PSSharedGoods` has been removed from the module shell. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
+
+## Quick Start
+
+Send a classic connector-card notification through an incoming webhook:
+
+```powershell
+$target = New-TeamsWebhookTarget -Uri $Env:TEAMS_WEBHOOK_URL
+$section = New-TeamsSection `
+    -ActivityTitle 'PSTeams' `
+    -ActivitySubtitle 'Build notification' `
+    -ActivityText 'The release pipeline completed successfully.' `
+    -ActivityDetails @(
+        New-TeamsFact -Name 'Environment' -Value 'Production'
+        New-TeamsFact -Name 'Result' -Value 'Passed'
+    )
+
+$message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
+Send-TeamsMessage -Message $message -Target $target
+```
+
+Render the same message as JSON when you want to validate payloads in tests or CI:
+
+```powershell
+$message | ConvertTo-TeamsJson
+```
+
 ## Supported .NET and PowerShell Versions
 
 ### TeamsX Library
@@ -435,57 +486,6 @@ Send-TeamsMessage `
 - And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
 
 ![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
-
-## Installing and Updating
-
-PSTeams works on Windows, Linux, and macOS through PowerShell Gallery. Installation does not require administrative rights when you install for the current user.
-
-Install for the current user:
-
-```powershell
-Install-Module PSTeams -Scope CurrentUser
-```
-
-Install for all users from an elevated PowerShell session:
-
-```powershell
-Install-Module PSTeams
-```
-
-Update an existing installation:
-
-```powershell
-Update-Module -Name PSTeams
-```
-
-After updating, restart any PowerShell session that already imported PSTeams so the new binary module is loaded.
-If PSTeams is used in production automations, test new versions before rolling them out broadly.
-Runtime dependency on `PSSharedGoods` has been removed from the module shell. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
-
-## Quick Start
-
-Send a classic connector-card notification through an incoming webhook:
-
-```powershell
-$target = New-TeamsWebhookTarget -Uri $Env:TEAMS_WEBHOOK_URL
-$section = New-TeamsSection `
-    -ActivityTitle 'PSTeams' `
-    -ActivitySubtitle 'Build notification' `
-    -ActivityText 'The release pipeline completed successfully.' `
-    -ActivityDetails @(
-        New-TeamsFact -Name 'Environment' -Value 'Production'
-        New-TeamsFact -Name 'Result' -Value 'Passed'
-    )
-
-$message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
-Send-TeamsMessage -Message $message -Target $target
-```
-
-Render the same message as JSON when you want to validate payloads in tests or CI:
-
-```powershell
-$message | ConvertTo-TeamsJson
-```
 
 ## Typed Adaptive Cards
 
