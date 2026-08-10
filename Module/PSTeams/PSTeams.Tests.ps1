@@ -61,7 +61,12 @@ if (-not (Test-Path -LiteralPath $testsPath)) {
     throw "Path $testsPath doesn't contain the active PSTeams migration tests. Failing tests."
 }
 
-$result = Invoke-Pester -Script $testsPath -Verbose -PassThru
+Import-Module Pester -Force
+$configuration = [PesterConfiguration]::Default
+$configuration.Run.Path = $testsPath
+$configuration.Run.PassThru = $true
+$configuration.Output.Verbosity = 'Detailed'
+$result = Invoke-Pester -Configuration $configuration
 
 if ($result.FailedCount -gt 0) {
     throw "$($result.FailedCount) tests failed."
