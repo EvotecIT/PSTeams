@@ -28,7 +28,7 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Setup PowerShell modules
               shell: pwsh
@@ -43,7 +43,7 @@ jobs:
                   ./Module/Build/Build-Module.ps1
 
             - name: Upload refreshed manifest
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: psd1
                   path: Module/PSTeams/PSTeams.psd1
@@ -55,16 +55,16 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Download manifest
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: psd1
                   path: Module/PSTeams
 
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v6
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -91,16 +91,16 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Download manifest
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: psd1
                   path: Module/PSTeams
 
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v6
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -127,16 +127,16 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Download manifest
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: psd1
                   path: Module/PSTeams
 
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v6
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -171,16 +171,16 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Download manifest
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: psd1
                   path: Module/PSTeams
 
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v6
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
