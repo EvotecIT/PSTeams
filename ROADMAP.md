@@ -310,15 +310,15 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Notification delivery
 
-- [ ] Support Slack incoming webhooks as simple fixed-destination senders.
-- [ ] Support plain text and Block Kit payloads.
-- [ ] Make webhook limitations explicit, including message lifecycle operations that require Web API credentials.
+- [x] Support Slack incoming webhooks as simple fixed-destination senders.
+- [x] Support plain text and initial section/divider Block Kit payloads.
+- [x] Make webhook limitations explicit, including message lifecycle operations that require Web API credentials.
 
 ### Web API messaging
 
-- [ ] Implement bot-token calls needed to send to public channels, private channels, direct messages, and multiparty conversations when scopes and membership allow them.
-- [ ] Support thread replies using `thread_ts` and optional reply broadcast.
-- [ ] Return channel and timestamp identifiers required for update, delete, reply, and reaction operations.
+- [x] Implement bot-token calls needed to send to public channels, private channels, direct messages, and multiparty conversations when scopes and membership allow them.
+- [x] Support thread replies using `thread_ts` and optional reply broadcast.
+- [x] Return channel and timestamp identifiers required for update, delete, reply, and reaction operations.
 - [ ] Support opening or resolving direct-message conversations without encouraging bulk unsolicited DMs.
 - [ ] Implement update and delete for application-owned messages.
 - [ ] Add reactions and current file-upload workflows after the message lifecycle is stable.
@@ -327,9 +327,9 @@ PowerShell should expose simple synchronous command behavior to users while the 
 ### Rich content
 
 - [ ] Add typed builders for common Block Kit blocks, elements, actions, views, and modals.
-- [ ] Preserve top-level fallback text for accessibility and notifications.
-- [ ] Validate provider limits before sending and expose actionable validation errors.
-- [ ] Keep provider-native JSON import/export available for unsupported new Slack elements.
+- [x] Preserve top-level fallback text for accessibility and notifications.
+- [x] Validate limits for the implemented message, section, field, identifier, and block contracts before sending.
+- [ ] Add a safe provider-native extension model for unsupported new Slack elements without weakening typed validation.
 
 ### Inbound events and interactions
 
@@ -872,11 +872,19 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 2 - Slack notification vertical slice
 
-- [ ] Implement incoming webhook and bot-token channel/direct-message sending.
-- [ ] Add initial Block Kit builders and `Send-SlackMessage`.
-- [ ] Return durable message references for authenticated sends.
-- [ ] Add live send, error, rate-limit, package, and dual-runtime PowerShell proof.
-- [ ] Revisit core contracts and remove Teams-only assumptions.
+- [x] Implement incoming webhook and bot-token channel/direct-message sending.
+- [x] Add initial Block Kit builders and `Send-SlackMessage`.
+- [x] Return durable message references for authenticated sends.
+- [ ] Add live send proof in the authorized Slack workspace; error, rate-limit, package, and dual-runtime PowerShell proof are part of the candidate gate.
+- [x] Revisit core HTTP transport and safe diagnostic-token contracts and remove Teams-only ownership.
+
+#### Recorded Phase 2 candidate evidence
+
+- `MessageX.Slack` uses an owned `System.Text.Json` protocol surface and builds with `MessageX.Core` and `MessageX.PowerShell` for `net472`, `net8.0`, and `net10.0` without SlackNet, Discord libraries, or Newtonsoft.Json.
+- Incoming-webhook and authenticated `chat.postMessage` senders cover safe targets, bearer authentication, Block Kit section/divider payloads, thread replies, retry classification, sanitized failures, and durable Slack channel/timestamp references.
+- PowerShell exposes simple and typed parameter sets through `Send-SlackMessage`, secure bot connections, webhook and conversation targets, Block Kit builders, and exact JSON preview while retaining shared proxy, timeout, user-agent, cancellation, and `ShouldProcess` behavior.
+- The committed candidate passes 76 .NET contracts on both .NET 8 and .NET 10 (152 target-framework executions per operating system) on Windows and Linux, plus 49 packed-artifact PowerShell contracts on both PowerShell 7 and Windows PowerShell 5.1. Standalone applications restored the packed `MessageX.Slack` and `MessageX.Core` NuGet artifacts from an isolated feed and executed the Slack composition API on .NET Framework 4.7.2, .NET 8, and .NET 10.
+- Live Slack webhook, channel, direct-message, and thread sends remain intentionally pending for the final authorized provider-validation phase.
 
 **Exit:** Slack webhook and bot sends work from C#, PowerShell 5.1, and PowerShell 7 without pulling Teams implementation details into Slack.
 

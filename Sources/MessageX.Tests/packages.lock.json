@@ -153,6 +153,12 @@
       "messagex.core": {
         "type": "Project"
       },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
       "messagex.teams": {
         "type": "Project",
         "dependencies": {
@@ -328,6 +334,12 @@
       },
       "messagex.core": {
         "type": "Project"
+      },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
       },
       "messagex.teams": {
         "type": "Project",

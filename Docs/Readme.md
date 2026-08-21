@@ -7,9 +7,12 @@ Locale: en-US
 ---
 # PSTeams Module
 ## Description
-PSTeams provides typed Microsoft Teams message composition and delivery through MessageX.Teams and thin compiled PowerShell cmdlets.
+PSTeams provides typed Teams and Slack message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
 
 ## PSTeams Cmdlets
+### [ConvertTo-SlackJson](ConvertTo-SlackJson.md)
+Serializes a typed Slack message using the exact provider payload contract.
+
 ### [ConvertTo-TeamsFact](ConvertTo-TeamsFact.md)
 Converts dictionaries and PowerShell objects into Teams facts.
 
@@ -81,6 +84,27 @@ Creates one Teams list-card item.
 
 ### [New-HeroCard](New-HeroCard.md)
 Creates or sends a Teams HeroCard payload.
+
+### [New-SlackConnection](New-SlackConnection.md)
+Creates an authenticated Slack bot connection without exposing its token.
+
+### [New-SlackConversationTarget](New-SlackConversationTarget.md)
+Creates a Slack channel, direct-message, multiparty-message, or user target.
+
+### [New-SlackDivider](New-SlackDivider.md)
+Creates a Slack Block Kit divider.
+
+### [New-SlackMessage](New-SlackMessage.md)
+Creates a provider-native Slack message.
+
+### [New-SlackSection](New-SlackSection.md)
+Creates a Slack Block Kit section.
+
+### [New-SlackText](New-SlackText.md)
+Creates typed Slack plain-text or mrkdwn content.
+
+### [New-SlackWebhookTarget](New-SlackWebhookTarget.md)
+Creates a fixed-destination Slack incoming-webhook target.
 
 ### [New-TeamsActivityImage](New-TeamsActivityImage.md)
 Creates a typed activity-image directive for connector-card sections.
@@ -194,6 +218,9 @@ Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 
 ### [New-ThumbnailCard](New-ThumbnailCard.md)
 Creates or sends a Teams ThumbnailCard payload.
+
+### [Send-SlackMessage](Send-SlackMessage.md)
+Sends simple or typed messages through Slack incoming webhooks or the authenticated Web API.
 
 ### [Send-TeamsMessage](Send-TeamsMessage.md)
 Sends a typed or legacy-composed message to Microsoft Teams.

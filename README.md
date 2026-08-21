@@ -1,6 +1,6 @@
-# PSTeams - Microsoft Teams Notifications for PowerShell and .NET
+# PSTeams / MessageX - Messaging for PowerShell and .NET
 
-PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into the reusable `MessageX.Core` and `MessageX.Teams` libraries while keeping the familiar Teams cmdlets.
+PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into reusable `MessageX` libraries for Teams, Slack, and later Discord while keeping familiar commands such as `Send-TeamsMessage` and adding provider-native commands such as `Send-SlackMessage`.
 
 ## PowerShell Module
 
@@ -31,7 +31,8 @@ PSTeams uses a cleaner architecture:
 
 - `MessageX.Core` owns provider-neutral delivery results, message references, capability flags, and classified errors.
 - `MessageX.Teams` owns Microsoft Teams composition and delivery.
-- `MessageX.PowerShell` exposes thin binary PowerShell cmdlets over `MessageX.Teams`.
+- `MessageX.Slack` owns Slack incoming-webhook, Web API, and Block Kit messaging without SlackNet or Newtonsoft.Json.
+- `MessageX.PowerShell` exposes thin provider-native binary PowerShell cmdlets over those libraries.
 - `PSTeams` remains the PowerShell module users install and import.
 
 ## Capabilities
@@ -44,6 +45,9 @@ PSTeams uses a cleaner architecture:
 - Compose Hero, Thumbnail, and List cards with typed cmdlets.
 - Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
 - Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in MessageX.Teams.
+- Send Slack text and initial Block Kit messages through fixed-destination incoming webhooks or an authenticated bot connection.
+- Address Slack channels, private channels, direct messages, multiparty conversations, and user IDs through provider identifiers supported by `chat.postMessage`.
+- Reply in Slack threads and retain the returned channel and timestamp as a durable `MessageReference` for later lifecycle work.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
 ## Installing and Updating
@@ -115,6 +119,28 @@ Render the same message as JSON when you want to validate payloads in tests or C
 $message | ConvertTo-TeamsJson
 ```
 
+Create and preview a Slack Block Kit message:
+
+```powershell
+$target = New-SlackConversationTarget -ConversationId 'C0123456789' -DisplayName 'Release alerts'
+$message = New-SlackMessage -Text 'Deployment completed' -Blocks @(
+    New-SlackSection -Markdown '*Deployment completed*'
+    New-SlackDivider
+)
+
+$message | ConvertTo-SlackJson -Target $target
+```
+
+Send through a Slack bot connection without placing its token in normal output:
+
+```powershell
+$token = Read-Host 'Slack bot token' -AsSecureString
+$connection = New-SlackConnection -BotToken $token -WorkspaceId 'T0123456789'
+Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru
+```
+
+For a fixed-destination Slack incoming webhook, use `New-SlackWebhookTarget` or the simple `Send-SlackMessage -WebhookText ... -WebhookUri ...` parameter set. Webhook URLs and bot tokens are credentials and should come from a secret store.
+
 ## Supported .NET and PowerShell Versions
 
 ### MessageX libraries
@@ -130,7 +156,7 @@ $message | ConvertTo-TeamsJson
 
 ## Legacy Branch
 
-The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, `MessageX.Teams`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
+The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, provider libraries such as `MessageX.Teams` and `MessageX.Slack`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
 
 ## Links/Blogs
 

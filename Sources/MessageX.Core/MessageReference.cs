@@ -4,6 +4,8 @@ namespace MessageX.Core;
 /// Safe-to-persist coordinates for a provider message and its conversation.
 /// </summary>
 public sealed class MessageReference : IProviderCapabilities {
+    private string? _correlationId;
+
     /// <summary>Creates a provider message reference.</summary>
     /// <param name="provider">Stable provider identifier.</param>
     /// <param name="messageId">Provider message or activity identifier, when available.</param>
@@ -35,7 +37,10 @@ public sealed class MessageReference : IProviderCapabilities {
     public string? MessageId { get; set; }
 
     /// <summary>Provider or transport correlation identifier.</summary>
-    public string? CorrelationId { get; set; }
+    public string? CorrelationId {
+        get => _correlationId;
+        set => _correlationId = MessageDiagnosticToken.Normalize(value);
+    }
 
     /// <summary>Provider message timestamp when it is part of the message identity.</summary>
     public DateTimeOffset? Timestamp { get; set; }

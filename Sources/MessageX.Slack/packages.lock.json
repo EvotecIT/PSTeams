@@ -11,11 +11,21 @@
           "Microsoft.NETFramework.ReferenceAssemblies.net472": "1.0.3"
         }
       },
-      "PowerShellStandard.Library": {
+      "System.Text.Json": {
         "type": "Direct",
-        "requested": "[5.1.1, )",
-        "resolved": "5.1.1",
-        "contentHash": "e31xJjG+Kjbv6YF3Yq6D4Dl3or8v7LrNF41k3CXrWozW6hR1zcOe5KYuZJaGSiAgLnwP8wcW+I3+IWEzMPZKXQ=="
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "X2rXQy7g8KEUvWVbAz6vOk6byI1eMgmzFeXbKxq4BfZCfFy5S91K+K+hd4ZBlSp0wL1Y8FyGRXs6+hvABTjwQw==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "10.0.11",
+          "System.Buffers": "4.6.1",
+          "System.IO.Pipelines": "10.0.11",
+          "System.Memory": "4.6.3",
+          "System.Runtime.CompilerServices.Unsafe": "6.1.2",
+          "System.Text.Encodings.Web": "10.0.11",
+          "System.Threading.Tasks.Extensions": "4.6.3",
+          "System.ValueTuple": "4.6.2"
+        }
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -90,82 +100,16 @@
       },
       "messagex.core": {
         "type": "Project"
-      },
-      "messagex.slack": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )",
-          "System.Text.Json": "[10.0.11, )"
-        }
-      },
-      "messagex.teams": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )",
-          "System.Text.Json": "[10.0.11, )"
-        }
-      },
-      "System.Text.Json": {
-        "type": "CentralTransitive",
-        "requested": "[10.0.11, )",
-        "resolved": "10.0.11",
-        "contentHash": "X2rXQy7g8KEUvWVbAz6vOk6byI1eMgmzFeXbKxq4BfZCfFy5S91K+K+hd4ZBlSp0wL1Y8FyGRXs6+hvABTjwQw==",
-        "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "10.0.11",
-          "System.Buffers": "4.6.1",
-          "System.IO.Pipelines": "10.0.11",
-          "System.Memory": "4.6.3",
-          "System.Runtime.CompilerServices.Unsafe": "6.1.2",
-          "System.Text.Encodings.Web": "10.0.11",
-          "System.Threading.Tasks.Extensions": "4.6.3",
-          "System.ValueTuple": "4.6.2"
-        }
       }
     },
     "net10.0": {
-      "PowerShellStandard.Library": {
-        "type": "Direct",
-        "requested": "[5.1.1, )",
-        "resolved": "5.1.1",
-        "contentHash": "e31xJjG+Kjbv6YF3Yq6D4Dl3or8v7LrNF41k3CXrWozW6hR1zcOe5KYuZJaGSiAgLnwP8wcW+I3+IWEzMPZKXQ=="
-      },
       "messagex.core": {
         "type": "Project"
-      },
-      "messagex.slack": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
-      },
-      "messagex.teams": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
       }
     },
     "net8.0": {
-      "PowerShellStandard.Library": {
-        "type": "Direct",
-        "requested": "[5.1.1, )",
-        "resolved": "5.1.1",
-        "contentHash": "e31xJjG+Kjbv6YF3Yq6D4Dl3or8v7LrNF41k3CXrWozW6hR1zcOe5KYuZJaGSiAgLnwP8wcW+I3+IWEzMPZKXQ=="
-      },
       "messagex.core": {
         "type": "Project"
-      },
-      "messagex.slack": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
-      },
-      "messagex.teams": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
       }
     }
   }

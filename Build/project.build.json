@@ -3,6 +3,7 @@
   "RootPath": "..",
   "ExpectedVersionMap": {
     "MessageX.Core": "0.1.X",
+    "MessageX.Slack": "0.1.X",
     "MessageX.Teams": "0.1.X"
   },
   "ExpectedVersionMapAsInclude": true,
