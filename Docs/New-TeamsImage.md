@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsImage
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a standard section image entry.
 
 ## SYNTAX
-
-```
-New-TeamsImage [[-Link] <Object>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsImage [[-Link] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a standard section image entry.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsImage -Link 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Link
-{{ Fill Link Description }}
+Specifies a value for link.
 
 ```yaml
-Type: Object
-Parameter Sets: (All)
+Type: String
+Parameter Sets: __AllParameterSets
 Aliases: Url, Uri
+Possible values:
 
 Required: False
 Position: 0
@@ -50,11 +48,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageImage`
 
 ## RELATED LINKS
+
+- None

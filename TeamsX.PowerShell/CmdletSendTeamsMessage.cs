@@ -4,94 +4,125 @@ using TeamsX;
 
 namespace TeamsX.PowerShell;
 
+/// <summary>
+/// Sends a typed or legacy-composed message to Microsoft Teams.
+/// </summary>
+/// <remarks>
+/// Typed parameter sets accept TeamsX message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.
+/// Workflows webhooks are the recommended notification transport for new automation.
+/// </remarks>
+/// <example>
+/// <summary>Send a typed message through a Teams Workflows webhook</summary>
+/// <code>$message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42'; $target = New-TeamsWebhookTarget -Uri $workflowUrl -Workflow; Send-TeamsMessage -Message $message -Target $target</code>
+/// </example>
+/// <example>
+/// <summary>Preview a legacy connector-card payload without sending it</summary>
+/// <code>Send-TeamsMessage -Uri $webhookUrl -MessageTitle 'Build failed' -MessageText 'Pipeline 42' -Suppress:$false -WhatIf</code>
+/// </example>
 [Cmdlet(VerbsCommunications.Send, "TeamsMessage", SupportsShouldProcess = true)]
 [Alias("TeamsMessage")]
 [OutputType(typeof(TeamsDeliveryResult), typeof(string))]
-public sealed class CmdletSendTeamsMessage : PSCmdlet {
+public sealed class CmdletSendTeamsMessage : AsyncPSCmdlet {
+    /// <summary>Typed Teams message request to send.</summary>
     [Parameter(Mandatory = true, Position = 0, ParameterSetName = "TypedMessage")]
     public TeamsMessageRequest Message { get; set; } = null!;
 
+    /// <summary>Typed Teams HeroCard to send.</summary>
     [Parameter(Mandatory = true, Position = 0, ParameterSetName = "TypedHeroCard")]
     public TeamsHeroCard HeroCard { get; set; } = null!;
 
+    /// <summary>Typed Teams ThumbnailCard to send.</summary>
     [Parameter(Mandatory = true, Position = 0, ParameterSetName = "TypedThumbnailCard")]
     public TeamsThumbnailCard ThumbnailCard { get; set; } = null!;
 
+    /// <summary>Typed Teams ListCard to send.</summary>
     [Parameter(Mandatory = true, Position = 0, ParameterSetName = "TypedListCard")]
     public TeamsListCard ListCard { get; set; } = null!;
 
+    /// <summary>Typed Teams delivery target.</summary>
     [Parameter(Mandatory = true, Position = 1, ParameterSetName = "TypedMessage")]
     [Parameter(Mandatory = true, Position = 1, ParameterSetName = "TypedHeroCard")]
     [Parameter(Mandatory = true, Position = 1, ParameterSetName = "TypedThumbnailCard")]
     [Parameter(Mandatory = true, Position = 1, ParameterSetName = "TypedListCard")]
     public TeamsMessageTarget Target { get; set; } = null!;
 
+    /// <summary>Returns the typed delivery result.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "TypedMessage")]
     [Parameter(Mandatory = false, ParameterSetName = "TypedHeroCard")]
     [Parameter(Mandatory = false, ParameterSetName = "TypedThumbnailCard")]
     [Parameter(Mandatory = false, ParameterSetName = "TypedListCard")]
     public SwitchParameter PassThru { get; set; }
 
+    /// <summary>Legacy composition script block that emits Teams sections.</summary>
     [Parameter(Mandatory = false, Position = 0, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, Position = 0, ParameterSetName = "LegacySections")]
     public ScriptBlock? SectionsInput { get; set; }
 
+    /// <summary>HTTPS Teams incoming webhook URL used by the legacy parameter sets.</summary>
     [Alias("TeamsID", "Url")]
     [Parameter(Mandatory = true, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = true, ParameterSetName = "LegacySections")]
     public Uri Uri { get; set; } = null!;
 
+    /// <summary>Legacy connector-card title.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public string? MessageTitle { get; set; }
 
+    /// <summary>Legacy connector-card body text.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public string? MessageText { get; set; }
 
+    /// <summary>Legacy connector-card summary used by notifications and accessibility clients.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public string? MessageSummary { get; set; }
 
+    /// <summary>Theme color name or hexadecimal value for the legacy connector card.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public string? Color { get; set; }
 
+    /// <summary>Requests Teams to hide the original message body when supported.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public SwitchParameter HideOriginalBody { get; set; }
 
+    /// <summary>HTTP proxy used by the legacy webhook request.</summary>
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public Uri? Proxy { get; set; }
 
+    /// <summary>Pre-built connector-card sections for the legacy sections parameter set.</summary>
     [Parameter(Mandatory = true, ParameterSetName = "LegacySections")]
     public TeamsMessageSection[] Sections { get; set; } = Array.Empty<TeamsMessageSection>();
 
+    /// <summary>Suppresses the rendered legacy JSON output after processing. The default is true.</summary>
     [Alias("Supress")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public bool Suppress { get; set; } = true;
 
-    protected override void ProcessRecord() {
+    protected override async Task ProcessRecordAsync() {
         if (ParameterSetName.StartsWith("Typed", StringComparison.Ordinal)) {
-            ProcessTypedRecord();
+            await ProcessTypedRecordAsync();
             return;
         }
 
-        ProcessLegacyRecord();
+        await ProcessLegacyRecordAsync();
     }
 
-    private void ProcessTypedRecord() {
+    private async Task ProcessTypedRecordAsync() {
         if (!ShouldProcess(GetShouldProcessTarget(), $"Send {GetTypedPayloadName()} using {Target.DeliveryMethod}")) {
             return;
         }
 
         var result = ParameterSetName switch {
-            "TypedHeroCard" => TeamsClient.Default.SendAsync(HeroCard, Target).GetAwaiter().GetResult(),
-            "TypedThumbnailCard" => TeamsClient.Default.SendAsync(ThumbnailCard, Target).GetAwaiter().GetResult(),
-            "TypedListCard" => TeamsClient.Default.SendAsync(ListCard, Target).GetAwaiter().GetResult(),
-            _ => TeamsClient.Default.SendAsync(Message, Target).GetAwaiter().GetResult()
+            "TypedHeroCard" => await TeamsClient.Default.SendAsync(HeroCard, Target, CancelToken),
+            "TypedThumbnailCard" => await TeamsClient.Default.SendAsync(ThumbnailCard, Target, CancelToken),
+            "TypedListCard" => await TeamsClient.Default.SendAsync(ListCard, Target, CancelToken),
+            _ => await TeamsClient.Default.SendAsync(Message, Target, CancelToken)
         };
 
         if (!result.IsSuccessStatusCode) {
@@ -103,7 +134,7 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
         }
     }
 
-    private void ProcessLegacyRecord() {
+    private async Task ProcessLegacyRecordAsync() {
         var request = new TeamsMessageRequest {
             Title = MessageTitle,
             Text = MessageText,
@@ -118,7 +149,7 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
         }
 
         var renderedBody = WebhookMessageRenderer.Render(request);
-        WriteVerbose($"Send-TeamsMessage - Body {renderedBody}");
+        WriteVerbose($"Send-TeamsMessage - Prepared {renderedBody.Length} characters for {Uri.Host}.");
 
         if (!ShouldProcess(Uri.Host, "Send Teams message using IncomingWebhook")) {
             if (!Suppress) {
@@ -130,10 +161,12 @@ public sealed class CmdletSendTeamsMessage : PSCmdlet {
 
         using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = clientLease.Client.SendAsync(request, target).GetAwaiter().GetResult();
+        var result = await clientLease.Client.SendAsync(request, target, CancelToken);
 
-        WriteVerbose($"Send-TeamsMessage - Execute {result.ResponseBody}");
-        TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "Send-TeamsMessage");
+        WriteVerbose($"Send-TeamsMessage - Completed with HTTP status {result.StatusCode?.ToString() ?? "unknown"}.");
+        if (!result.IsSuccessStatusCode) {
+            WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "Send-TeamsMessage"));
+        }
 
         if (!Suppress) {
             WriteObject(renderedBody);

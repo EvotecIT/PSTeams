@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsFact
-
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Creates a connector-card fact item.
 
 ## SYNTAX
-
-```
-New-TeamsFact [[-Name] <String>] [[-Value] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsFact [[-Name] <string>] [[-Value] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Creates a connector-card fact item.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsFact -Name 'Status' -Value 'Failed'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Name
-{{Fill Name Description}}
+Fact label displayed in the section.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -46,12 +44,13 @@ Accept wildcard characters: False
 ```
 
 ### -Value
-{{Fill Value Description}}
+Fact value displayed beside the label.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 1
@@ -65,11 +64,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageFact`
 
 ## RELATED LINKS
+
+- None

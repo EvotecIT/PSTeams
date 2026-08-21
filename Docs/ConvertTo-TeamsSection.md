@@ -1,59 +1,59 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # ConvertTo-TeamsSection
-
 ## SYNOPSIS
-Convert an array of PSCustomObject or a Hashtable to separate Teams sections.
+Converts dictionaries and PowerShell objects into Teams sections.
 
 ## SYNTAX
-
-```
-ConvertTo-TeamsSection [-InputObject] <Object> [[-SectionTitleProperty] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+ConvertTo-TeamsSection [-InputObject] <Object> [[-SectionTitleProperty] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Teams sections are chunks of information that appear within a Teams message.
-This function helps convert an array of PSObject or an array of Hashtables to Teams sections (only one level deep).
+Converts dictionaries and PowerShell objects into Teams sections.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
+```powershell
+ConvertTo-TeamsSection -InputObject 'Value'
 ```
-Get-ChildItem -Directory | ConvertTo-TeamsSection -SectionTitleProperty Name
-```
+
 
 ## PARAMETERS
 
 ### -InputObject
-The Hashtable or PSObject that is output by another cmdlet.
+Specifies a value for input object.
 
 ```yaml
 Type: Object
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: True
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 
 ### -SectionTitleProperty
-The property to use for title
+Specifies a value for section title property.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -64,9 +64,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+- `System.Object`
+
 ## OUTPUTS
 
-## NOTES
-Ram Iyer (https://ramiyer.me)
+- `TeamsX.TeamsMessageSection`
 
 ## RELATED LINKS
+
+- None

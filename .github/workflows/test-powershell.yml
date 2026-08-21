@@ -33,14 +33,12 @@ jobs:
             - name: Setup PowerShell modules
               shell: pwsh
               run: |
-                  Install-Module PSPublishModule -Force -Scope CurrentUser -AllowClobber
+                  Install-Module PSPublishModule -RequiredVersion 3.0.124 -Force -Scope CurrentUser -AllowClobber
 
             - name: Refresh module manifest
               shell: pwsh
-              env:
-                  RefreshPSD1Only: 'true'
               run: |
-                  ./Module/Build/Build-Module.ps1
+                  ./Build/Build-Module.ps1 -ConfigurationGateMode Manifest -SignModule:$false
 
             - name: Upload refreshed manifest
               uses: actions/upload-artifact@v7

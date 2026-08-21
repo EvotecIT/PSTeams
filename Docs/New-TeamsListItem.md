@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsListItem
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a typed legacy list item for connector-card facts.
 
 ## SYNTAX
-
-```
-New-TeamsListItem [[-Text] <String>] [[-Level] <Int32>] [-Numbered] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsListItem [[-Text] <string>] [[-Level] <int>] [-Numbered] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a typed legacy list item for connector-card facts.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsListItem -Level 1
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Level
-{{ Fill Level Description }}
+Specifies a value for level.
 
 ```yaml
 Type: Int32
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 1
@@ -46,27 +44,29 @@ Accept wildcard characters: False
 ```
 
 ### -Numbered
-{{ Fill Numbered Description }}
+Specifies the numbered switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Text
-{{ Fill Text Description }}
+Specifies a value for text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -80,11 +80,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageListItem`
 
 ## RELATED LINKS
+
+- None

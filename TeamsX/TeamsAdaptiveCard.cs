@@ -9,7 +9,7 @@ public sealed class TeamsAdaptiveCard {
     public string? Speak { get; set; }
     public string? Language { get; set; }
     public string? VerticalContentAlignment { get; set; }
-    public Dictionary<string, object?>? BackgroundImage { get; set; }
+    public TeamsAdaptiveBackgroundImage? BackgroundImage { get; set; }
     public TeamsAdaptiveAction? SelectAction { get; set; }
     public bool? AllowImageExpand { get; set; }
     public bool FullWidth { get; set; }

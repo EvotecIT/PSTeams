@@ -1,139 +1,139 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-CardListItem
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates one Teams list-card item.
 
 ## SYNTAX
-
-```
-New-CardListItem [-Type] <String> [[-Icon] <String>] [[-Title] <String>] [[-SubTitle] <String>]
- [[-TapAction] <String>] [[-TapType] <String>] [[-TapValue] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-CardListItem -Type <TeamsListCardItemKind> [-Icon <string>] [-Title <string>] [-SubTitle <string>] [-TapAction <string>] [-TapType <TeamsCardButtonActionType>] [-TapValue <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates one Teams list-card item.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-CardListItem -Type 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Icon
-{{ Fill Icon Description }}
+Specifies a value for icon.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SubTitle
-{{ Fill SubTitle Description }}
+Specifies a value for sub title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -TapAction
-{{ Fill TapAction Description }}
+Specifies a value for tap action.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: whois, editOnline
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: whois, editOnline
 
 Required: False
-Position: 4
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -TapType
-{{ Fill TapType Description }}
+Specifies a value for tap type.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: imBack, openUrl, file
+Type: TeamsCardButtonActionType
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: ImBack, OpenUrl, File
 
 Required: False
-Position: 5
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -TapValue
-{{ Fill TapValue Description }}
+Specifies a value for tap value.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 6
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Title
-{{ Fill Title Description }}
+Specifies a value for title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Type
-{{ Fill Type Description }}
+Specifies a value for type.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: file, resultItem, section, person
+Type: TeamsListCardItemKind
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: File, ResultItem, Section, Person
 
 Required: True
-Position: 0
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -144,11 +144,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsListCardItem`
 
 ## RELATED LINKS
+
+- None

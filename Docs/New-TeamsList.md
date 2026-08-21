@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsList
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Builds a legacy list fact from typed list items.
 
 ## SYNTAX
-
-```
-New-TeamsList [[-List] <ScriptBlock>] [[-Name] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsList [[-List] <scriptblock>] [[-Name] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Builds a legacy list fact from typed list items.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsList -Name 'Name'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -List
-{{ Fill List Description }}
+Specifies a value for list.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -46,12 +44,13 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-{{ Fill Name Description }}
+Specifies a value for name.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 1
@@ -65,11 +64,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageFact`
 
 ## RELATED LINKS
+
+- None

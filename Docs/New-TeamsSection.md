@@ -1,166 +1,168 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsSection
-
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Creates a connector-card section.
 
 ## SYNTAX
-
-```
-New-TeamsSection [[-SectionInput] <ScriptBlock>] [[-Title] <String>] [[-ActivityTitle] <String>]
- [[-ActivitySubtitle] <String>] [[-ActivityImageLink] <String>] [[-ActivityImage] <String>]
- [[-ActivityImagePath] <FileInfo>] [[-ActivityText] <String>] [[-Text] <String>]
- [[-ActivityDetails] <IDictionary[]>] [[-Buttons] <IDictionary[]>] [-StartGroup] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsSection [[-SectionInput] <scriptblock>] [-Title <string>] [-ActivityTitle <string>] [-ActivitySubtitle <string>] [-ActivityImageLink <string>] [-ActivityImage <string>] [-ActivityImagePath <FileInfo>] [-ActivityText <string>] [-Text <string>] [-ActivityDetails <TeamsMessageFact[]>] [-Buttons <TeamsMessageButton[]>] [-StartGroup] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Creates a connector-card section.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsSection -Title 'Build 42' -ActivityText 'Deployment failed' -ActivityDetails (New-TeamsFact -Name 'Status' -Value 'Failed') -Buttons (New-TeamsButton -Name 'Open build' -Link 'https://ci.example.test/build/42')
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -ActivityDetails
-{{Fill ActivityDetails Description}}
+Fact rows displayed in the section.
 
 ```yaml
-Type: IDictionary[]
-Parameter Sets: (All)
-Aliases:
+Type: TeamsMessageFact[]
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 9
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivityImage
-{{Fill ActivityImage Description}}
+Name of a built-in PSTeams activity image.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Alert, Cancel, Disable, Download, Minus, Check, Add, None
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Alert, Cancel, Disable, Download, Minus, Check, Add, None
 
 Required: False
-Position: 5
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivityImageLink
-{{Fill ActivityImageLink Description}}
+HTTPS URL for the activity image.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 4
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivityImagePath
-{{ Fill ActivityImagePath Description }}
+Local image file to embed as the activity image.
 
 ```yaml
 Type: FileInfo
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 6
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivitySubtitle
-{{Fill ActivitySubtitle Description}}
+Activity subheading.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivityText
-{{Fill ActivityText Description}}
+Text displayed beside the activity image.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 7
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -ActivityTitle
-{{Fill ActivityTitle Description}}
+Activity heading.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Buttons
-{{Fill Buttons Description}}
+Actions displayed in the section.
 
 ```yaml
-Type: IDictionary[]
-Parameter Sets: (All)
-Aliases:
+Type: TeamsMessageButton[]
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 10
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SectionInput
-{{ Fill SectionInput Description }}
+Optional composition script block that emits facts, buttons, images, or section directives.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -170,45 +172,48 @@ Accept wildcard characters: False
 ```
 
 ### -StartGroup
-{{ Fill StartGroup Description }}
+Starts a visually separated group before this section.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Text
-{{ Fill Text Description }}
+Main section text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 8
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Title
-{{Fill Title Description}}
+Section heading.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -219,11 +224,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageSection`
 
 ## RELATED LINKS
+
+- None

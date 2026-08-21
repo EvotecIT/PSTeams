@@ -1,72 +1,88 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # Send-TeamsMessageBody
-
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Sends a raw Teams message payload body to an incoming webhook.
 
 ## SYNTAX
-
-```
-Send-TeamsMessageBody [-Uri] <String> [[-Body] <String>] [[-Supress] <Boolean>] [-Wrap] [[-Proxy] <Uri>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+Send-TeamsMessageBody [-Uri] <uri> [[-Body] <string>] [-Supress <bool>] [-Wrap] [-Proxy <uri>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Use this command for pre-rendered payloads. Prefer Send-TeamsMessage for typed message models.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+$json | Send-TeamsMessageBody -Uri $workflowUrl
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Body
-{{Fill Body Description}}
+Pre-rendered JSON body to send.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 1
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Proxy
+HTTP proxy used for the request.
+
+```yaml
+Type: Uri
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Supress
-{{ Fill Supress Description }}
+Suppresses the rendered JSON output after processing. The default is true.
 
 ```yaml
 Type: Boolean
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: Suppress
+Possible values:
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Uri
-{{Fill URI Description}}
+HTTPS Teams incoming webhook or Workflows URL.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
+Type: Uri
+Parameter Sets: __AllParameterSets
 Aliases: TeamsID, Url
+Possible values:
 
 Required: True
 Position: 0
@@ -76,29 +92,16 @@ Accept wildcard characters: False
 ```
 
 ### -Wrap
-{{ Fill Wrap Description }}
+Wraps an Adaptive Card attachment body in the Teams message envelope.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Proxy
-{{ Fill in Proxy Description }}
-
-```yaml
-Type: System.Uri
-Parameter Sets: (All)
-Aliases:
-
-Required: False
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -109,11 +112,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `System.String`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `System.String`
 
 ## RELATED LINKS
+
+- None

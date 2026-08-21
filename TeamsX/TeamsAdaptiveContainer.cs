@@ -13,7 +13,7 @@ public sealed class TeamsAdaptiveContainer : TeamsAdaptiveCardElement {
     public bool? Bleed { get; set; }
     public string? VerticalContentAlignment { get; set; }
     public bool? IsVisible { get; set; }
-    public Dictionary<string, object?>? BackgroundImage { get; set; }
+    public TeamsAdaptiveBackgroundImage? BackgroundImage { get; set; }
     public TeamsAdaptiveAction? SelectAction { get; set; }
     public List<TeamsAdaptiveCardElement> Items { get; } = new();
 }

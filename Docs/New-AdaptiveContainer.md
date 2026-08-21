@@ -1,188 +1,184 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveContainer
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a legacy-named adaptive container backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveContainer [[-Items] <ScriptBlock>] [[-Spacing] <String>] [-Separator]
- [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Style] <String>] [[-MinimumHeight] <Int32>] [-Bleed]
- [[-VerticalContentAlignment] <String>] [[-Id] <String>] [-Hidden] [[-BackgroundUrl] <String>]
- [[-BackgroundFillMode] <String>] [[-BackgroundHorizontalAlignment] <String>]
- [[-BackgroundVerticalAlignment] <String>] [[-SelectAction] <String>] [[-SelectActionId] <String>]
- [[-SelectActionUrl] <String>] [[-SelectActionTitle] <String>] [[-SelectActionTargetElement] <String[]>]
- [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveContainer [[-Items] <scriptblock>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-VerticalContentAlignment <string>] [-Id <string>] [-Hidden] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a legacy-named adaptive container backed by the TeamsX model.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-AdaptiveContainer -BackgroundFillMode 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -BackgroundFillMode
-{{ Fill BackgroundFillMode Description }}
+Specifies a value for background fill mode.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Cover, RepeatHorizontally, RepeatVertically, Repeat
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Cover, RepeatHorizontally, RepeatVertically, Repeat
 
 Required: False
-Position: 9
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -BackgroundHorizontalAlignment
-{{ Fill BackgroundHorizontalAlignment Description }}
+Specifies a value for background horizontal alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: left, center, right
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: left, center, right
 
 Required: False
-Position: 10
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -BackgroundUrl
-{{ Fill BackgroundUrl Description }}
+Specifies a value for background url.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 8
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -BackgroundVerticalAlignment
-{{ Fill BackgroundVerticalAlignment Description }}
+Specifies a value for background vertical alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: top, center, bottom
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: top, center, bottom
 
 Required: False
-Position: 11
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Bleed
-{{ Fill Bleed Description }}
+Specifies the bleed switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Height
-{{ Fill Height Description }}
+Specifies a value for height.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Stretch, Automatic
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Stretch, Automatic
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Hidden
-{{ Fill Hidden Description }}
+Specifies the hidden switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -HorizontalAlignment
-{{ Fill HorizontalAlignment Description }}
+Specifies a value for horizontal alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Left, Center, Right
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Left, Center, Right
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Id
-{{ Fill Id Description }}
+Specifies a value for id.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 7
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Items
-{{ Fill Items Description }}
+Specifies a value for items.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -192,154 +188,160 @@ Accept wildcard characters: False
 ```
 
 ### -MinimumHeight
-{{ Fill MinimumHeight Description }}
+Specifies a value for minimum height.
 
 ```yaml
 Type: Int32
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 5
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectAction
-{{ Fill SelectAction Description }}
+Specifies a value for select action.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
 
 Required: False
-Position: 12
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionId
-{{ Fill SelectActionId Description }}
+Specifies a value for select action id.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 13
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionTargetElement
-{{ Fill SelectActionTargetElement Description }}
+Specifies one or more values for select action target element.
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 16
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionTitle
-{{ Fill SelectActionTitle Description }}
+Specifies a value for select action title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 15
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionUrl
-{{ Fill SelectActionUrl Description }}
+Specifies a value for select action url.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 14
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Separator
-{{ Fill Separator Description }}
+Specifies the separator switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Spacing
-{{ Fill Spacing Description }}
+Specifies a value for spacing.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: None, Small, Default, Medium, Large, ExtraLarge, Padding
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Style
-{{ Fill Style Description }}
+Specifies a value for style.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Accent, Default, Emphasis, Good, Warning, Attention
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Accent, Default, Emphasis, Good, Warning, Attention
 
 Required: False
-Position: 4
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -VerticalContentAlignment
-{{ Fill VerticalContentAlignment Description }}
+Specifies a value for vertical content alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: top, center, bottom
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: top, center, bottom
 
 Required: False
-Position: 6
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -350,11 +352,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsAdaptiveContainer`
 
 ## RELATED LINKS
+
+- None

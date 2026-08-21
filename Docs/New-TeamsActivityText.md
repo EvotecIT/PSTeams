@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsActivityText
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a typed activity-text directive for connector-card sections.
 
 ## SYNTAX
-
-```
-New-TeamsActivityText [[-Text] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsActivityText [[-Text] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a typed activity-text directive for connector-card sections.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsActivityText -Text 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Text
-{{ Fill Text Description }}
+Specifies a value for text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -50,11 +48,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageSectionDirective`
 
 ## RELATED LINKS
+
+- None

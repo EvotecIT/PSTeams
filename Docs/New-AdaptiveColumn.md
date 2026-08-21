@@ -1,93 +1,88 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveColumn
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a legacy-named adaptive column backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveColumn [[-Items] <ScriptBlock>] [[-Spacing] <String>] [[-Height] <String>] [[-Width] <String>]
- [[-WidthInWeight] <Int32>] [[-WidthInPixels] <Int32>] [[-MinimumHeight] <Int32>]
- [[-HorizontalAlignment] <String>] [[-VerticalContentAlignment] <String>] [[-Style] <String>] [-Hidden]
- [-Separator] [[-SelectAction] <String>] [[-SelectActionId] <String>] [[-SelectActionUrl] <String>]
- [[-SelectActionTitle] <String>] [[-SelectActionTargetElement] <String[]>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveColumn [[-Items] <scriptblock>] [-Spacing <string>] [-Height <string>] [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a legacy-named adaptive column backed by the TeamsX model.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-AdaptiveColumn -Height 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Height
-{{ Fill Height Description }}
+Specifies a value for height.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Stretch, Automatic
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Stretch, Automatic
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Hidden
-{{ Fill Hidden Description }}
+Specifies the hidden switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -HorizontalAlignment
-{{ Fill HorizontalAlignment Description }}
+Specifies a value for horizontal alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Left, Center, Right
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Left, Center, Right
 
 Required: False
-Position: 7
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Items
-{{ Fill Items Description }}
+Specifies a value for items.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -97,200 +92,208 @@ Accept wildcard characters: False
 ```
 
 ### -MinimumHeight
-{{ Fill MinimumHeight Description }}
+Specifies a value for minimum height.
 
 ```yaml
 Type: Int32
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 6
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectAction
-{{ Fill SelectAction Description }}
+Specifies a value for select action.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
 
 Required: False
-Position: 10
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionId
-{{ Fill SelectActionId Description }}
+Specifies a value for select action id.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 11
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionTargetElement
-{{ Fill SelectActionTargetElement Description }}
+Specifies one or more values for select action target element.
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 14
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionTitle
-{{ Fill SelectActionTitle Description }}
+Specifies a value for select action title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 13
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -SelectActionUrl
-{{ Fill SelectActionUrl Description }}
+Specifies a value for select action url.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 12
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Separator
-{{ Fill Separator Description }}
+Specifies the separator switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Spacing
-{{ Fill Spacing Description }}
+Specifies a value for spacing.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: None, Small, Default, Medium, Large, ExtraLarge, Padding
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Style
-{{ Fill Style Description }}
+Specifies a value for style.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Accent, Default, Emphasis, Good, Warning, Attention
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Accent, Default, Emphasis, Good, Warning, Attention
 
 Required: False
-Position: 9
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -VerticalContentAlignment
-{{ Fill VerticalContentAlignment Description }}
+Specifies a value for vertical content alignment.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Top, Center, Bottom
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Top, Center, Bottom
 
 Required: False
-Position: 8
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Width
-{{ Fill Width Description }}
+Specifies a value for width.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Stretch, Auto, Weighted
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Stretch, Auto, Weighted
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -WidthInPixels
-{{ Fill WidthInPixels Description }}
+Specifies a value for width in pixels.
 
 ```yaml
 Type: Int32
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 5
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -WidthInWeight
-{{ Fill WidthInWeight Description }}
+Specifies a value for width in weight.
 
 ```yaml
 Type: Int32
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 4
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -301,11 +304,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsAdaptiveColumn`
 
 ## RELATED LINKS
+
+- None

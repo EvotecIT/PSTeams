@@ -1,257 +1,295 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveRichTextBlock
-
 ## SYNOPSIS
-Defines an array of inlines, allowing for inline text formatting.
+Creates a legacy-named adaptive rich text block backed by the TeamsX model.
 
 ## SYNTAX
-
+### Text (Default)
+```powershell
+New-AdaptiveRichTextBlock -Text <string[]> [-Color <string[]>] [-Subtle <bool[]>] [-Size <string[]>] [-Weight <string[]>] [-Highlight <bool[]>] [-Italic <bool[]>] [-StrikeThrough <bool[]>] [-FontType <string[]>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Id <string>] [-Hidden] [<CommonParameters>]
 ```
-New-AdaptiveRichTextBlock [[-Text] <String[]>] [[-Color] <String[]>] [[-Subtle] <Boolean[]>]
- [[-Size] <String[]>] [[-Weight] <String[]>] [[-Highlight] <Boolean[]>] [[-Italic] <Boolean[]>]
- [[-StrikeThrough] <Boolean[]>] [[-FontType] <String[]>] [[-Spacing] <String>] [-Separator]
- [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Id] <String>] [-Hidden] [<CommonParameters>]
+
+### Inline
+```powershell
+New-AdaptiveRichTextBlock -Inlines <TeamsAdaptiveTextRun[]> [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Id <string>] [-Hidden] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Defines an array of inlines, allowing for inline text formatting.
+Creates a legacy-named adaptive rich text block backed by the TeamsX model.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
+```powershell
+New-AdaptiveRichTextBlock -Text @('Value')
 ```
-New-AdaptiveRichTextBlock -Text 'This is the first inline.', 'We support colors,', 'both regular and subtle. ', 'Monospace too!' -Color Attention, Default, Warning -StrikeThrough $false, $true, $false -Size ExtraLarge, Default, Medium -Italic $false, $false, $true -Subtle $false, $true, $true
+
+
+### EXAMPLE 2
+```powershell
+New-AdaptiveRichTextBlock -Inlines @('Value')
 ```
+
 
 ## PARAMETERS
 
-### -Text
-Text to display.
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Color
-Controls the color of text elements.
+Specifies one or more values for color.
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: Text
+Aliases: None
+Possible values: Accent, Default, Dark, Light, Good, Warning, Attention
 
 Required: False
-Position: 2
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Subtle
-Displays text slightly toned down to appear less prominent.
-
-```yaml
-Type: Boolean[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 3
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Size
-Controls size of text.
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: FontSize
-
-Required: False
-Position: 4
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Weight
-Controls the weight of text elements.
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: FontWeight
-
-Required: False
-Position: 5
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Highlight
-Controls the hightlight of text elements
-
-```yaml
-Type: Boolean[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 6
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Italic
-Controls italic of text elements
-
-```yaml
-Type: Boolean[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -StrikeThrough
-Controls strikethrough of text elements
-
-```yaml
-Type: Boolean[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 8
-Default value: @()
+Position: named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -FontType
-Type of font to use for rendering
+Specifies one or more values for font type.
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: Text
+Aliases: None
+Possible values: Default, Monospace
 
 Required: False
-Position: 9
-Default value: @()
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Spacing
-Controls the amount of spacing between this element and the preceding element.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 10
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Separator
-Draw a separating line at the top of the element.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -HorizontalAlignment
-Controls the horizontal text alignment.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 11
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Height
-Specifies the height of the element.
+Specifies a value for height.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values: Stretch, Automatic
 
 Required: False
-Position: 12
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Id
-A unique identifier associated with the item.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 13
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Hidden
-If used this item will be removed from the visual tree.
+Specifies the hidden switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
-Default value: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Highlight
+Specifies one or more values for highlight.
+
+```yaml
+Type: Boolean[]
+Parameter Sets: Text
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+Specifies a value for horizontal alignment.
+
+```yaml
+Type: String
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values: Left, Center, Right
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Id
+Specifies a value for id.
+
+```yaml
+Type: String
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Inlines
+Specifies one or more values for inlines.
+
+```yaml
+Type: TeamsAdaptiveTextRun[]
+Parameter Sets: Inline
+Aliases: None
+Possible values:
+
+Required: True
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Italic
+Specifies one or more values for italic.
+
+```yaml
+Type: Boolean[]
+Parameter Sets: Text
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+Specifies the separator switch.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Size
+Specifies one or more values for size.
+
+```yaml
+Type: String[]
+Parameter Sets: Text
+Aliases: FontSize
+Possible values: Small, Default, Medium, Large, ExtraLarge
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+Specifies a value for spacing.
+
+```yaml
+Type: String
+Parameter Sets: Text, Inline
+Aliases: None
+Possible values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -StrikeThrough
+Specifies one or more values for strike through.
+
+```yaml
+Type: Boolean[]
+Parameter Sets: Text
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Subtle
+Specifies one or more values for subtle.
+
+```yaml
+Type: Boolean[]
+Parameter Sets: Text
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Text
+Specifies one or more values for text.
+
+```yaml
+Type: String[]
+Parameter Sets: Text
+Aliases: None
+Possible values:
+
+Required: True
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Weight
+Specifies one or more values for weight.
+
+```yaml
+Type: String[]
+Parameter Sets: Text
+Aliases: FontWeight
+Possible values: Lighter, Default, Bolder
+
+Required: False
+Position: named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -261,9 +299,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+- `None`
+
 ## OUTPUTS
 
-## NOTES
-General notes
+- `TeamsX.TeamsAdaptiveRichTextBlock`
 
 ## RELATED LINKS
+
+- None

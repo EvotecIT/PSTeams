@@ -12,7 +12,7 @@ public class TeamsClientTests {
             rawSender
         });
 
-        var result = await client.SendJsonAsync("{\"text\":\"hello\"}", target);
+        var result = await client.SendJsonAsync("{\"text\":\"hello\"}", target, TestContext.Current.CancellationToken);
 
         Assert.True(rawSender.WasCalled);
         Assert.True(result.IsSuccessStatusCode);
@@ -30,7 +30,7 @@ public class TeamsClientTests {
 
         var result = await client.SendAsync(new TeamsHeroCard {
             Title = "Hero"
-        }, target);
+        }, target, TestContext.Current.CancellationToken);
 
         Assert.True(rawSender.WasCalled);
         Assert.True(result.IsSuccessStatusCode);
@@ -40,7 +40,10 @@ public class TeamsClientTests {
 
     [Fact]
     public async Task SendAsyncHeroCardRejectsUnsupportedDeliveryMethods() {
-        var target = TeamsMessageTarget.ForGraphChatMessage("19:testchat@thread.v2", "token-1");
+        var target = new TeamsMessageTarget {
+            DeliveryMethod = (TeamsDeliveryMethod)999,
+            TargetUri = new Uri("https://example.test/unsupported")
+        };
         var client = new TeamsClient(new ITeamsMessageSender[] {
             new TypedOnlyWebhookSender(),
             new RawWebhookSender()
@@ -48,7 +51,7 @@ public class TeamsClientTests {
 
         var action = async () => await client.SendAsync(new TeamsHeroCard {
             Title = "Hero"
-        }, target);
+        }, target, TestContext.Current.CancellationToken);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(action);
         Assert.Contains("incoming and workflow webhooks", exception.Message);
@@ -89,7 +92,7 @@ public class TeamsClientTests {
 
             return Task.FromResult(new TeamsDeliveryResult {
                 DeliveryMethod = target.DeliveryMethod,
-                TargetUri = target.TargetUri,
+                Target = target.DisplayName ?? target.TargetUri.Host,
                 IsSuccessStatusCode = true,
                 StatusCode = 200,
                 ResponseBody = jsonBody

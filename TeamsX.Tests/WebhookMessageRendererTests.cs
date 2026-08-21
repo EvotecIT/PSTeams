@@ -119,9 +119,9 @@ public class WebhookMessageRendererTests {
                         Spacing = "Medium",
                         Separator = true,
                         IsVisible = false,
-                        BackgroundImage = new Dictionary<string, object?> {
-                            ["fillMode"] = "Cover",
-                            ["url"] = "https://example.test/background.png"
+                        BackgroundImage = new TeamsAdaptiveBackgroundImage {
+                            FillMode = "Cover",
+                            Url = "https://example.test/background.png"
                         },
                         SelectAction = new TeamsAdaptiveOpenUrlAction {
                             Title = "Open panel",

@@ -194,4 +194,21 @@ Describe 'Legacy connector-card migration cmdlets' {
         $body | Should -Match '"attachments":\['
         $body | Should -Match '"contentType":"application/vnd.microsoft.card.hero"'
     }
+
+    It 'does not expose message bodies in verbose output' {
+        $messageMarker = 'MESSAGE_BODY_MUST_NOT_APPEAR'
+        $rawMarker = 'RAW_BODY_MUST_NOT_APPEAR'
+
+        $messageVerbose = & {
+            Send-TeamsMessage -Uri 'https://example.test/webhook' -MessageText $messageMarker -WhatIf -Verbose
+        } 4>&1 | Out-String
+        $rawVerbose = & {
+            Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Body "{`"text`":`"$rawMarker`"}" -WhatIf -Verbose
+        } 4>&1 | Out-String
+
+        $messageVerbose | Should -Match 'Prepared \d+ characters for example.test'
+        $messageVerbose | Should -Not -Match $messageMarker
+        $rawVerbose | Should -Match 'Prepared \d+ characters for example.test'
+        $rawVerbose | Should -Not -Match $rawMarker
+    }
 }

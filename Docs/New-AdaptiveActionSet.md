@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveActionSet
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a legacy-named adaptive action set backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveActionSet [[-Action] <ScriptBlock>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveActionSet [[-Action] <scriptblock>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a legacy-named adaptive action set backed by the TeamsX model.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-AdaptiveActionSet -Action { }
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Action
-{{ Fill Action Description }}
+Specifies a value for action.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -50,11 +48,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsAdaptiveActionSet`
 
 ## RELATED LINKS
+
+- None

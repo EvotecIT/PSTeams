@@ -1,92 +1,91 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-CardListButton
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a button for ListCard, HeroCard, and ThumbnailCard payloads.
 
 ## SYNTAX
-
-```
-New-CardListButton [[-Type] <String>] [[-Title] <String>] [[-Value] <String>] [[-Image] <String>]
- [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-CardListButton [-Type <TeamsCardButtonActionType>] [-Title <string>] [-Value <string>] [-Image <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a button for ListCard, HeroCard, and ThumbnailCard payloads.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-CardListButton -Image 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Image
-{{ Fill Image Description }}
+Specifies a value for image.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Title
-{{ Fill Title Description }}
+Specifies a value for title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Type
-{{ Fill Type Description }}
+Specifies a value for type.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: imBack, openUrl, file
+Type: TeamsCardButtonActionType
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: ImBack, OpenUrl, File
 
 Required: False
-Position: 0
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Value
-{{ Fill Value Description }}
+Specifies a value for value.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -97,11 +96,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsCardButton`
 
 ## RELATED LINKS
+
+- None

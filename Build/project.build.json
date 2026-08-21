@@ -25,6 +25,8 @@
   "CertificateThumbprint": "483292C9E317AA13B07BB7A96AE9D1A5ED9E7703",
   "CertificateStore": "CurrentUser",
   "TimeStampServer": "http://timestamp.digicert.com",
+  "SignAssemblies": false,
+  "SignPackages": false,
   "PublishSource": "https://api.nuget.org/v3/index.json",
   "PublishApiKeyFilePath": "C:\\Support\\Important\\NugetOrgEvotec.txt",
   "SkipDuplicate": true,

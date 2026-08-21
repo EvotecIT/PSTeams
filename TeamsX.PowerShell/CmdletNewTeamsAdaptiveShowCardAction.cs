@@ -70,7 +70,7 @@ public sealed class CmdletNewTeamsAdaptiveShowCardAction : PSCmdlet {
         WriteObject(new TeamsAdaptiveShowCardAction {
             Id = Id,
             Title = Title,
-            Card = TeamsAdaptiveCardDictionarySupport.ToDictionary(nestedCard)
+            Card = nestedCard
         });
     }
 
@@ -82,7 +82,7 @@ public sealed class CmdletNewTeamsAdaptiveShowCardAction : PSCmdlet {
             Speak = Speak,
             Language = Language,
             VerticalContentAlignment = VerticalContentAlignment,
-            BackgroundImage = TeamsAdaptiveCardDictionarySupport.BuildBackgroundImage(
+            BackgroundImage = TeamsAdaptiveBackgroundImageSupport.Create(
                 BackgroundUrl,
                 BackgroundFillMode,
                 BackgroundHorizontalAlignment,

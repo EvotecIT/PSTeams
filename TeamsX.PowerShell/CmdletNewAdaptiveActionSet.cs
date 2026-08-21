@@ -77,18 +77,15 @@ public sealed class CmdletNewAdaptiveActionSet : PSCmdlet {
                 action = toggle;
                 return true;
             case "Action.ShowCard":
-                Dictionary<string, object?>? card = null;
                 if (dictionary.Contains("card") && dictionary["card"] is IDictionary cardDictionary) {
-                    card = cardDictionary
-                        .Cast<DictionaryEntry>()
-                        .ToDictionary(
-                            entry => entry.Key?.ToString() ?? string.Empty,
-                            entry => (object?)entry.Value);
+                    throw new InvalidOperationException(
+                        "New-AdaptiveActionSet no longer accepts a dictionary-shaped Action.ShowCard card because silently dropping nested fields is unsafe. " +
+                        "Create the nested card with New-AdaptiveAction -Body/-Actions or New-TeamsAdaptiveShowCardAction.");
                 }
 
                 action = new TeamsAdaptiveShowCardAction {
                     Title = title,
-                    Card = card
+                    Card = null
                 };
                 return true;
             default:

@@ -9,44 +9,60 @@ namespace TeamsX.PowerShell;
 /// <summary>
 /// Creates a connector-card section.
 /// </summary>
+/// <example>
+/// <summary>Create a section containing a fact and an action button</summary>
+/// <code>New-TeamsSection -Title 'Build 42' -ActivityText 'Deployment failed' -ActivityDetails (New-TeamsFact -Name 'Status' -Value 'Failed') -Buttons (New-TeamsButton -Name 'Open build' -Link 'https://ci.example.test/build/42')</code>
+/// </example>
 [Cmdlet(VerbsCommon.New, "TeamsSection")]
 [Alias("TeamsSection")]
 [OutputType(typeof(TeamsMessageSection))]
 public sealed class CmdletNewTeamsSection : PSCmdlet {
+    /// <summary>Optional composition script block that emits facts, buttons, images, or section directives.</summary>
     [Parameter(Mandatory = false, Position = 0)]
     public ScriptBlock? SectionInput { get; set; }
 
+    /// <summary>Section heading.</summary>
     [Parameter(Mandatory = false)]
     public string? Title { get; set; }
 
+    /// <summary>Activity heading.</summary>
     [Parameter(Mandatory = false)]
     public string? ActivityTitle { get; set; }
 
+    /// <summary>Activity subheading.</summary>
     [Parameter(Mandatory = false)]
     public string? ActivitySubtitle { get; set; }
 
+    /// <summary>HTTPS URL for the activity image.</summary>
     [Parameter(Mandatory = false)]
     public string? ActivityImageLink { get; set; }
 
+    /// <summary>Name of a built-in PSTeams activity image.</summary>
     [Parameter(Mandatory = false)]
     [ValidateSet("Alert", "Cancel", "Disable", "Download", "Minus", "Check", "Add", "None")]
     public string ActivityImage { get; set; } = "None";
 
+    /// <summary>Local image file to embed as the activity image.</summary>
     [Parameter(Mandatory = false)]
     public FileInfo? ActivityImagePath { get; set; }
 
+    /// <summary>Text displayed beside the activity image.</summary>
     [Parameter(Mandatory = false)]
     public string? ActivityText { get; set; }
 
+    /// <summary>Main section text.</summary>
     [Parameter(Mandatory = false)]
     public string? Text { get; set; }
 
+    /// <summary>Fact rows displayed in the section.</summary>
     [Parameter(Mandatory = false)]
     public TeamsMessageFact[]? ActivityDetails { get; set; }
 
+    /// <summary>Actions displayed in the section.</summary>
     [Parameter(Mandatory = false)]
     public TeamsMessageButton[]? Buttons { get; set; }
 
+    /// <summary>Starts a visually separated group before this section.</summary>
     [Parameter(Mandatory = false)]
     public SwitchParameter StartGroup { get; set; }
 
