@@ -44,4 +44,17 @@ public class TeamsMessageTargetTests {
         Assert.Equal(MessageCapabilities.Send, target.Capabilities);
         Assert.False(target.Capabilities.HasFlag(MessageCapabilities.Reply));
     }
+
+    [Fact]
+    public void WebhookCredentialIsNotAVisibleTargetPropertyOrString() {
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"));
+        var publicProperties = typeof(TeamsMessageTarget).GetProperties()
+            .Where(property => property.GetMethod?.IsPublic == true)
+            .Select(property => property.Name)
+            .ToArray();
+
+        Assert.DoesNotContain("TargetUri", publicProperties);
+        Assert.DoesNotContain("secret-token", target.ToString(), StringComparison.Ordinal);
+    }
 }

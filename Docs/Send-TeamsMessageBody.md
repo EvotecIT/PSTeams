@@ -44,7 +44,7 @@ Accept wildcard characters: False
 ```
 
 ### -Proxy
-HTTP proxy used for the webhook request.
+HTTP proxy used for provider requests.
 
 ```yaml
 Type: Uri
@@ -108,7 +108,7 @@ Accept wildcard characters: False
 ```
 
 ### -UserAgent
-Optional product user-agent sent with the webhook request.
+Optional product user-agent sent with provider requests.
 
 ```yaml
 Type: String

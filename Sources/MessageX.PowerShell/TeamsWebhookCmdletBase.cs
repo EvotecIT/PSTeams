@@ -1,29 +1,14 @@
-using System.Management.Automation;
-
 namespace MessageX.PowerShell;
 
 /// <summary>
 /// Provides consistent enterprise HTTP transport parameters to Teams webhook cmdlets.
 /// </summary>
-public abstract class TeamsWebhookCmdletBase : AsyncPSCmdlet {
+public abstract class TeamsWebhookCmdletBase : MessageHttpCmdletBase {
     private TeamsClientLease? _clientLease;
-
-    /// <summary>HTTP proxy used for the webhook request.</summary>
-    [Parameter(Mandatory = false)]
-    public Uri? Proxy { get; set; }
-
-    /// <summary>HTTP request timeout in seconds.</summary>
-    [Parameter(Mandatory = false)]
-    [ValidateRange(1, 3600)]
-    public int TimeoutSeconds { get; set; } = 100;
-
-    /// <summary>Optional product user-agent sent with the webhook request.</summary>
-    [Parameter(Mandatory = false)]
-    public string? UserAgent { get; set; }
 
     /// <summary>Creates one Teams client for the complete PowerShell cmdlet lifecycle.</summary>
     protected override Task BeginProcessingAsync() {
-        _clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy, TimeoutSeconds, UserAgent);
+        _clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(CreateTransportOptions());
         return Task.CompletedTask;
     }
 

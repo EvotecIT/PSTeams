@@ -145,6 +145,25 @@ public sealed class WebhookTeamsMessageSenderTests {
     }
 
     [Fact]
+    public async Task TransportTimeoutCoversStalledResponseBody() {
+        using var httpClient = new HttpClient(new StallingResponseHandler()) {
+            Timeout = TimeSpan.FromMilliseconds(50)
+        };
+        using var sender = new WebhookTeamsMessageSender(httpClient);
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"));
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => sender.SendAsync(
+            new TeamsMessageRequest { Text = "Build completed" },
+            target,
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.Contains("timed out", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CallerCancellationPropagatesWithoutTimeoutClassification() {
         using var handler = new DelayingHandler();
         using var httpClient = new HttpClient(handler) {

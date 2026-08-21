@@ -202,7 +202,7 @@ public sealed class CmdletSendTeamsMessage : TeamsWebhookCmdletBase {
             return Target.DisplayName!;
         }
 
-        return $"{Target.DeliveryMethod} target at {Target.TargetUri.Host}";
+        return Target.ToString();
     }
 
     private string GetTypedPayloadName() {

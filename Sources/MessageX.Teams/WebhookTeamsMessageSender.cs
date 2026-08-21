@@ -1,5 +1,4 @@
 using System.Net.Http;
-using System.Net;
 using System.Text;
 
 namespace MessageX.Teams;
@@ -66,10 +65,11 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
 
         TeamsMessageTarget.ValidateUri(target.TargetUri);
 
-        using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-        HttpResponseMessage response;
+        using var operationCancellation = MessageHttpClientFactory.CreateOperationCancellation(
+            _httpClient,
+            cancellationToken);
         try {
-            response = await _httpClient.PostAsync(target.TargetUri, content, cancellationToken).ConfigureAwait(false);
+            return await SendJsonCoreAsync(jsonBody, target, operationCancellation.Token).ConfigureAwait(false);
         } catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
             throw new MessageDeliveryException(
                 "Teams webhook request timed out.",
@@ -79,24 +79,35 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
                 "Teams webhook request failed.",
                 MessageErrorKind.Transient);
         }
+    }
 
-        using (response) {
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+    private async Task<TeamsDeliveryResult> SendJsonCoreAsync(
+        string jsonBody,
+        TeamsMessageTarget target,
+        CancellationToken cancellationToken) {
+        using var request = new HttpRequestMessage(HttpMethod.Post, target.TargetUri) {
+            Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+        };
+        using var response = await _httpClient
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+        var responseBody = await MessageHttpResponseReader
+            .ReadUtf8BodyAsync(response, cancellationToken)
+            .ConfigureAwait(false);
 
-            var statusCode = (int)response.StatusCode;
-            var isSuccess = response.IsSuccessStatusCode;
-            return new TeamsDeliveryResult {
-                DeliveryMethod = target.DeliveryMethod,
-                Target = string.IsNullOrWhiteSpace(target.DisplayName) ? target.TargetUri.Host : target.DisplayName!,
-                IsSuccessStatusCode = isSuccess,
-                StatusCode = statusCode,
-                ResponseBody = responseBody,
-                CorrelationId = ReadCorrelationId(response),
-                RetryAfter = ReadRetryAfter(response),
-                ErrorKind = isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
-                ErrorMessage = isSuccess ? null : $"Teams webhook returned HTTP status {statusCode}."
-            };
-        }
+        var statusCode = (int)response.StatusCode;
+        var isSuccess = response.IsSuccessStatusCode;
+        return new TeamsDeliveryResult {
+            DeliveryMethod = target.DeliveryMethod,
+            Target = string.IsNullOrWhiteSpace(target.DisplayName) ? target.TargetUri.Host : target.DisplayName!,
+            IsSuccessStatusCode = isSuccess,
+            StatusCode = statusCode,
+            ResponseBody = responseBody,
+            CorrelationId = ReadCorrelationId(response),
+            RetryAfter = ReadRetryAfter(response),
+            ErrorKind = isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
+            ErrorMessage = isSuccess ? null : $"Teams webhook returned HTTP status {statusCode}."
+        };
     }
 
     public void Dispose() {
@@ -106,45 +117,11 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
     }
 
     internal static HttpClient CreateDefaultHttpClient(MessageHttpTransportOptions? options = null) {
-        options ??= new MessageHttpTransportOptions();
-        ValidateOptions(options);
-
-        var client = new HttpClient(CreateDefaultHandler(options)) {
-            Timeout = options.Timeout
-        };
-        var userAgent = options.UserAgent?.Trim();
-        if (!string.IsNullOrWhiteSpace(userAgent)) {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
-        }
-
-        return client;
+        return MessageHttpClientFactory.CreateClient(options);
     }
 
     internal static HttpClientHandler CreateDefaultHandler(MessageHttpTransportOptions? options = null) {
-        options ??= new MessageHttpTransportOptions();
-        ValidateOptions(options);
-
-        var handler = new HttpClientHandler {
-            AllowAutoRedirect = false
-        };
-        if (options.ProxyUri is not null) {
-            handler.Proxy = new WebProxy(options.ProxyUri);
-            handler.UseProxy = true;
-        }
-
-        return handler;
-    }
-
-    private static void ValidateOptions(MessageHttpTransportOptions options) {
-        if (options.Timeout <= TimeSpan.Zero && options.Timeout != Timeout.InfiniteTimeSpan) {
-            throw new ArgumentOutOfRangeException(nameof(options), "Timeout must be positive or infinite.");
-        }
-
-        if (options.ProxyUri is not null &&
-            (!options.ProxyUri.IsAbsoluteUri ||
-             (options.ProxyUri.Scheme != Uri.UriSchemeHttp && options.ProxyUri.Scheme != Uri.UriSchemeHttps))) {
-            throw new ArgumentException("Proxy URI must be an absolute HTTP or HTTPS URI.", nameof(options));
-        }
+        return MessageHttpClientFactory.CreateHandler(options);
     }
 
     private static MessageErrorKind ClassifyFailure(int statusCode) {

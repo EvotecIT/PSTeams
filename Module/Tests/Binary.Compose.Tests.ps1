@@ -82,6 +82,8 @@ Describe 'MessageX binary cmdlets through PSTeams' {
         $workflow.DeliveryMethod.ToString() | Should -Be 'WorkflowWebhook'
         $workflow.WorkflowDestination.ToString() | Should -Be 'Channel'
         $workflow.Capabilities.ToString() | Should -Be 'Send'
+        $incoming.PSObject.Properties.Name | Should -Not -Contain 'TargetUri'
+        $incoming.ToString() | Should -Not -Match '/incoming'
     }
 
     It 'renders connector-card JSON from typed Teams message cmdlets' {

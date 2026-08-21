@@ -1,10 +1,10 @@
 namespace MessageX.Teams;
 
 public sealed class TeamsMessageTarget : IProviderCapabilities {
-    public TeamsDeliveryMethod DeliveryMethod { get; set; }
-    public Uri TargetUri { get; set; } = null!;
-    public string? DisplayName { get; set; }
-    public TeamsWorkflowDestinationKind WorkflowDestination { get; set; }
+    public TeamsDeliveryMethod DeliveryMethod { get; internal set; }
+    internal Uri TargetUri { get; set; } = null!;
+    public string? DisplayName { get; internal set; }
+    public TeamsWorkflowDestinationKind WorkflowDestination { get; internal set; }
     public MessageCapabilities Capabilities =>
         DeliveryMethod is TeamsDeliveryMethod.IncomingWebhook or TeamsDeliveryMethod.WorkflowWebhook
             ? MessageCapabilities.Send
@@ -48,4 +48,9 @@ public sealed class TeamsMessageTarget : IProviderCapabilities {
         }
     }
 
+    public override string ToString() {
+        return string.IsNullOrWhiteSpace(DisplayName)
+            ? $"{DeliveryMethod} target at {TargetUri?.Host ?? "unknown host"}"
+            : DisplayName!;
+    }
 }

@@ -4,12 +4,16 @@ using MessageX.Teams;
 namespace MessageX.PowerShell;
 
 internal static class TeamsPowerShellDeliverySupport {
-    public static TeamsClientLease CreateClientLease(Uri? proxy, int timeoutSeconds = 100, string? userAgent = null) {
-        var options = new MessageHttpTransportOptions {
-            ProxyUri = proxy,
-            Timeout = TimeSpan.FromSeconds(timeoutSeconds),
-            UserAgent = userAgent
-        };
+    public static TeamsClientLease CreateClientLease(MessageHttpTransportOptions options) {
+        if (options is null) {
+            throw new ArgumentNullException(nameof(options));
+        }
+        if (options.ProxyUri is null &&
+            options.Timeout == MessageHttpTransportOptions.DefaultTimeout &&
+            string.IsNullOrWhiteSpace(options.UserAgent)) {
+            return new TeamsClientLease(TeamsClient.Default);
+        }
+
         var sender = new WebhookTeamsMessageSender(options);
 
         return new TeamsClientLease(
