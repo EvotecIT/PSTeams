@@ -829,16 +829,27 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 0C - MessageX architecture baseline
 
-- [ ] Prepare the MessageX source-tree baseline by evolving stabilized TeamsX projects without rewriting repository history or discarding validated behavior.
-- [ ] Plan the repository rename and default-branch landing so repository metadata, links, workflows, and documentation change together.
-- [ ] Reserve the package/module identifiers needed for the intended release family.
-- [ ] Evolve the stabilized TeamsX solution, shared build properties, dependency management, analyzers, formatting, and test projects into the MessageX layout; add only missing infrastructure.
-- [ ] Add the PowerForge/PSPublishModule coordinated release configuration required by the new package family.
-- [ ] Capture current PSTeams and PSDiscord public-surface and issue inventories for explicit migration decisions.
-- [ ] Confirm the exact GraphEssentialsX adapter boundary in the new package layout.
-- [ ] Decide whether `MessageX.Core` or another package provides the version source.
+- [x] Prepare the MessageX source-tree baseline by evolving stabilized TeamsX projects without rewriting repository history or discarding validated behavior.
+- [x] Plan the repository rename and default-branch landing so repository metadata, links, workflows, and documentation change together.
+- [x] Verify the intended package/module identifiers are available; reserve them through the first explicitly authorized preview publication rather than publishing empty placeholders.
+- [x] Evolve the stabilized TeamsX solution, shared build properties, dependency management, analyzers, formatting, and test projects into the MessageX layout; add only missing infrastructure.
+- [x] Add the PowerForge/PSPublishModule coordinated release configuration required by the new package family.
+- [x] Capture current PSTeams and PSDiscord public-surface and issue inventories for explicit migration decisions.
+- [x] Confirm the exact GraphEssentialsX adapter boundary in the new package layout.
+- [x] Use the shared repository version for coordinated packages, with `MessageX.Core` as the primary project in release configuration.
 
 **Exit:** clean restore/build/pack skeleton for the renamed package family, with retained Teams behavior proven and no empty speculative provider packages published.
+
+#### Recorded Phase 0C candidate evidence
+
+- `Sources/MessageX.slnx` contains real `MessageX.Core`, `MessageX.Teams`, `MessageX.PowerShell`, and `MessageX.Tests` projects; no empty Slack, Discord, hosting, Graph, persistence, or aggregate projects were introduced.
+- `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` build without warnings for `net472`, `net8.0`, and `net10.0` on Windows.
+- The provider-neutral core owns message references, capability flags, classified errors, delivery-result state, and the focused generic sender contract. Teams implements that sender/result boundary while retaining its provider-native models.
+- The Microsoft Testing Platform suite passes 32/32 on .NET 8 and .NET 10, including capability discovery through the provider-neutral interface and fail-closed unsupported targets. The retained PSTeams surface passes 38/38 on PowerShell 7 and 38/38 on Windows PowerShell 5.1 while loading `MessageX.PowerShell` from the source tree.
+- Local `MessageX.Core` and `MessageX.Teams` 0.1.0 packages contain the expected three target frameworks and package readme. `MessageX.Teams` depends only on `MessageX.Core`, plus `System.Text.Json` on .NET Framework.
+- A clean .NET 10 sample restored `MessageX.Teams` from the staged feed, received `MessageX.Core` transitively, compiled against both namespaces, and ran successfully.
+- [Legacy-Issue-Migration.md](Docs/Legacy-Issue-Migration.md) maps every currently open PSTeams and PSDiscord issue to an implementation phase and concrete closure evidence.
+- GraphEssentialsX remains outside the initial dependency graph; a future `MessageX.Teams.Graph` project is introduced only with its first real adapter capability.
 
 ### Phase 1 - Teams notification vertical slice
 

@@ -53,7 +53,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageFact</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageFact</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -223,7 +223,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSection</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSection</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -249,11 +249,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveAction</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive action backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive action backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive action backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive action backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -404,7 +404,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveAction</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveAction</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -430,11 +430,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveActionSet</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive action set backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive action set backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive action set backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive action set backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -477,7 +477,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveActionSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveActionSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -503,11 +503,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveCard</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive card message backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive card message backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive card message backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive card message backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -1108,11 +1108,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveColumn</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive column backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive column backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive column backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive column backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -1621,7 +1621,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveColumn</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveColumn</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -1647,11 +1647,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveColumnSet</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive column set backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive column set backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive column set backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive column set backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -1914,7 +1914,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveColumnSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveColumnSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -1940,11 +1940,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveContainer</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive container backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive container backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive container backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive container backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -2547,7 +2547,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveContainer</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveContainer</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -2573,11 +2573,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveFact</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive fact backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive fact backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive fact backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive fact backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -2644,7 +2644,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveFact</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveFact</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -2670,11 +2670,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveFactSet</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive fact set backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive fact set backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -2815,7 +2815,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveFactSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveFactSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -2841,11 +2841,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveImage</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive image backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive image backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive image backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive image backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -3364,7 +3364,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveImage</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveImage</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -3390,11 +3390,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveImageSet</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive image set backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive image set backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive image set backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive image set backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -3651,7 +3651,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveImageSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveImageSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -3699,7 +3699,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveTextBlock</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveTextBlock</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -3725,11 +3725,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveMedia</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive media element backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive media element backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive media element backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive media element backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -4000,7 +4000,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMedia</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMedia</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -4026,11 +4026,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveMediaSource</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive media source backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive media source backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive media source backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive media source backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -4097,7 +4097,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMediaSource</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMediaSource</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -4123,11 +4123,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveMention</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive mention backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive mention backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive mention backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive mention backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -4218,7 +4218,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMention</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMention</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -4244,11 +4244,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveRichTextBlock</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive rich text block backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive rich text block backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="Text">
@@ -4830,7 +4830,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveRichTextBlock</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveRichTextBlock</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -5810,7 +5810,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveColumnSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveColumnSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -5836,11 +5836,11 @@
       <command:verb>New</command:verb>
       <command:noun>AdaptiveTextBlock</command:noun>
       <maml:description>
-        <maml:para>Creates a legacy-named adaptive text block backed by the TeamsX model.</maml:para>
+        <maml:para>Creates a legacy-named adaptive text block backed by the MessageX.Teams model.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a legacy-named adaptive text block backed by the TeamsX model.</maml:para>
+      <maml:para>Creates a legacy-named adaptive text block backed by the MessageX.Teams model.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -6353,7 +6353,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveTextBlock</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveTextBlock</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -6653,7 +6653,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsCardButton</maml:name>
+          <maml:name>MessageX.Teams.TeamsCardButton</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -6900,7 +6900,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsListCardItem</maml:name>
+          <maml:name>MessageX.Teams.TeamsListCardItem</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -7246,7 +7246,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSectionDirective</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSectionDirective</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -7319,7 +7319,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSectionDirective</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSectionDirective</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -7392,7 +7392,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSectionDirective</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSectionDirective</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -7465,7 +7465,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSectionDirective</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSectionDirective</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -7538,7 +7538,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveActionSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveActionSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -8119,7 +8119,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveCard</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveCard</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -8648,7 +8648,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveColumn</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveColumn</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -8941,7 +8941,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveColumnSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveColumnSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -9574,7 +9574,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveContainer</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveContainer</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -9671,7 +9671,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveFact</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveFact</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -9744,7 +9744,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveFactSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveFactSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -9865,7 +9865,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveImage</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveImage</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -9962,7 +9962,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveImageSet</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveImageSet</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -10227,7 +10227,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMedia</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMedia</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -10324,7 +10324,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMediaSource</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMediaSource</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -10445,7 +10445,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveMention</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveMention</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -10542,7 +10542,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveOpenUrlAction</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveOpenUrlAction</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -11106,7 +11106,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveRichTextBlock</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveRichTextBlock</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -11636,7 +11636,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveShowCardAction</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveShowCardAction</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -11733,7 +11733,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveSubmitAction</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveSubmitAction</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -11902,7 +11902,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveTextBlock</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveTextBlock</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12167,7 +12167,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveTextRun</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveTextRun</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12264,7 +12264,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsAdaptiveToggleVisibilityAction</maml:name>
+          <maml:name>MessageX.Teams.TeamsAdaptiveToggleVisibilityAction</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12361,7 +12361,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageImage</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageImage</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12496,7 +12496,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageButton</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageButton</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12593,7 +12593,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsCardImage</maml:name>
+          <maml:name>MessageX.Teams.TeamsCardImage</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12690,7 +12690,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageFact</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageFact</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12859,7 +12859,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsHeroCard</maml:name>
+          <maml:name>MessageX.Teams.TeamsHeroCard</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -12932,7 +12932,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageImage</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageImage</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -13029,7 +13029,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageFact</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageFact</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -13150,7 +13150,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsListCard</maml:name>
+          <maml:name>MessageX.Teams.TeamsListCard</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -13271,7 +13271,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageListItem</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageListItem</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -13512,7 +13512,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageRequest</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageRequest</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -13869,7 +13869,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageSection</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageSection</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -14038,7 +14038,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsThumbnailCard</maml:name>
+          <maml:name>MessageX.Teams.TeamsThumbnailCard</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -14159,7 +14159,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsMessageTarget</maml:name>
+          <maml:name>MessageX.Teams.TeamsMessageTarget</maml:name>
         </dev:type>
       </command:returnValue>
     </command:returnValues>
@@ -14382,7 +14382,7 @@
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Typed parameter sets accept TeamsX message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.&#xD;
+      <maml:para>Typed parameter sets accept MessageX.Teams message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.&#xD;
 Workflows webhooks are the recommended notification transport for new automation.</maml:para>
     </maml:description>
     <command:syntax>
@@ -14981,7 +14981,7 @@ Workflows webhooks are the recommended notification transport for new automation
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>TeamsX.TeamsDeliveryResult</maml:name>
+          <maml:name>MessageX.Teams.TeamsDeliveryResult</maml:name>
         </dev:type>
       </command:returnValue>
       <command:returnValue>

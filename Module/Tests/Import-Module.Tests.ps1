@@ -4,7 +4,7 @@ Describe 'PSTeams module migration shell' {
     }
 
     BeforeEach {
-        Get-Module PSTeams, TeamsX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
     }
 
     It 'exports legacy functions and migrated cmdlets together' {

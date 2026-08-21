@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveColumnSet
 ## SYNOPSIS
-Creates a legacy-named adaptive column set backed by the TeamsX model.
+Creates a legacy-named adaptive column set backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveColumnSet [[-Columns] <scriptblock>] [-Style <string>] [-MinimumHeig
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive column set backed by the TeamsX model.
+Creates a legacy-named adaptive column set backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -164,7 +164,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveColumnSet`
+- `MessageX.Teams.TeamsAdaptiveColumnSet`
 
 ## RELATED LINKS
 

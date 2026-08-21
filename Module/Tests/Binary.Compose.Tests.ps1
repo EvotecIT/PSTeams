@@ -1,6 +1,6 @@
-Describe 'TeamsX binary cmdlets through PSTeams' {
+Describe 'MessageX binary cmdlets through PSTeams' {
     BeforeEach {
-        Get-Module PSTeams, TeamsX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
     }
 
     It 'renders adaptive card JSON from typed cmdlets only' {
@@ -175,7 +175,7 @@ Describe 'TeamsX binary cmdlets through PSTeams' {
     It 'supports Send-TeamsMessage in WhatIf mode with typed input' {
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
 
-        $message = New-TeamsMessage -Text 'Hello from TeamsX'
+        $message = New-TeamsMessage -Text 'Hello from MessageX'
         $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
 
         { Send-TeamsMessage -Message $message -Target $target -WhatIf } | Should -Not -Throw

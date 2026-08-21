@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveMedia
 ## SYNOPSIS
-Creates a legacy-named adaptive media element backed by the TeamsX model.
+Creates a legacy-named adaptive media element backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveMedia [-Sources] <scriptblock> [-PosterUrl <string>] [-AlternateText
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive media element backed by the TeamsX model.
+Creates a legacy-named adaptive media element backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -180,7 +180,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveMedia`
+- `MessageX.Teams.TeamsAdaptiveMedia`
 
 ## RELATED LINKS
 

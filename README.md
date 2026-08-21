@@ -1,6 +1,6 @@
 # PSTeams - Microsoft Teams Notifications for PowerShell and .NET
 
-PSTeams is available as a PowerShell module from PowerShell Gallery and is powered by a reusable C# library named `TeamsX`.
+PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into the reusable `MessageX.Core` and `MessageX.Teams` libraries while keeping the familiar Teams cmdlets.
 
 ## PowerShell Module
 
@@ -29,8 +29,9 @@ PSTeams is available as a PowerShell module from PowerShell Gallery and is power
 
 PSTeams uses a cleaner architecture:
 
-- `TeamsX` is the reusable C# library for composing and delivering Microsoft Teams messages.
-- `TeamsX.PowerShell` exposes thin binary PowerShell cmdlets over that library.
+- `MessageX.Core` owns provider-neutral delivery results, message references, capability flags, and classified errors.
+- `MessageX.Teams` owns Microsoft Teams composition and delivery.
+- `MessageX.PowerShell` exposes thin binary PowerShell cmdlets over `MessageX.Teams`.
 - `PSTeams` remains the PowerShell module users install and import.
 
 ## Capabilities
@@ -40,7 +41,7 @@ PSTeams uses a cleaner architecture:
 - Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
 - Compose Hero, Thumbnail, and List cards with typed cmdlets.
 - Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
-- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in TeamsX.
+- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in MessageX.Teams.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
 ## Installing and Updating
@@ -96,21 +97,20 @@ $message | ConvertTo-TeamsJson
 
 ## Supported .NET and PowerShell Versions
 
-### TeamsX Library
+### MessageX libraries
 
 - .NET 8.0 and .NET 10.0 for modern cross-platform use
-- .NET Standard 2.0 for compatibility
 - .NET Framework 4.7.2 for Windows PowerShell 5.1 scenarios
 
 ### PowerShell Module
 
-- PowerShell 7.x uses the .NET 8.0 binary build by default during development.
+- PowerShell 7 on .NET 10 uses the .NET 10 binary build; PowerShell 7 on .NET 8 uses the .NET 8 binary build.
 - Windows PowerShell 5.1 uses the .NET Framework 4.7.2 binary build during development.
 - Packaged module builds are produced by `Build\Build-Module.ps1` through PowerForge/PSPublishModule. Development builds are unsigned by default; signing is an explicit release-gate choice.
 
 ## Legacy Branch
 
-The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `TeamsX`, `TeamsX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
+The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, `MessageX.Teams`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
 
 ## Links/Blogs
 
@@ -489,7 +489,7 @@ Send-TeamsMessage `
 
 ## Typed Adaptive Cards
 
-The public adaptive surface is binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
+The public adaptive surface is binary-backed through `MessageX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
 
 If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
 
@@ -561,7 +561,7 @@ Typed wrapper-card direct sending currently targets incoming and Workflow webhoo
 
 ## Microsoft Graph Boundary
 
-Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. TeamsX intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
+Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. MessageX.Teams intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
 
 ## Documentation for Message Cards (for development)
 

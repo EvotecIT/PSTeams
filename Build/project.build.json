@@ -2,13 +2,14 @@
   "$schema": "https://raw.githubusercontent.com/EvotecIT/PSPublishModule/main/Schemas/project.build.schema.json",
   "RootPath": "..",
   "ExpectedVersionMap": {
-    "TeamsX": "0.1.X"
+    "MessageX.Core": "0.1.X",
+    "MessageX.Teams": "0.1.X"
   },
   "ExpectedVersionMapAsInclude": true,
   "ExpectedVersionMapUseWildcards": false,
   "ExcludeProjects": [
-    "TeamsX.PowerShell",
-    "TeamsX.Tests"
+    "MessageX.PowerShell",
+    "MessageX.Tests"
   ],
   "NugetSource": [],
   "IncludePrerelease": true,
@@ -38,7 +39,7 @@
   "GitHubIncludeProjectNameInTag": false,
   "GitHubGenerateReleaseNotes": true,
   "GitHubReleaseMode": "Single",
-  "GitHubPrimaryProject": "TeamsX",
+  "GitHubPrimaryProject": "MessageX.Core",
   "GitHubTagTemplate": "{Repo}-v{UtcTimestamp}",
   "GitHubReleaseName": "{Repo} {UtcDateTime}"
 }

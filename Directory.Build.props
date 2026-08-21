@@ -11,6 +11,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(CI)' == 'true' ">

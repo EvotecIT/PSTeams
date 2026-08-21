@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveRichTextBlock
 ## SYNOPSIS
-Creates a legacy-named adaptive rich text block backed by the TeamsX model.
+Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### Text (Default)
@@ -20,7 +20,7 @@ New-AdaptiveRichTextBlock -Inlines <TeamsAdaptiveTextRun[]> [-Spacing <string>] 
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive rich text block backed by the TeamsX model.
+Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -303,7 +303,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveRichTextBlock`
+- `MessageX.Teams.TeamsAdaptiveRichTextBlock`
 
 ## RELATED LINKS
 

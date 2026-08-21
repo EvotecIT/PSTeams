@@ -19,7 +19,7 @@ Build-Module -ModuleName 'PSTeams' -Path 'Module' {
         Author               = 'Przemyslaw Klys'
         CompanyName          = 'Evotec'
         Copyright            = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
-        Description          = 'PSTeams provides typed Microsoft Teams message composition and delivery through the reusable TeamsX library and compiled PowerShell cmdlets.'
+        Description          = 'PSTeams provides typed Microsoft Teams message composition and delivery through MessageX.Teams and thin compiled PowerShell cmdlets.'
         Tags                 = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'PowerShell', 'Windows', 'MacOS', 'Linux')
         IconUri              = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
         ProjectUri           = 'https://github.com/EvotecIT/PSTeams'
@@ -35,9 +35,9 @@ Build-Module -ModuleName 'PSTeams' -Path 'Module' {
         SignModule                 = $SignModule
         MergeModuleOnBuild         = $true
         CertificateThumbprint      = '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
-        NETProjectPath             = '..\..\TeamsX.PowerShell\TeamsX.PowerShell.csproj'
-        NETProjectName             = 'TeamsX.PowerShell'
-        NETBinaryModule            = 'TeamsX.PowerShell.dll'
+        NETProjectPath             = '..\..\Sources\MessageX.PowerShell\MessageX.PowerShell.csproj'
+        NETProjectName             = 'MessageX.PowerShell'
+        NETBinaryModule            = 'MessageX.PowerShell.dll'
         NETConfiguration           = 'Release'
         NETFramework               = 'net472', 'net8.0', 'net10.0'
         DotSourceLibraries         = $true

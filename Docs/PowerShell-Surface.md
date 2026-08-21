@@ -1,14 +1,15 @@
 # PowerShell Surface
 
-`main` exposes one `PSTeams` module whose public surface is now binary-backed through `TeamsX.PowerShell`, with the shipping shell in `Module\PSTeams`.
+The current migration branch exposes one `PSTeams` module whose public surface is binary-backed through `MessageX.PowerShell`, with the shipping shell in `Module\PSTeams`.
 
 ## Current Module Shape
 
-- `TeamsX` is the reusable .NET library
-- `TeamsX.PowerShell` is the thin binary cmdlet layer
+- `MessageX.Core` is the provider-neutral contract library
+- `MessageX.Teams` is the reusable Teams provider library
+- `MessageX.PowerShell` is the thin binary cmdlet layer
 - `Module\PSTeams` is the shipping module shell and alias bridge
 - Legacy public names are preserved as cmdlets and aliases, not script functions
-- The runtime module import is now binary-only: the shell loads `TeamsX.PowerShell.dll`, sets aliases, and does not dot-source public/private script functions
+- The runtime module import is binary-only: the shell loads `MessageX.PowerShell.dll`, sets aliases, and does not dot-source public/private script functions
 - The old module-local helper scripts and stale in-module legacy tests have been removed; the active validation suite lives in `Module\Tests`
 
 ## Current Cmdlets
@@ -59,15 +60,15 @@
 ## Migration Status
 
 - `FunctionsToExport` in `Module\PSTeams\PSTeams.psd1` is now empty.
-- The whole `New-Adaptive*` surface is binary-backed on `main`.
-- `Module\PSTeams\PSTeams.psm1` now follows the `DnsClientX`-style development loader and prefers `net8.0` for PowerShell 7.x, with `net10.0` only as a fallback development build when present.
-- Remaining work is now quality and parity polish: warnings cleanup, docs/examples refresh, and feature expansion on the typed cmdlet surface.
-- Authenticated Graph lifecycle and governed Teams chat/channel delivery belong to GraphEssentialsX; TeamsX keeps webhook composition and delivery independent of a Graph SDK.
+- The whole `New-Adaptive*` surface is binary-backed on the migration branch.
+- `Module\PSTeams\PSTeams.psm1` selects `net10.0` for PowerShell running on .NET 10, `net8.0` for PowerShell running on .NET 8, and `net472` for Windows PowerShell 5.1.
+- Remaining work is provider expansion and the eventual PowerShell module rename; current Teams command names remain stable.
+- Authenticated Graph lifecycle and governed Teams chat/channel delivery belong to GraphEssentialsX; `MessageX.Teams` keeps Workflow/webhook composition and delivery independent of a Graph SDK.
 
 ## Design Rules
 
 - New public PowerShell features should be implemented as C# cmdlets.
-- `TeamsX.PowerShell` should stay thin over `TeamsX`.
+- `MessageX.PowerShell` stays thin over provider libraries such as `MessageX.Teams`; provider-neutral contracts stay in `MessageX.Core`.
 - If a feature needs more composition support, add typed .NET models first, then expose cmdlets.
 - Keep the existing `PSTeams` public names available, but prefer implementing them as cmdlets or aliases.
 - Delete PowerShell implementations only after the matching C# cmdlet path is in place and tested.
@@ -109,4 +110,4 @@ $wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wr
 
 ## Microsoft Graph Boundary
 
-TeamsX does not ship a second authenticated Graph client. GraphEssentialsX owns authentication, discovery, paging, throttling, lifecycle operations, and governed Teams chat/channel writes. A later MessageX adapter can compose TeamsX messages and delegate delivery to that owner after GraphEssentialsX is available as a consumable package.
+`MessageX.Teams` does not ship a second authenticated Graph client. GraphEssentialsX owns authentication, discovery, paging, throttling, lifecycle operations, and governed Teams chat/channel writes. A later `MessageX.Teams.Graph` adapter can compose provider messages and delegate delivery to that owner after GraphEssentialsX is available as a consumable package.

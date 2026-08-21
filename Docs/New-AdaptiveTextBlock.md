@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveTextBlock
 ## SYNOPSIS
-Creates a legacy-named adaptive text block backed by the TeamsX model.
+Creates a legacy-named adaptive text block backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveTextBlock [[-Text] <string>] [-Color <string>] [-FontType <string>] 
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive text block backed by the TeamsX model.
+Creates a legacy-named adaptive text block backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -308,7 +308,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveTextBlock`
+- `MessageX.Teams.TeamsAdaptiveTextBlock`
 
 ## RELATED LINKS
 

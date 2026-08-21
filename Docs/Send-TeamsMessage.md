@@ -40,7 +40,7 @@ Send-TeamsMessage [[-SectionsInput] <scriptblock>] -Uri <uri> -Sections <TeamsMe
 ```
 
 ## DESCRIPTION
-Typed parameter sets accept TeamsX message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.
+Typed parameter sets accept MessageX.Teams message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.
 Workflows webhooks are the recommended notification transport for new automation.
 
 ## EXAMPLES
@@ -324,7 +324,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsDeliveryResult`
+- `MessageX.Teams.TeamsDeliveryResult`
 - `System.String`
 
 ## RELATED LINKS

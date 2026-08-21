@@ -5,7 +5,7 @@
     Author               = 'Przemyslaw Klys'
     CompanyName          = 'Evotec'
     Copyright            = '(c) 2011 - 2026 Przemyslaw Klys @ Evotec. All rights reserved.'
-    Description          = 'PSTeams provides typed Microsoft Teams message composition and delivery through the reusable TeamsX library and compiled PowerShell cmdlets.'
+    Description          = 'PSTeams provides typed Microsoft Teams message composition and delivery through MessageX.Teams and thin compiled PowerShell cmdlets.'
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @()
@@ -15,7 +15,7 @@
         PSData = @{
             Tags                       = @('Teams', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'PowerShell', 'Windows', 'MacOS', 'Linux')
             ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
-            ReleaseNotes               = 'Main branch now ships the PSTeams module shell from Module\PSTeams and migrates functionality incrementally to TeamsX-based cmdlets.'
+            ReleaseNotes               = 'The current migration keeps PSTeams command names while moving implementation to MessageX.Teams and MessageX.PowerShell.'
             IconUri                    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
             RequireLicenseAcceptance   = $false
             ExternalModuleDependencies = @()

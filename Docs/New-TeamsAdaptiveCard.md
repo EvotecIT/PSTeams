@@ -356,7 +356,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveCard`
+- `MessageX.Teams.TeamsAdaptiveCard`
 
 ## RELATED LINKS
 

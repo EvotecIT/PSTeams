@@ -307,7 +307,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveRichTextBlock`
+- `MessageX.Teams.TeamsAdaptiveRichTextBlock`
 
 ## RELATED LINKS
 

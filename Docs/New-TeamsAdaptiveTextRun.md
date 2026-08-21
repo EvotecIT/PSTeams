@@ -180,7 +180,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveTextRun`
+- `MessageX.Teams.TeamsAdaptiveTextRun`
 
 ## RELATED LINKS
 

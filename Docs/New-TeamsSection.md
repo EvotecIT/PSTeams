@@ -228,7 +228,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsMessageSection`
+- `MessageX.Teams.TeamsMessageSection`
 
 ## RELATED LINKS
 

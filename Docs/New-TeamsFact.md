@@ -68,7 +68,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsMessageFact`
+- `MessageX.Teams.TeamsMessageFact`
 
 ## RELATED LINKS
 

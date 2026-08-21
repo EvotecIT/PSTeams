@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveCard
 ## SYNOPSIS
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveCard [[-Body] <scriptblock>] [-Action <scriptblock>] [-Uri <uri>] [-
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ## EXAMPLES
 

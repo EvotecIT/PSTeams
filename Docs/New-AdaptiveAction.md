@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveAction
 ## SYNOPSIS
-Creates a legacy-named adaptive action backed by the TeamsX model.
+Creates a legacy-named adaptive action backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveAction [-Body <scriptblock>] [-Actions <scriptblock>] [-Type <string
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive action backed by the TeamsX model.
+Creates a legacy-named adaptive action backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -116,7 +116,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveAction`
+- `MessageX.Teams.TeamsAdaptiveAction`
 
 ## RELATED LINKS
 

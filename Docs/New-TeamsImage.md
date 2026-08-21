@@ -52,7 +52,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsMessageImage`
+- `MessageX.Teams.TeamsMessageImage`
 
 ## RELATED LINKS
 

@@ -75,8 +75,8 @@ jobs:
 
             - name: Build .NET solution
               run: |
-                  dotnet restore TeamsX.sln
-                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+                  dotnet restore Sources/MessageX.slnx
+                  dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run PowerShell tests
               shell: powershell
@@ -111,8 +111,8 @@ jobs:
 
             - name: Build .NET solution
               run: |
-                  dotnet restore TeamsX.sln
-                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+                  dotnet restore Sources/MessageX.slnx
+                  dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run PowerShell tests
               shell: pwsh
@@ -155,8 +155,8 @@ jobs:
 
             - name: Build .NET solution
               run: |
-                  dotnet restore TeamsX.sln
-                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+                  dotnet restore Sources/MessageX.slnx
+                  dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run PowerShell tests
               shell: pwsh
@@ -203,8 +203,8 @@ jobs:
 
             - name: Build .NET solution
               run: |
-                  dotnet restore TeamsX.sln
-                  dotnet build TeamsX.sln --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+                  dotnet restore Sources/MessageX.slnx
+                  dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run PowerShell tests
               shell: pwsh

@@ -84,7 +84,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsListCard`
+- `MessageX.Teams.TeamsListCard`
 
 ## RELATED LINKS
 

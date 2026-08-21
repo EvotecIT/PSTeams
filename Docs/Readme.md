@@ -7,7 +7,7 @@ Locale: en-US
 ---
 # PSTeams Module
 ## Description
-PSTeams provides typed Microsoft Teams message composition and delivery through the reusable TeamsX library and compiled PowerShell cmdlets.
+PSTeams provides typed Microsoft Teams message composition and delivery through MessageX.Teams and thin compiled PowerShell cmdlets.
 
 ## PSTeams Cmdlets
 ### [ConvertTo-TeamsFact](ConvertTo-TeamsFact.md)
@@ -20,55 +20,55 @@ ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
 Converts dictionaries and PowerShell objects into Teams sections.
 
 ### [New-AdaptiveAction](New-AdaptiveAction.md)
-Creates a legacy-named adaptive action backed by the TeamsX model.
+Creates a legacy-named adaptive action backed by the MessageX.Teams model.
 
 ### [New-AdaptiveActionSet](New-AdaptiveActionSet.md)
-Creates a legacy-named adaptive action set backed by the TeamsX model.
+Creates a legacy-named adaptive action set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveCard](New-AdaptiveCard.md)
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ### [New-AdaptiveColumn](New-AdaptiveColumn.md)
-Creates a legacy-named adaptive column backed by the TeamsX model.
+Creates a legacy-named adaptive column backed by the MessageX.Teams model.
 
 ### [New-AdaptiveColumnSet](New-AdaptiveColumnSet.md)
-Creates a legacy-named adaptive column set backed by the TeamsX model.
+Creates a legacy-named adaptive column set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveContainer](New-AdaptiveContainer.md)
-Creates a legacy-named adaptive container backed by the TeamsX model.
+Creates a legacy-named adaptive container backed by the MessageX.Teams model.
 
 ### [New-AdaptiveFact](New-AdaptiveFact.md)
-Creates a legacy-named adaptive fact backed by the TeamsX model.
+Creates a legacy-named adaptive fact backed by the MessageX.Teams model.
 
 ### [New-AdaptiveFactSet](New-AdaptiveFactSet.md)
-Creates a legacy-named adaptive fact set backed by the TeamsX model.
+Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveImage](New-AdaptiveImage.md)
-Creates a legacy-named adaptive image backed by the TeamsX model.
+Creates a legacy-named adaptive image backed by the MessageX.Teams model.
 
 ### [New-AdaptiveImageSet](New-AdaptiveImageSet.md)
-Creates a legacy-named adaptive image set backed by the TeamsX model.
+Creates a legacy-named adaptive image set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveLineBreak](New-AdaptiveLineBreak.md)
 Creates a legacy-named adaptive line break backed by a newline text block.
 
 ### [New-AdaptiveMedia](New-AdaptiveMedia.md)
-Creates a legacy-named adaptive media element backed by the TeamsX model.
+Creates a legacy-named adaptive media element backed by the MessageX.Teams model.
 
 ### [New-AdaptiveMediaSource](New-AdaptiveMediaSource.md)
-Creates a legacy-named adaptive media source backed by the TeamsX model.
+Creates a legacy-named adaptive media source backed by the MessageX.Teams model.
 
 ### [New-AdaptiveMention](New-AdaptiveMention.md)
-Creates a legacy-named adaptive mention backed by the TeamsX model.
+Creates a legacy-named adaptive mention backed by the MessageX.Teams model.
 
 ### [New-AdaptiveRichTextBlock](New-AdaptiveRichTextBlock.md)
-Creates a legacy-named adaptive rich text block backed by the TeamsX model.
+Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.
 
 ### [New-AdaptiveTable](New-AdaptiveTable.md)
 Creates a legacy-named adaptive table by projecting objects into column sets.
 
 ### [New-AdaptiveTextBlock](New-AdaptiveTextBlock.md)
-Creates a legacy-named adaptive text block backed by the TeamsX model.
+Creates a legacy-named adaptive text block backed by the MessageX.Teams model.
 
 ### [New-CardList](New-CardList.md)
 Creates or sends a Teams ListCard payload.

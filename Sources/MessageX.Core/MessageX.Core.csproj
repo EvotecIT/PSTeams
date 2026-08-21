@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX Core</Title>
+    <Description>Provider-neutral messaging contracts, delivery results, capabilities, and errors.</Description>
+    <AssemblyName>MessageX.Core</AssemblyName>
+    <PackageId>MessageX.Core</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

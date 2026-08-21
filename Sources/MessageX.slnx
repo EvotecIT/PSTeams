@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MessageX.Core/MessageX.Core.csproj" />
+  <Project Path="MessageX.PowerShell/MessageX.PowerShell.csproj" />
+  <Project Path="MessageX.Teams/MessageX.Teams.csproj" />
+  <Project Path="MessageX.Tests/MessageX.Tests.csproj" />
+</Solution>
