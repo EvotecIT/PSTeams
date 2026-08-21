@@ -255,12 +255,12 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Notification delivery
 
-- [ ] Support Power Automate Workflow webhook URLs for external notifications.
-- [ ] Support Workflow destinations configured for channels, group chats, and chats.
-- [ ] Support plain text fallback and Adaptive Card payloads accepted by the configured Workflow.
-- [ ] Return a useful delivery result even when the Workflow does not expose a durable Teams message identifier.
-- [ ] Model Workflow endpoints as send-only capabilities rather than pretending they provide inbound conversation support.
-- [ ] Add transport options for proxy, timeout, cancellation, headers that are safe to expose, and redacted diagnostics.
+- [x] Support Power Automate Workflow webhook URLs for external notifications.
+- [x] Support Workflow destinations configured for channels, group chats, and chats as descriptive target metadata.
+- [x] Support plain text fallback and Adaptive Card payloads accepted by the configured Workflow.
+- [x] Return a useful delivery result even when the Workflow does not expose a durable Teams message identifier.
+- [x] Model Workflow endpoints as send-only capabilities rather than pretending they provide inbound conversation support.
+- [x] Add transport options for proxy, timeout, cancellation, a product user agent, safe correlation/retry headers, and redacted diagnostics.
 
 ### Adaptive Cards and legacy card surfaces
 
@@ -853,10 +853,20 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 1 - Teams notification vertical slice
 
-- [ ] Extract or refine minimal core results, errors, and transport options while retaining the current TeamsX Workflow target as the first provider vertical slice.
-- [ ] Retain and modernize existing typed Adaptive Card composition required by real examples.
-- [ ] Preserve and refine the existing `Send-TeamsMessage` and `New-Adaptive*` commands with deliberate parameter-set and compatibility decisions.
-- [ ] Add proxy, timeout, cancellation, diagnostics, serialization fixtures, live Workflow proof, and package/module artifact tests.
+- [x] Extract or refine minimal core results, errors, and transport options while retaining the current Teams Workflow target as the first provider vertical slice.
+- [x] Retain and modernize existing typed Adaptive Card composition required by real examples.
+- [x] Preserve and refine the existing `Send-TeamsMessage` and `New-Adaptive*` commands with deliberate parameter-set and compatibility decisions.
+- [x] Add proxy, timeout, cancellation, safe diagnostics, and serialization fixtures.
+- [x] Complete exact package/module artifact tests for this slice.
+- [ ] Complete live Workflow proof for a test channel and chat.
+
+#### Recorded Phase 1 candidate evidence
+
+- `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` build without warnings for `net472`, `net8.0`, and `net10.0`.
+- The Microsoft Testing Platform suite passes 40/40 on .NET 8 and .NET 10. It covers Workflow destination metadata, send-only capability discovery, proxy/timeout/user-agent configuration, bounded safe correlation and retry headers, fully redacted exception chains, and the distinction between transport timeouts and caller cancellation.
+- The source module passes 41/41 on PowerShell 7 and Windows PowerShell 5.1. Every webhook-capable retained command exposes the same enterprise transport parameters, response bodies stay out of default delivery errors, and pipeline records reuse one lifecycle-scoped client.
+- The exact PowerForge-packed PSTeams 2.4.1 artifact passes 41/41 on PowerShell 7 while loading `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` from `Lib/Core-net10.0`, and 41/41 on Windows PowerShell 5.1 while loading the same assemblies from `Lib/Default`.
+- Live Workflow delivery remains intentionally pending until the configured test channel and chat URLs are supplied during the authorized provider-validation phase.
 
 **Exit:** C# and PowerShell users can install a packed artifact and send text and Adaptive Cards through a current Teams Workflow.
 

@@ -14,7 +14,7 @@ namespace MessageX.PowerShell;
 [Cmdlet(VerbsCommunications.Send, "TeamsMessageBody", SupportsShouldProcess = true)]
 [Alias("TeamsMessageBody")]
 [OutputType(typeof(string))]
-public sealed class CmdletSendTeamsMessageBody : AsyncPSCmdlet {
+public sealed class CmdletSendTeamsMessageBody : TeamsWebhookCmdletBase {
     /// <summary>HTTPS Teams incoming webhook or Workflows URL.</summary>
     [Alias("TeamsID", "Url")]
     [Parameter(Mandatory = true, Position = 0)]
@@ -33,10 +33,6 @@ public sealed class CmdletSendTeamsMessageBody : AsyncPSCmdlet {
     [Parameter(Mandatory = false)]
     public SwitchParameter Wrap { get; set; }
 
-    /// <summary>HTTP proxy used for the request.</summary>
-    [Parameter(Mandatory = false)]
-    public Uri? Proxy { get; set; }
-
     protected override async Task ProcessRecordAsync() {
         var jsonBody = Wrap.IsPresent
             ? WrapMessageBody(Body)
@@ -52,9 +48,8 @@ public sealed class CmdletSendTeamsMessageBody : AsyncPSCmdlet {
             return;
         }
 
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = await clientLease.Client.SendJsonAsync(jsonBody, target, CancelToken);
+        var result = await SendWithClientAsync(client => client.SendJsonAsync(jsonBody, target, CancelToken));
 
         WriteVerbose($"Send-TeamsMessageBody - Completed with HTTP status {result.StatusCode?.ToString() ?? "unknown"}.");
         if (!result.IsSuccessStatusCode) {

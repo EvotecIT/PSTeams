@@ -76,10 +76,12 @@ Describe 'MessageX binary cmdlets through PSTeams' {
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
 
         $incoming = New-TeamsWebhookTarget -Uri 'https://example.test/incoming'
-        $workflow = New-TeamsWebhookTarget -Uri 'https://example.test/workflow' -Workflow
+        $workflow = New-TeamsWebhookTarget -Uri 'https://example.test/workflow' -Workflow -Destination Channel
 
         $incoming.DeliveryMethod.ToString() | Should -Be 'IncomingWebhook'
         $workflow.DeliveryMethod.ToString() | Should -Be 'WorkflowWebhook'
+        $workflow.WorkflowDestination.ToString() | Should -Be 'Channel'
+        $workflow.Capabilities.ToString() | Should -Be 'Send'
     }
 
     It 'renders connector-card JSON from typed Teams message cmdlets' {
@@ -178,7 +180,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
         $message = New-TeamsMessage -Text 'Hello from MessageX'
         $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
 
-        { Send-TeamsMessage -Message $message -Target $target -WhatIf } | Should -Not -Throw
+        { Send-TeamsMessage -Message $message -Target $target -Proxy 'http://proxy.example.test:8080' -TimeoutSeconds 15 -UserAgent 'PSTeams.Tests/1.0' -WhatIf } | Should -Not -Throw
     }
 
     It 'supports Send-TeamsMessage in WhatIf mode with typed wrapper-card input' {
@@ -205,5 +207,85 @@ Describe 'MessageX binary cmdlets through PSTeams' {
 
         (Get-Command Send-TeamsMessage).CommandType | Should -Be 'Cmdlet'
         (Get-Command Send-TeamsMessage).Source | Should -Be 'PSTeams'
+    }
+
+    It 'exposes consistent enterprise transport parameters on every webhook send entry point' {
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+
+        $commands = @(
+            'Send-TeamsMessage'
+            'Send-TeamsMessageBody'
+            'New-AdaptiveCard'
+            'New-HeroCard'
+            'New-ThumbnailCard'
+            'New-CardList'
+        )
+
+        foreach ($commandName in $commands) {
+            $parameters = (Get-Command $commandName).Parameters
+            $parameters.ContainsKey('Proxy') | Should -BeTrue
+            $parameters.ContainsKey('TimeoutSeconds') | Should -BeTrue
+            $parameters.ContainsKey('UserAgent') | Should -BeTrue
+        }
+    }
+
+    It 'keeps provider response bodies out of default PowerShell delivery errors' {
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+
+        $result = [MessageX.Teams.TeamsDeliveryResult]::new()
+        $result.StatusCode = 429
+        $result.ErrorKind = [MessageX.Core.MessageErrorKind]::RateLimited
+        $result.ErrorMessage = 'Teams webhook returned HTTP status 429.'
+        $result.CorrelationId = 'request-42'
+        $result.RetryAfter = [TimeSpan]::FromSeconds(30)
+        $result.Target = 'Release alerts'
+        $result.ResponseBody = 'request rejected for https://example.test/workflows/secret-token'
+
+        $supportType = [MessageX.PowerShell.CmdletSendTeamsMessage].Assembly.GetType(
+            'MessageX.PowerShell.TeamsPowerShellDeliverySupport',
+            $true)
+        $flags = [System.Reflection.BindingFlags]'Public, Static'
+        $method = $supportType.GetMethod('CreateDeliveryFailureError', $flags)
+        $errorRecord = $method.Invoke($null, [object[]]@($result, 'Send-TeamsMessage'))
+
+        $errorRecord.ErrorDetails.Message | Should -Match 'RateLimited'
+        $errorRecord.ErrorDetails.Message | Should -Match 'request-42'
+        $errorRecord.ErrorDetails.Message | Should -Match '30 seconds'
+        $errorRecord.ErrorDetails.Message | Should -Not -Match 'secret-token'
+        $errorRecord.Exception.ToString() | Should -Not -Match 'secret-token'
+
+        $unsafeResult = [MessageX.Teams.TeamsDeliveryResult]::new()
+        $unsafeResult.StatusCode = 429
+        $unsafeResult.ErrorKind = [MessageX.Core.MessageErrorKind]::RateLimited
+        $unsafeResult.ErrorMessage = 'Teams webhook returned HTTP status 429.'
+        $unsafeResult.CorrelationId = 'https://example.test/workflows/secret-token'
+        $unsafeResult.Target = 'Release alerts'
+        $unsafeError = $method.Invoke($null, [object[]]@($unsafeResult, 'Send-TeamsMessage'))
+
+        $unsafeResult.CorrelationId | Should -BeNullOrEmpty
+        $unsafeError.ErrorDetails.Message | Should -Not -Match 'secret-token'
+    }
+
+    It 'owns one reusable Teams client lease for the complete cmdlet lifecycle' {
+        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+
+        $cmdlet = [MessageX.PowerShell.CmdletSendTeamsMessageBody]::new()
+        $baseType = [MessageX.PowerShell.TeamsWebhookCmdletBase]
+        $flags = [System.Reflection.BindingFlags]'Instance, NonPublic'
+        $leaseField = $baseType.GetField('_clientLease', $flags)
+        $begin = $baseType.GetMethod('BeginProcessingAsync', $flags)
+        $end = $baseType.GetMethod('EndProcessingAsync', $flags)
+
+        $begin.Invoke($cmdlet, [object[]]@()).GetAwaiter().GetResult()
+        $lease = $leaseField.GetValue($cmdlet)
+        $lease | Should -Not -BeNullOrEmpty
+        [object]::ReferenceEquals($leaseField.GetValue($cmdlet), $lease) | Should -BeTrue
+
+        $end.Invoke($cmdlet, [object[]]@()).GetAwaiter().GetResult()
+        $leaseField.GetValue($cmdlet) | Should -BeNullOrEmpty
+        $disposedField = $lease.GetType().GetField('_disposed', $flags)
+        $disposedField.GetValue($lease) | Should -BeTrue
+
+        { $cmdlet.Dispose() } | Should -Not -Throw
     }
 }

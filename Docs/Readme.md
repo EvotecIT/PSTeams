@@ -190,7 +190,7 @@ Creates a connector-card section.
 New-TeamsThumbnailCard [-Title <string>] [-SubTitle <string>] [-Text <string>] [-Images <TeamsCardImage[]>] [-Buttons <TeamsCardButton[]>] [<CommonParameters>]
 
 ### [New-TeamsWebhookTarget](New-TeamsWebhookTarget.md)
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Workflow] [<CommonParameters>]
+Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 
 ### [New-ThumbnailCard](New-ThumbnailCard.md)
 Creates or sends a Teams ThumbnailCard payload.

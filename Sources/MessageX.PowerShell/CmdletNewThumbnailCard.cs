@@ -9,7 +9,7 @@ namespace MessageX.PowerShell;
 /// </summary>
 [Cmdlet(VerbsCommon.New, "ThumbnailCard", SupportsShouldProcess = true)]
 [OutputType(typeof(string))]
-public sealed class CmdletNewThumbnailCard : AsyncPSCmdlet {
+public sealed class CmdletNewThumbnailCard : TeamsWebhookCmdletBase {
     [Parameter(Mandatory = true, Position = 0)]
     public ScriptBlock Content { get; set; } = null!;
 
@@ -24,12 +24,6 @@ public sealed class CmdletNewThumbnailCard : AsyncPSCmdlet {
 
     [Parameter(Mandatory = false)]
     public Uri? Uri { get; set; }
-
-    /// <summary>
-    /// Gets or sets the HTTP proxy used when the card is sent.
-    /// </summary>
-    [Parameter(Mandatory = false)]
-    public Uri? Proxy { get; set; }
 
     protected override async Task ProcessRecordAsync() {
         var card = new TeamsThumbnailCard {
@@ -98,10 +92,9 @@ public sealed class CmdletNewThumbnailCard : AsyncPSCmdlet {
     }
 
     private async Task SendAttachmentBodyAsync(string attachmentBody, Uri uri) {
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(uri);
         var wrappedBody = TeamsWrapperCardRenderer.WrapAsMessage(attachmentBody);
-        var result = await clientLease.Client.SendJsonAsync(wrappedBody, target, CancelToken);
+        var result = await SendWithClientAsync(client => client.SendJsonAsync(wrappedBody, target, CancelToken));
 
         if (!result.IsSuccessStatusCode) {
             WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "New-ThumbnailCard"));

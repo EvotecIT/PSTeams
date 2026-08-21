@@ -64,6 +64,8 @@ The current migration branch exposes one `PSTeams` module whose public surface i
 - `Module\PSTeams\PSTeams.psm1` selects `net10.0` for PowerShell running on .NET 10, `net8.0` for PowerShell running on .NET 8, and `net472` for Windows PowerShell 5.1.
 - Remaining work is provider expansion and the eventual PowerShell module rename; current Teams command names remain stable.
 - Authenticated Graph lifecycle and governed Teams chat/channel delivery belong to GraphEssentialsX; `MessageX.Teams` keeps Workflow/webhook composition and delivery independent of a Graph SDK.
+- Workflow targets can record `Channel`, `GroupChat`, or `Chat` as descriptive destination metadata while advertising only the `Send` capability.
+- `Send-TeamsMessage` exposes proxy, timeout, and user-agent transport controls for typed and retained legacy parameter sets; cancellation is propagated by the compiled cmdlet.
 
 ## Design Rules
 

@@ -32,4 +32,16 @@ public class TeamsMessageTargetTests {
         var exception = Assert.Throws<ArgumentException>(action);
         Assert.Contains("HTTPS", exception.Message);
     }
+
+    [Fact]
+    public void ForWorkflowWebhookRecordsConfiguredDestinationWithoutAddingConversationCapabilities() {
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"),
+            "Release channel",
+            TeamsWorkflowDestinationKind.Channel);
+
+        Assert.Equal(TeamsWorkflowDestinationKind.Channel, target.WorkflowDestination);
+        Assert.Equal(MessageCapabilities.Send, target.Capabilities);
+        Assert.False(target.Capabilities.HasFlag(MessageCapabilities.Reply));
+    }
 }

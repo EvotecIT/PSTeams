@@ -37,6 +37,8 @@ PSTeams uses a cleaner architecture:
 ## Capabilities
 
 - Send Microsoft Teams notifications through incoming webhooks and workflow webhooks.
+- Describe whether a Workflow URL delivers to a channel, group chat, or chat without claiming conversation access that the URL does not provide.
+- Configure proxy, timeout, cancellation, and product user-agent behavior for webhook delivery.
 - Compose classic connector-card messages with sections, facts, images, buttons, and activity fields.
 - Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
 - Compose Hero, Thumbnail, and List cards with typed cmdlets.
@@ -88,6 +90,24 @@ $section = New-TeamsSection `
 $message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
 Send-TeamsMessage -Message $message -Target $target
 ```
+
+Send an Adaptive Card through a Workflow that is configured to deliver to a channel:
+
+```powershell
+$target = New-TeamsWebhookTarget `
+    -Uri $Env:TEAMS_WORKFLOW_URL `
+    -Workflow `
+    -Destination Channel `
+    -DisplayName 'Release channel'
+
+$card = New-TeamsAdaptiveCard -Body @(
+    New-TeamsAdaptiveTextBlock -Text 'Deployment completed' -Weight Bolder
+)
+$message = New-TeamsMessage -Summary 'Deployment completed' -AdaptiveCard $card
+Send-TeamsMessage -Message $message -Target $target -TimeoutSeconds 30 -PassThru
+```
+
+The destination value is descriptive metadata. Workflow URLs remain send-only: they do not provide message IDs, replies, updates, deletes, or inbound events.
 
 Render the same message as JSON when you want to validate payloads in tests or CI:
 

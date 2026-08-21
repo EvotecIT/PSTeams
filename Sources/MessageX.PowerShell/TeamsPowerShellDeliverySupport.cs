@@ -1,23 +1,16 @@
 using System.Management.Automation;
-using System.Net;
-using System.Net.Http;
 using MessageX.Teams;
 
 namespace MessageX.PowerShell;
 
 internal static class TeamsPowerShellDeliverySupport {
-    public static TeamsClientLease CreateClientLease(Uri? proxy) {
-        if (proxy is null) {
-            return TeamsClientLease.SharedDefault;
-        }
-
-        var handler = new HttpClientHandler {
-            Proxy = new WebProxy(proxy),
-            UseProxy = true,
-            AllowAutoRedirect = false
+    public static TeamsClientLease CreateClientLease(Uri? proxy, int timeoutSeconds = 100, string? userAgent = null) {
+        var options = new MessageHttpTransportOptions {
+            ProxyUri = proxy,
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds),
+            UserAgent = userAgent
         };
-        var httpClient = new HttpClient(handler, disposeHandler: true);
-        var sender = new WebhookTeamsMessageSender(httpClient, disposeHttpClient: true);
+        var sender = new WebhookTeamsMessageSender(options);
 
         return new TeamsClientLease(
             new TeamsClient(new ITeamsMessageSender[] { sender }),
@@ -26,13 +19,23 @@ internal static class TeamsPowerShellDeliverySupport {
 
     public static ErrorRecord CreateDeliveryFailureError(TeamsDeliveryResult result, string commandName) {
         var statusCode = result.StatusCode?.ToString() ?? "unknown";
-        var message = $"{commandName} - Couldn't send message. HTTP status: {statusCode}.";
+        var message = string.IsNullOrWhiteSpace(result.ErrorMessage)
+            ? $"{commandName} could not send the message. HTTP status: {statusCode}."
+            : result.ErrorMessage!;
+        var details = $"{message} Error kind: {result.ErrorKind}.";
+        if (!string.IsNullOrWhiteSpace(result.CorrelationId)) {
+            details += $" Correlation ID: {result.CorrelationId}.";
+        }
+        if (result.RetryAfter is not null) {
+            details += $" Retry after: {Math.Ceiling(result.RetryAfter.Value.TotalSeconds)} seconds.";
+        }
+
         var error = new ErrorRecord(
-            new InvalidOperationException(message),
+            new MessageDeliveryException(message, result.ErrorKind, result.StatusCode, result.ProviderCode),
             "TeamsMessageDeliveryFailed",
             ErrorCategory.ConnectionError,
             result.Target) {
-            ErrorDetails = new ErrorDetails(result.ResponseBody ?? message)
+            ErrorDetails = new ErrorDetails(details)
         };
 
         return error;
@@ -41,9 +44,8 @@ internal static class TeamsPowerShellDeliverySupport {
 }
 
 internal sealed class TeamsClientLease : IDisposable {
-    public static TeamsClientLease SharedDefault { get; } = new(TeamsClient.Default);
-
     private readonly IDisposable[] _disposables;
+    private bool _disposed;
 
     public TeamsClientLease(TeamsClient client, params IDisposable[] disposables) {
         Client = client ?? throw new ArgumentNullException(nameof(client));
@@ -53,6 +55,11 @@ internal sealed class TeamsClientLease : IDisposable {
     public TeamsClient Client { get; }
 
     public void Dispose() {
+        if (_disposed) {
+            return;
+        }
+
+        _disposed = true;
         foreach (var disposable in _disposables) {
             disposable.Dispose();
         }

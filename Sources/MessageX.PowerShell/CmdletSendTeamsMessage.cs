@@ -22,7 +22,7 @@ namespace MessageX.PowerShell;
 [Cmdlet(VerbsCommunications.Send, "TeamsMessage", SupportsShouldProcess = true)]
 [Alias("TeamsMessage")]
 [OutputType(typeof(TeamsDeliveryResult), typeof(string))]
-public sealed class CmdletSendTeamsMessage : AsyncPSCmdlet {
+public sealed class CmdletSendTeamsMessage : TeamsWebhookCmdletBase {
     /// <summary>Typed Teams message request to send.</summary>
     [Parameter(Mandatory = true, Position = 0, ParameterSetName = "TypedMessage")]
     public TeamsMessageRequest Message { get; set; } = null!;
@@ -89,11 +89,6 @@ public sealed class CmdletSendTeamsMessage : AsyncPSCmdlet {
     [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
     public SwitchParameter HideOriginalBody { get; set; }
 
-    /// <summary>HTTP proxy used by the legacy webhook request.</summary>
-    [Parameter(Mandatory = false, ParameterSetName = "LegacyScript")]
-    [Parameter(Mandatory = false, ParameterSetName = "LegacySections")]
-    public Uri? Proxy { get; set; }
-
     /// <summary>Pre-built connector-card sections for the legacy sections parameter set.</summary>
     [Parameter(Mandatory = true, ParameterSetName = "LegacySections")]
     public TeamsMessageSection[] Sections { get; set; } = Array.Empty<TeamsMessageSection>();
@@ -118,12 +113,12 @@ public sealed class CmdletSendTeamsMessage : AsyncPSCmdlet {
             return;
         }
 
-        var result = ParameterSetName switch {
-            "TypedHeroCard" => await TeamsClient.Default.SendAsync(HeroCard, Target, CancelToken),
-            "TypedThumbnailCard" => await TeamsClient.Default.SendAsync(ThumbnailCard, Target, CancelToken),
-            "TypedListCard" => await TeamsClient.Default.SendAsync(ListCard, Target, CancelToken),
-            _ => await TeamsClient.Default.SendAsync(Message, Target, CancelToken)
-        };
+        var result = await SendWithClientAsync(client => ParameterSetName switch {
+            "TypedHeroCard" => client.SendAsync(HeroCard, Target, CancelToken),
+            "TypedThumbnailCard" => client.SendAsync(ThumbnailCard, Target, CancelToken),
+            "TypedListCard" => client.SendAsync(ListCard, Target, CancelToken),
+            _ => client.SendAsync(Message, Target, CancelToken)
+        });
 
         if (!result.IsSuccessStatusCode) {
             WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "Send-TeamsMessage"));
@@ -159,9 +154,8 @@ public sealed class CmdletSendTeamsMessage : AsyncPSCmdlet {
             return;
         }
 
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = await clientLease.Client.SendAsync(request, target, CancelToken);
+        var result = await SendWithClientAsync(client => client.SendAsync(request, target, CancelToken));
 
         WriteVerbose($"Send-TeamsMessage - Completed with HTTP status {result.StatusCode?.ToString() ?? "unknown"}.");
         if (!result.IsSuccessStatusCode) {

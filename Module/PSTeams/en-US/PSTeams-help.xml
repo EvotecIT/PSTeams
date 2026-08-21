@@ -663,7 +663,7 @@
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -761,6 +761,18 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="TeamsID,Url">
           <maml:name>Uri</maml:name>
           <maml:description>
@@ -769,6 +781,18 @@
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
             <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -944,7 +968,7 @@
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
@@ -1042,6 +1066,18 @@
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="TeamsID,Url">
         <maml:name>Uri</maml:name>
         <maml:description>
@@ -1050,6 +1086,18 @@
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -6403,11 +6451,23 @@
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
             <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -6436,6 +6496,18 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
@@ -6454,11 +6526,23 @@
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -6483,6 +6567,18 @@
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -6950,7 +7046,7 @@
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -6984,6 +7080,18 @@
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Title</maml:name>
           <maml:description>
             <maml:para>Specifies a value for title.</maml:para>
@@ -7007,6 +7115,18 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
@@ -7025,7 +7145,7 @@
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
@@ -7059,6 +7179,18 @@
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Title</maml:name>
         <maml:description>
           <maml:para>Specifies a value for title.</maml:para>
@@ -7078,6 +7210,18 @@
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -14064,14 +14208,14 @@
       <command:verb>New</command:verb>
       <command:noun>TeamsWebhookTarget</command:noun>
       <maml:description>
-        <maml:para>New-TeamsWebhookTarget [-Uri] &lt;uri&gt; [-DisplayName &lt;string&gt;] [-Workflow] [&lt;CommonParameters&gt;]</maml:para>
+        <maml:para>Creates a send-only Teams incoming webhook or Power Automate Workflow target.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>New-TeamsWebhookTarget [-Uri] &lt;uri&gt; [-DisplayName &lt;string&gt;] [-Workflow] [&lt;CommonParameters&gt;]</maml:para>
+      <maml:para>Workflow destination metadata documents where the configured flow delivers messages. It does not add reply, update, delete, or conversation capabilities.</maml:para>
     </maml:description>
     <command:syntax>
-      <command:syntaxItem parameterSetName="__AllParameterSets">
+      <command:syntaxItem parameterSetName="IncomingWebhook">
         <maml:name>New-TeamsWebhookTarget</maml:name>
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>DisplayName</maml:name>
@@ -14097,12 +14241,57 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem parameterSetName="WorkflowWebhook">
+        <maml:name>New-TeamsWebhookTarget</maml:name>
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>Destination</maml:name>
+          <maml:description>
+            <maml:para>Specifies a value for destination.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">TeamsWorkflowDestinationKind</command:parameterValue>
+          <command:parameterValueGroup>
+            <command:parameterValue required="false" variableLength="false">Unknown</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">Channel</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">GroupChat</command:parameterValue>
+            <command:parameterValue required="false" variableLength="false">Chat</command:parameterValue>
+          </command:parameterValueGroup>
+          <dev:type>
+            <maml:name>TeamsWorkflowDestinationKind</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>DisplayName</maml:name>
+          <maml:description>
+            <maml:para>Specifies a value for display name.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="0" aliases="None">
+          <maml:name>Uri</maml:name>
+          <maml:description>
+            <maml:para>Specifies a value for uri.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
+          <dev:type>
+            <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Workflow</maml:name>
           <maml:description>
             <maml:para>Specifies the workflow switch.</maml:para>
           </maml:description>
-          <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+          <command:parameterValue required="true" variableLength="false">SwitchParameter</command:parameterValue>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -14112,6 +14301,24 @@
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>Destination</maml:name>
+        <maml:description>
+          <maml:para>Specifies a value for destination.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">TeamsWorkflowDestinationKind</command:parameterValue>
+        <command:parameterValueGroup>
+          <command:parameterValue required="false" variableLength="false">Unknown</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">Channel</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">GroupChat</command:parameterValue>
+          <command:parameterValue required="false" variableLength="false">Chat</command:parameterValue>
+        </command:parameterValueGroup>
+        <dev:type>
+          <maml:name>TeamsWorkflowDestinationKind</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>DisplayName</maml:name>
         <maml:description>
@@ -14136,12 +14343,12 @@
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Workflow</maml:name>
         <maml:description>
           <maml:para>Specifies the workflow switch.</maml:para>
         </maml:description>
-        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <command:parameterValue required="true" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
           <maml:uri />
@@ -14170,8 +14377,15 @@
     </maml:alertSet>
     <command:examples>
       <command:example>
-        <maml:title>EXAMPLE 1</maml:title>
-        <dev:code>New-TeamsWebhookTarget -DisplayName 'Name'</dev:code>
+        <maml:title>Create a channel Workflow target</maml:title>
+        <dev:code>New-TeamsWebhookTarget -Uri $workflowUrl -Workflow -Destination Channel -DisplayName 'Release alerts'</dev:code>
+        <dev:remarks>
+          <maml:para></maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>Create a legacy incoming webhook target</maml:title>
+        <dev:code>New-TeamsWebhookTarget -Uri $incomingWebhookUrl -DisplayName 'Legacy alerts'</dev:code>
         <dev:remarks>
           <maml:para></maml:para>
         </dev:remarks>
@@ -14209,7 +14423,7 @@
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -14243,6 +14457,18 @@
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Title</maml:name>
           <maml:description>
             <maml:para>Specifies a value for title.</maml:para>
@@ -14266,6 +14492,18 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
@@ -14284,7 +14522,7 @@
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>Gets or sets the HTTP proxy used when the card is sent.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
@@ -14318,6 +14556,18 @@
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Title</maml:name>
         <maml:description>
           <maml:para>Specifies a value for title.</maml:para>
@@ -14337,6 +14587,18 @@
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -14412,6 +14674,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>Proxy</maml:name>
+          <maml:description>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
+          <dev:type>
+            <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="1" aliases="None">
           <maml:name>Target</maml:name>
           <maml:description>
@@ -14420,6 +14694,30 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">TeamsMessageTarget</command:parameterValue>
           <dev:type>
             <maml:name>TeamsMessageTarget</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14451,6 +14749,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>Proxy</maml:name>
+          <maml:description>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
+          <dev:type>
+            <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="1" aliases="None">
           <maml:name>Target</maml:name>
           <maml:description>
@@ -14459,6 +14769,30 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">TeamsMessageTarget</command:parameterValue>
           <dev:type>
             <maml:name>TeamsMessageTarget</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14474,6 +14808,18 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>Proxy</maml:name>
+          <maml:description>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
+          <dev:type>
+            <maml:name>Uri</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14498,6 +14844,30 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">TeamsThumbnailCard</command:parameterValue>
           <dev:type>
             <maml:name>TeamsThumbnailCard</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14529,6 +14899,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>Proxy</maml:name>
+          <maml:description>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
+          <dev:type>
+            <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="1" aliases="None">
           <maml:name>Target</maml:name>
           <maml:description>
@@ -14537,6 +14919,30 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">TeamsMessageTarget</command:parameterValue>
           <dev:type>
             <maml:name>TeamsMessageTarget</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14607,7 +15013,7 @@ Workflows webhooks are the recommended notification transport for new automation
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>HTTP proxy used by the legacy webhook request.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -14640,6 +15046,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="TeamsID,Url">
           <maml:name>Uri</maml:name>
           <maml:description>
@@ -14648,6 +15066,18 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
           <dev:type>
             <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14718,7 +15148,7 @@ Workflows webhooks are the recommended notification transport for new automation
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>HTTP proxy used by the legacy webhook request.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -14763,6 +15193,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="TeamsID,Url">
           <maml:name>Uri</maml:name>
           <maml:description>
@@ -14771,6 +15213,18 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
           <dev:type>
             <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -14889,7 +15343,7 @@ Workflows webhooks are the recommended notification transport for new automation
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>HTTP proxy used by the legacy webhook request.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
@@ -14958,6 +15412,18 @@ Workflows webhooks are the recommended notification transport for new automation
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="TeamsID,Url">
         <maml:name>Uri</maml:name>
         <maml:description>
@@ -14966,6 +15432,18 @@ Workflows webhooks are the recommended notification transport for new automation
         <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -15043,7 +15521,7 @@ Workflows webhooks are the recommended notification transport for new automation
         <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
           <maml:name>Proxy</maml:name>
           <maml:description>
-            <maml:para>HTTP proxy used for the request.</maml:para>
+            <maml:para>HTTP proxy used for the webhook request.</maml:para>
           </maml:description>
           <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
           <dev:type>
@@ -15064,6 +15542,18 @@ Workflows webhooks are the recommended notification transport for new automation
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>TimeoutSeconds</maml:name>
+          <maml:description>
+            <maml:para>HTTP request timeout in seconds.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="0" aliases="TeamsID,Url">
           <maml:name>Uri</maml:name>
           <maml:description>
@@ -15072,6 +15562,18 @@ Workflows webhooks are the recommended notification transport for new automation
           <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
           <dev:type>
             <maml:name>Uri</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+          <maml:name>UserAgent</maml:name>
+          <maml:description>
+            <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -15106,7 +15608,7 @@ Workflows webhooks are the recommended notification transport for new automation
       <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
         <maml:name>Proxy</maml:name>
         <maml:description>
-          <maml:para>HTTP proxy used for the request.</maml:para>
+          <maml:para>HTTP proxy used for the webhook request.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">Uri</command:parameterValue>
         <dev:type>
@@ -15127,6 +15629,18 @@ Workflows webhooks are the recommended notification transport for new automation
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>TimeoutSeconds</maml:name>
+        <maml:description>
+          <maml:para>HTTP request timeout in seconds.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="False" position="0" aliases="TeamsID,Url">
         <maml:name>Uri</maml:name>
         <maml:description>
@@ -15135,6 +15649,18 @@ Workflows webhooks are the recommended notification transport for new automation
         <command:parameterValue required="true" variableLength="false">Uri</command:parameterValue>
         <dev:type>
           <maml:name>Uri</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="False" position="named" aliases="None">
+        <maml:name>UserAgent</maml:name>
+        <maml:description>
+          <maml:para>Optional product user-agent sent with the webhook request.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>

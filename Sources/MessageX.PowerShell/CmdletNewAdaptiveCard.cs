@@ -8,7 +8,7 @@ namespace MessageX.PowerShell;
 /// </summary>
 [Cmdlet(VerbsCommon.New, "AdaptiveCard", SupportsShouldProcess = true)]
 [OutputType(typeof(string))]
-public sealed class CmdletNewAdaptiveCard : AsyncPSCmdlet {
+public sealed class CmdletNewAdaptiveCard : TeamsWebhookCmdletBase {
     [Parameter(Mandatory = false, Position = 0)]
     public ScriptBlock? Body { get; set; }
 
@@ -18,12 +18,6 @@ public sealed class CmdletNewAdaptiveCard : AsyncPSCmdlet {
     [Alias("TeamsID", "Url")]
     [Parameter(Mandatory = false)]
     public Uri? Uri { get; set; }
-
-    /// <summary>
-    /// Gets or sets the HTTP proxy used when the card is sent.
-    /// </summary>
-    [Parameter(Mandatory = false)]
-    public Uri? Proxy { get; set; }
 
     [Parameter(Mandatory = false)]
     public string? FallBackText { get; set; }
@@ -144,9 +138,8 @@ public sealed class CmdletNewAdaptiveCard : AsyncPSCmdlet {
             return;
         }
 
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = await clientLease.Client.SendJsonAsync(jsonBody, target, CancelToken);
+        var result = await SendWithClientAsync(client => client.SendJsonAsync(jsonBody, target, CancelToken));
 
         if (!result.IsSuccessStatusCode) {
             WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "New-AdaptiveCard"));
