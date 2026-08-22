@@ -21,7 +21,7 @@ Removes the authenticated Discord bot's reaction from a message.
 
 ### EXAMPLE 1
 ```powershell
-Remove-DiscordReaction -Connection 'Value'
+$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $message = New-DiscordMessage -Content 'Review complete'; $reference = (Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Remove-DiscordReaction -Reference $reference -Reaction '👀' -Connection $connection
 ```
 
 
@@ -118,7 +118,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

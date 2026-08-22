@@ -21,7 +21,7 @@ Deletes an application-owned Slack message.
 
 ### EXAMPLE 1
 ```powershell
-Remove-SlackMessage -Connection 'Value'
+$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $target = New-SlackConversationTarget -ConversationId 'C0123456789'; $message = New-SlackMessage -Text 'Temporary notice'; $reference = (Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Remove-SlackMessage -Reference $reference -Connection $connection
 ```
 
 
@@ -102,7 +102,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

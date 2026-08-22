@@ -21,7 +21,7 @@ Resolves or opens a Slack direct-message conversation for explicit user identifi
 
 ### EXAMPLE 1
 ```powershell
-Resolve-SlackConversation -Connection 'Value'
+$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $conversation = Resolve-SlackConversation -UserId 'U0123456789' -Connection $connection -PreventCreation
 ```
 
 
@@ -86,7 +86,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

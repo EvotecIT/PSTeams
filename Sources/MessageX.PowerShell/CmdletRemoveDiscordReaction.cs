@@ -3,6 +3,10 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Removes the authenticated Discord bot's reaction from a message.</summary>
+/// <example>
+/// <summary>Remove the bot's eyes reaction from a message</summary>
+/// <code>$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $message = New-DiscordMessage -Content 'Review complete'; $reference = (Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Remove-DiscordReaction -Reference $reference -Reaction '👀' -Connection $connection</code>
+/// </example>
 [Cmdlet(VerbsCommon.Remove, "DiscordReaction", SupportsShouldProcess = true)]
 [OutputType(typeof(DiscordDeliveryResult))]
 public sealed class CmdletRemoveDiscordReaction : DiscordBotLifecycleCmdletBase {

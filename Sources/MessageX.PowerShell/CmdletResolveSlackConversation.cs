@@ -3,6 +3,10 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Resolves or opens a Slack direct-message conversation for explicit user identifiers.</summary>
+/// <example>
+/// <summary>Look up an existing direct-message conversation without creating one</summary>
+/// <code>$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $conversation = Resolve-SlackConversation -UserId 'U0123456789' -Connection $connection -PreventCreation</code>
+/// </example>
 [Cmdlet(VerbsDiagnostic.Resolve, "SlackConversation", SupportsShouldProcess = true)]
 [OutputType(typeof(MessageReference))]
 public sealed class CmdletResolveSlackConversation : SlackLifecycleCmdletBase {
