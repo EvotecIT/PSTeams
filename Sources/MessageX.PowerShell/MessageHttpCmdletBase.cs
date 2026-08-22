@@ -11,6 +11,7 @@ public abstract class MessageHttpCmdletBase : AsyncPSCmdlet {
     /// <summary>HTTP request timeout in seconds.</summary>
     [Parameter(Mandatory = false)]
     [ValidateRange(1, 3600)]
+    [PSDefaultValue(Value = 100, Help = "100 (valid range: 1-3600)")]
     public int TimeoutSeconds { get; set; } = 100;
 
     /// <summary>Optional product user-agent sent with provider requests.</summary>

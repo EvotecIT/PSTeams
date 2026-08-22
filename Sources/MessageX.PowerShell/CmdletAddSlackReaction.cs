@@ -3,6 +3,10 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Adds the authenticated Slack application's reaction to a message.</summary>
+/// <example>
+/// <summary>Add an eyes reaction to an application-owned message</summary>
+/// <code>$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $target = New-SlackConversationTarget -ConversationId 'C0123456789'; $message = New-SlackMessage -Text 'Review ready'; $reference = (Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Add-SlackReaction -Reference $reference -Reaction 'eyes' -Connection $connection</code>
+/// </example>
 [Cmdlet(VerbsCommon.Add, "SlackReaction", SupportsShouldProcess = true)]
 [OutputType(typeof(SlackDeliveryResult))]
 public sealed class CmdletAddSlackReaction : SlackLifecycleCmdletBase {

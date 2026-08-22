@@ -3,6 +3,14 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Deletes an application-owned Discord message through a bot or owning webhook.</summary>
+/// <example>
+/// <summary>Delete a bot-owned Discord message</summary>
+/// <code>$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $message = New-DiscordMessage -Content 'Temporary notice'; $reference = (Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Remove-DiscordMessage -Reference $reference -Connection $connection</code>
+/// </example>
+/// <example>
+/// <summary>Delete a message through its owning webhook</summary>
+/// <code>$target = New-DiscordWebhookTarget -Uri $webhookUri; $message = New-DiscordMessage -Content 'Temporary notice'; $reference = (Send-DiscordMessage -Message $message -Target $target -PassThru).Reference; Remove-DiscordMessage -Reference $reference -WebhookTarget $target</code>
+/// </example>
 [Cmdlet(VerbsCommon.Remove, "DiscordMessage", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium, DefaultParameterSetName = "Bot")]
 [OutputType(typeof(DiscordDeliveryResult))]
 public sealed class CmdletRemoveDiscordMessage : DiscordMessageLifecycleCmdletBase {

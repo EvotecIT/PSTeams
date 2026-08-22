@@ -26,13 +26,13 @@ Updates an application-owned Discord message through a bot or owning webhook.
 
 ### EXAMPLE 1
 ```powershell
-Update-DiscordMessage -Connection 'Value'
+$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $original = New-DiscordMessage -Content 'Deployment started'; $reference = (Send-DiscordMessage -Message $original -Target $target -Connection $connection -PassThru).Reference; $replacement = New-DiscordMessage -Content 'Deployment completed'; Update-DiscordMessage -Message $replacement -Reference $reference -Connection $connection
 ```
 
 
 ### EXAMPLE 2
 ```powershell
-Update-DiscordMessage -WebhookTarget 'Value'
+$target = New-DiscordWebhookTarget -Uri $webhookUri; $original = New-DiscordMessage -Content 'Deployment started'; $reference = (Send-DiscordMessage -Message $original -Target $target -PassThru).Reference; $replacement = New-DiscordMessage -Content 'Deployment completed'; Update-DiscordMessage -Message $replacement -Reference $reference -WebhookTarget $target
 ```
 
 
@@ -129,7 +129,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

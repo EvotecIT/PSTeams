@@ -102,7 +102,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

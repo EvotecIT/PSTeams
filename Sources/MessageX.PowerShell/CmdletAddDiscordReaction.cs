@@ -3,6 +3,10 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Adds the authenticated Discord bot's reaction to a message.</summary>
+/// <example>
+/// <summary>Add an eyes reaction to a bot-owned message</summary>
+/// <code>$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $message = New-DiscordMessage -Content 'Review ready'; $reference = (Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru).Reference; Add-DiscordReaction -Reference $reference -Reaction '👀' -Connection $connection</code>
+/// </example>
 [Cmdlet(VerbsCommon.Add, "DiscordReaction", SupportsShouldProcess = true)]
 [OutputType(typeof(DiscordDeliveryResult))]
 public sealed class CmdletAddDiscordReaction : DiscordBotLifecycleCmdletBase {

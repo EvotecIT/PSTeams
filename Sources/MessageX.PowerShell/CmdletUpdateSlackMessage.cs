@@ -3,6 +3,10 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Updates an application-owned Slack message.</summary>
+/// <example>
+/// <summary>Replace an application-owned Slack message</summary>
+/// <code>$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $target = New-SlackConversationTarget -ConversationId 'C0123456789'; $original = New-SlackMessage -Text 'Deployment started'; $reference = (Send-SlackMessage -Message $original -Target $target -Connection $connection -PassThru).Reference; $replacement = New-SlackMessage -Text 'Deployment completed'; Update-SlackMessage -Message $replacement -Reference $reference -Connection $connection</code>
+/// </example>
 [Cmdlet(VerbsData.Update, "SlackMessage", SupportsShouldProcess = true)]
 [OutputType(typeof(SlackDeliveryResult))]
 public sealed class CmdletUpdateSlackMessage : SlackLifecycleCmdletBase {

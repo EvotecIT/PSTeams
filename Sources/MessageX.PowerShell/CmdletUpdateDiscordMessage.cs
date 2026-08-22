@@ -3,6 +3,14 @@ using System.Management.Automation;
 namespace MessageX.PowerShell;
 
 /// <summary>Updates an application-owned Discord message through a bot or owning webhook.</summary>
+/// <example>
+/// <summary>Replace a bot-owned Discord message</summary>
+/// <code>$connection = New-DiscordConnection -BotToken (Read-Host -AsSecureString); $target = New-DiscordChannelTarget -ChannelId '123456789012345678'; $original = New-DiscordMessage -Content 'Deployment started'; $reference = (Send-DiscordMessage -Message $original -Target $target -Connection $connection -PassThru).Reference; $replacement = New-DiscordMessage -Content 'Deployment completed'; Update-DiscordMessage -Message $replacement -Reference $reference -Connection $connection</code>
+/// </example>
+/// <example>
+/// <summary>Replace a message through its owning webhook</summary>
+/// <code>$target = New-DiscordWebhookTarget -Uri $webhookUri; $original = New-DiscordMessage -Content 'Deployment started'; $reference = (Send-DiscordMessage -Message $original -Target $target -PassThru).Reference; $replacement = New-DiscordMessage -Content 'Deployment completed'; Update-DiscordMessage -Message $replacement -Reference $reference -WebhookTarget $target</code>
+/// </example>
 [Cmdlet(VerbsData.Update, "DiscordMessage", SupportsShouldProcess = true, DefaultParameterSetName = "Bot")]
 [OutputType(typeof(DiscordDeliveryResult))]
 public sealed class CmdletUpdateDiscordMessage : DiscordMessageLifecycleCmdletBase {

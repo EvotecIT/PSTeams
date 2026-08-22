@@ -21,7 +21,7 @@ Updates an application-owned Slack message.
 
 ### EXAMPLE 1
 ```powershell
-Update-SlackMessage -Connection 'Value'
+$connection = New-SlackConnection -BotToken (Read-Host -AsSecureString); $target = New-SlackConversationTarget -ConversationId 'C0123456789'; $original = New-SlackMessage -Text 'Deployment started'; $reference = (Send-SlackMessage -Message $original -Target $target -Connection $connection -PassThru).Reference; $replacement = New-SlackMessage -Text 'Deployment completed'; Update-SlackMessage -Message $replacement -Reference $reference -Connection $connection
 ```
 
 
@@ -118,7 +118,7 @@ Possible values:
 
 Required: False
 Position: named
-Default value: None
+Default value: 100 (valid range: 1-3600)
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
