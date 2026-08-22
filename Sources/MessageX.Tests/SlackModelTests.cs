@@ -22,8 +22,21 @@ public sealed class SlackModelTests {
 
         Assert.Equal("C0123456789", target.ConversationId);
         Assert.Equal(MessageCapabilities.Send | MessageCapabilities.Reply, target.Capabilities);
+        foreach (var providerId in new[] {
+            "C0123456789",
+            "G0123456789",
+            "D0123456789",
+            "U0123456789",
+            "W0123456789"
+        }) {
+            Assert.Equal(providerId, SlackMessageTarget.ForConversation(providerId).ConversationId);
+        }
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("release alerts"));
+        Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("general"));
+        Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("release-alerts"));
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("#release-alerts"));
+        Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("T0123456789"));
+        Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("c0123456789"));
     }
 
     [Fact]

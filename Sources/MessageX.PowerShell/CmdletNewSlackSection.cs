@@ -7,7 +7,7 @@ namespace MessageX.PowerShell;
 [OutputType(typeof(SlackSectionBlock))]
 public sealed class CmdletNewSlackSection : PSCmdlet {
     /// <summary>Markdown section text.</summary>
-    [Parameter(Mandatory = true, Position = 0, ParameterSetName = "Markdown")]
+    [Parameter(Mandatory = false, Position = 0, ParameterSetName = "Markdown")]
     public string Markdown { get; set; } = string.Empty;
 
     /// <summary>Plain section text.</summary>
@@ -19,7 +19,9 @@ public sealed class CmdletNewSlackSection : PSCmdlet {
     public SlackTextObject TextObject { get; set; } = null!;
 
     /// <summary>Optional compact section fields.</summary>
-    [Parameter(Mandatory = false)]
+    [Parameter(Mandatory = false, ParameterSetName = "Markdown")]
+    [Parameter(Mandatory = false, ParameterSetName = "PlainText")]
+    [Parameter(Mandatory = false, ParameterSetName = "Typed")]
     public SlackTextObject[] Fields { get; set; } = Array.Empty<SlackTextObject>();
 
     /// <summary>Optional unique Slack block identifier.</summary>
@@ -35,7 +37,8 @@ public sealed class CmdletNewSlackSection : PSCmdlet {
         var text = ParameterSetName switch {
             "PlainText" => SlackTextObject.Plain(PlainText),
             "Typed" => TextObject,
-            _ => SlackTextObject.Markdown(Markdown)
+            "Markdown" when !string.IsNullOrWhiteSpace(Markdown) => SlackTextObject.Markdown(Markdown),
+            _ => null
         };
         var section = new SlackSectionBlock {
             Text = text,
@@ -46,6 +49,13 @@ public sealed class CmdletNewSlackSection : PSCmdlet {
             if (field is not null) {
                 section.Fields.Add(field);
             }
+        }
+        if (section.Text is null && section.Fields.Count == 0) {
+            ThrowTerminatingError(new ErrorRecord(
+                new ArgumentException("A Slack section requires text or at least one field.", nameof(Fields)),
+                "SlackSectionContentRequired",
+                ErrorCategory.InvalidArgument,
+                Fields));
         }
         WriteObject(section);
     }

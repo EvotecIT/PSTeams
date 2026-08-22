@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -57,7 +58,8 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
             throw new MessageDeliveryException("Slack Web API request timed out.", MessageErrorKind.Transient);
         }
-        catch (HttpRequestException) {
+        catch (Exception exception) when (exception is HttpRequestException or IOException) {
+            cancellationToken.ThrowIfCancellationRequested();
             throw new MessageDeliveryException("Slack Web API request failed.", MessageErrorKind.Transient);
         }
     }

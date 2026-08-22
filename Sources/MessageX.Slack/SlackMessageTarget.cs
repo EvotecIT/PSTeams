@@ -65,12 +65,18 @@ public sealed class SlackMessageTarget : IProviderCapabilities {
 
     internal static string ValidateConversationId(string? conversationId) {
         var normalized = conversationId?.Trim();
-        if (string.IsNullOrEmpty(normalized) || normalized!.Length > 255) {
+        if (string.IsNullOrEmpty(normalized) || normalized!.Length < 9 || normalized.Length > 255) {
             throw new ArgumentException("A Slack conversation or user identifier is required.", nameof(conversationId));
         }
 
-        foreach (var character in normalized) {
-            var allowed = character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_';
+        var prefix = normalized[0];
+        if (prefix is not ('C' or 'G' or 'D' or 'U' or 'W')) {
+            throw new ArgumentException("Slack targets must use provider identifiers rather than display names.", nameof(conversationId));
+        }
+
+        for (var index = 1; index < normalized.Length; index++) {
+            var character = normalized[index];
+            var allowed = character is >= 'A' and <= 'Z' or >= '0' and <= '9';
             if (!allowed) {
                 throw new ArgumentException("Slack targets must use provider identifiers rather than display names.", nameof(conversationId));
             }

@@ -203,6 +203,40 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Null(exception.InnerException);
     }
 
+    [Fact]
+    public async Task ResponseBodyIoFailureReturnsSanitizedTransientFailure() {
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(new ThrowingResponseStreamHandler()),
+            disposeHttpClient: true);
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation("C0123456789"),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Null(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task CallerCancellationWinsWhenResponseStreamReportsIoFailure() {
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(new ThrowingResponseStreamHandler(throwAfterCancellation: true)),
+            disposeHttpClient: true);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation("C0123456789"),
+            cancellation.Token));
+
+        Assert.IsNotType<MessageDeliveryException>(exception);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class RecordingHandler : HttpMessageHandler {
         private readonly HttpStatusCode _statusCode;
         private readonly string _responseBody;

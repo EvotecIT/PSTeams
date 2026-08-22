@@ -81,6 +81,42 @@ public sealed class SlackIncomingWebhookSenderTests {
     }
 
     [Fact]
+    public async Task ResponseBodyIoFailureReturnsSanitizedTransientFailure() {
+        using var sender = new SlackIncomingWebhookSender(
+            new HttpClient(new ThrowingResponseStreamHandler()),
+            disposeHttpClient: true);
+        var target = SlackMessageTarget.ForIncomingWebhook(
+            new Uri("https://hooks.slack.com/services/T000/B000/secret"));
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            target,
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.DoesNotContain("secret", exception.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Null(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task CallerCancellationWinsWhenResponseStreamReportsIoFailure() {
+        using var sender = new SlackIncomingWebhookSender(
+            new HttpClient(new ThrowingResponseStreamHandler(throwAfterCancellation: true)),
+            disposeHttpClient: true);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        var target = SlackMessageTarget.ForIncomingWebhook(
+            new Uri("https://hooks.slack.com/services/T000/B000/secret"));
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            target,
+            cancellation.Token));
+
+        Assert.IsNotType<MessageDeliveryException>(exception);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ResponseBodyLimitStopsStreamingBeforeLargeContentIsBuffered() {
         using var handler = new LargeResponseHandler(1024 * 1024);
         using var sender = new SlackIncomingWebhookSender(new HttpClient(handler), disposeHttpClient: true);

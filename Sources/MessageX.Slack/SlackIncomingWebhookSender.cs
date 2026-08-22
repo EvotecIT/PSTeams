@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Http;
 using System.Text;
 
@@ -50,7 +51,8 @@ public sealed class SlackIncomingWebhookSender : ISlackMessageSender, IDisposabl
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
             throw new MessageDeliveryException("Slack incoming-webhook request timed out.", MessageErrorKind.Transient);
         }
-        catch (HttpRequestException) {
+        catch (Exception exception) when (exception is HttpRequestException or IOException) {
+            cancellationToken.ThrowIfCancellationRequested();
             throw new MessageDeliveryException("Slack incoming-webhook request failed.", MessageErrorKind.Transient);
         }
     }

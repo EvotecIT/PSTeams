@@ -30,6 +30,26 @@ Describe 'MessageX Slack PowerShell surface' {
         $payload.blocks[1].type | Should -Be 'divider'
     }
 
+    It 'creates fields-only Block Kit sections' {
+        $fields = @(
+            New-SlackText -PlainText 'Pipeline 42'
+            New-SlackText -Markdown '*Failed*'
+        )
+        $section = New-SlackSection -Fields $fields -BlockId 'facts'
+        $message = New-SlackMessage -Text 'Build failed' -Blocks $section
+        $target = New-SlackConversationTarget -ConversationId 'C0123456789'
+
+        $payload = $message | ConvertTo-SlackJson -Target $target | ConvertFrom-Json
+
+        $payload.blocks[0].type | Should -Be 'section'
+        $payload.blocks[0].fields.Count | Should -Be 2
+        $payload.blocks[0].PSObject.Properties.Name | Should -Not -Contain 'text'
+    }
+
+    It 'rejects Block Kit sections without text or fields' {
+        { New-SlackSection } | Should -Throw -ErrorId 'SlackSectionContentRequired,MessageX.PowerShell.CmdletNewSlackSection'
+    }
+
     It 'creates a token-safe authenticated connection' {
         $secureToken = ConvertTo-SecureString 'xoxb-secret-token' -AsPlainText -Force
         $connection = New-SlackConnection -BotToken $secureToken -WorkspaceId 'T0123'
