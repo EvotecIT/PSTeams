@@ -26,6 +26,7 @@ public sealed class SlackConversationDirectoryTests {
         Assert.False(payload.RootElement.GetProperty("prevent_creation").GetBoolean());
         Assert.Equal("D0123456789", result.Reference?.ConversationId);
         Assert.Equal("T0123", result.Reference?.ScopeId);
+        Assert.Equal(MessageConversationKind.DirectMessage, result.Reference?.ConversationKind);
         Assert.Equal(MessageCapabilities.Send | MessageCapabilities.Reply, result.Reference?.Capabilities);
         Assert.DoesNotContain("secret", result.Target, StringComparison.OrdinalIgnoreCase);
     }

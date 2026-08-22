@@ -105,6 +105,11 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
             result.Reference = new MessageReference(MessageProviders.Slack, parsed.Timestamp) {
                 ScopeId = _connection.WorkspaceId,
                 ConversationId = normalizedChannel,
+                ConversationKind = message.ThreadTimestamp is null
+                    ? normalizedChannel![0] == 'D'
+                        ? MessageConversationKind.DirectMessage
+                        : MessageConversationKind.Channel
+                    : MessageConversationKind.Thread,
                 ThreadId = message.ThreadTimestamp,
                 Timestamp = parsedTimestamp,
                 CorrelationId = result.CorrelationId,

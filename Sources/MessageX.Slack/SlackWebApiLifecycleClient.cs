@@ -176,6 +176,7 @@ public sealed class SlackWebApiLifecycleClient :
             InstallationId = source.InstallationId,
             ScopeId = source.ScopeId,
             ConversationId = conversationId,
+            ConversationKind = source.ConversationKind,
             ThreadId = source.ThreadId,
             Timestamp = timestamp,
             CorrelationId = correlationId ?? source.CorrelationId,

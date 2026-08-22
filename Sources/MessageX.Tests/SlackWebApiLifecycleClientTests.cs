@@ -92,6 +92,7 @@ public sealed class SlackWebApiLifecycleClientTests {
         using var client = CreateClient(handler);
         var reference = CreateReference();
         reference.Capabilities = MessageCapabilities.React;
+        reference.ConversationKind = MessageConversationKind.DirectMessage;
 
         var result = await client.AddReactionAsync(
             reference,
@@ -100,6 +101,7 @@ public sealed class SlackWebApiLifecycleClientTests {
 
         Assert.True(result.IsSuccess);
         Assert.Equal(MessageCapabilities.React, result.Reference?.Capabilities);
+        Assert.Equal(reference.ConversationKind, result.Reference?.ConversationKind);
     }
 
     [Fact]

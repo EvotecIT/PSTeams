@@ -58,6 +58,7 @@ public sealed class SlackConversationDirectory : IDisposable {
             (parsed, correlationId) => new MessageReference(MessageProviders.Slack) {
                 ScopeId = _connection.WorkspaceId,
                 ConversationId = parsed.Channel!.Trim(),
+                ConversationKind = MessageConversationKind.DirectMessage,
                 CorrelationId = correlationId,
                 Capabilities = MessageCapabilities.Send | MessageCapabilities.Reply
             },

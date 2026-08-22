@@ -32,6 +32,7 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Equal("1712345678.123456", result.Reference?.MessageId);
         Assert.Equal("C0123456789", result.Reference?.ConversationId);
         Assert.Equal("1712000000.000001", result.Reference?.ThreadId);
+        Assert.Equal(MessageConversationKind.Thread, result.Reference?.ConversationKind);
         Assert.Equal("T0123", result.Reference?.ScopeId);
         Assert.Equal(
             MessageCapabilities.Reply |
