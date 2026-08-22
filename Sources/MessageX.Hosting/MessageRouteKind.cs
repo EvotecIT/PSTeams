@@ -11,5 +11,7 @@ public enum MessageRouteKind {
     /// <summary>Route a direct message.</summary>
     DirectMessage,
     /// <summary>Route a named interactive action.</summary>
-    Action
+    Action,
+    /// <summary>Route a named modal or dialog submission.</summary>
+    Submission
 }

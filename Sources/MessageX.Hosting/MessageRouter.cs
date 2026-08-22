@@ -31,6 +31,12 @@ public sealed class MessageRouter {
         MessageEventHandler<TProviderPayload> handler) =>
         Register(MessageRoute.ForAction(name), handler);
 
+    /// <summary>Registers a named modal or dialog submission handler.</summary>
+    public void OnSubmission<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler) =>
+        Register(MessageRoute.ForSubmission(name), handler);
+
     /// <summary>Dispatches a verified event to an exact route and payload-type registration.</summary>
     public async Task<MessageDispatchResult> DispatchAsync<TProviderPayload>(
         MessageRoute route,

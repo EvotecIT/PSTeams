@@ -43,6 +43,10 @@ public sealed class MessageRoute {
     public static MessageRoute ForAction(string name) =>
         new(MessageRouteKind.Action, MessageEventKind.ActionInvoked, NormalizeName(name, nameof(name)));
 
+    /// <summary>Creates a named modal or dialog submission route.</summary>
+    public static MessageRoute ForSubmission(string name) =>
+        new(MessageRouteKind.Submission, MessageEventKind.ModalSubmitted, NormalizeName(name, nameof(name)));
+
     internal static string NormalizeName(string? value, string parameterName) {
         if (value is not null &&
             (value.Length > MaximumNameLength || value.Any(char.IsControl))) {

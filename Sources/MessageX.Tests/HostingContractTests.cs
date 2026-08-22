@@ -134,6 +134,30 @@ public sealed class HostingContractTests {
     }
 
     [Fact]
+    public async Task RouterKeepsModalSubmissionsDistinctFromOrdinaryActions() {
+        var router = new MessageRouter();
+        MessageRouteKind? observedRoute = null;
+        router.OnSubmission<TestPayload>("approval", (context, _) => {
+            observedRoute = context.Route.Kind;
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+
+        var dispatch = await router.DispatchAsync(
+            MessageRoute.ForSubmission("APPROVAL"),
+            Envelope(new TestPayload("x"), MessageEventKind.ModalSubmitted),
+            TestContext.Current.CancellationToken);
+        var action = await router.DispatchAsync(
+            MessageRoute.ForAction("approval"),
+            Envelope(new TestPayload("x"), MessageEventKind.ActionInvoked),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(dispatch.RouteMatched);
+        Assert.Equal(MessageRouteKind.Submission, observedRoute);
+        Assert.True(dispatch.HandlerResult?.Handled);
+        Assert.False(action.RouteMatched);
+    }
+
+    [Fact]
     public async Task RouterHonorsCancellationBeforeDispatch() {
         var router = new MessageRouter();
         router.OnDirectMessage<TestPayload>((_, _) =>
