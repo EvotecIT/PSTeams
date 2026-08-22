@@ -13,7 +13,7 @@ public sealed class DiscordWebhookLifecycleClient :
 
     /// <summary>Creates a lifecycle client with default MessageX transport behavior.</summary>
     public DiscordWebhookLifecycleClient(DiscordMessageTarget target)
-        : this(target, DiscordHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(target, DiscordHttpClientPool.Shared) {
     }
 
     /// <summary>Creates a lifecycle client with configured MessageX transport behavior.</summary>
