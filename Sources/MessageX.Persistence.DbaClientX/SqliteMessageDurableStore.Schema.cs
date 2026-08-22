@@ -10,6 +10,7 @@ public sealed partial class SqliteMessageDurableStore {
             route_kind INTEGER NOT NULL,
             event_kind INTEGER NOT NULL,
             route_name TEXT NULL,
+            route_qualifier TEXT NULL,
             received_at TEXT NOT NULL,
             payload_type TEXT NOT NULL,
             payload BLOB NOT NULL,

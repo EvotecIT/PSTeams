@@ -9,25 +9,45 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
     private readonly SQLite _client;
     private readonly string _databasePath;
     private readonly bool _ownsClient;
+    private readonly TimeProvider _timeProvider;
     private bool _disposed;
 
     /// <summary>Creates a durable store using an owned DbaClientX SQLite client.</summary>
     public SqliteMessageDurableStore(string databasePath)
-        : this(databasePath, new SQLite(), ownsClient: true) {
+        : this(databasePath, new SQLite(), ownsClient: true, TimeProvider.System) {
     }
 
     /// <summary>Creates a durable store using a caller-supplied DbaClientX SQLite client.</summary>
     public SqliteMessageDurableStore(string databasePath, SQLite client)
-        : this(databasePath, client, ownsClient: false) {
+        : this(databasePath, client, ownsClient: false, TimeProvider.System) {
     }
 
-    private SqliteMessageDurableStore(string databasePath, SQLite client, bool ownsClient) {
+    private SqliteMessageDurableStore(string databasePath, TimeProvider timeProvider)
+        : this(databasePath, new SQLite(), ownsClient: true, timeProvider) {
+    }
+
+    /// <summary>Creates an owned durable store with one host-selected authoritative clock.</summary>
+    public static SqliteMessageDurableStore CreateWithTimeProvider(
+        string databasePath,
+        TimeProvider timeProvider) => new(databasePath, timeProvider);
+
+    private SqliteMessageDurableStore(
+        string databasePath,
+        SQLite client,
+        bool ownsClient,
+        TimeProvider timeProvider) {
         if (string.IsNullOrWhiteSpace(databasePath) || databasePath.Any(char.IsControl)) {
             throw new ArgumentException("A SQLite database path is required.", nameof(databasePath));
         }
         _databasePath = databasePath.Trim();
+        if (IsInMemoryPath(_databasePath)) {
+            throw new ArgumentException(
+                "In-memory SQLite paths are not durable and cannot back MessageX persistence.",
+                nameof(databasePath));
+        }
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _ownsClient = ownsClient;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     /// <inheritdoc />
@@ -48,6 +68,8 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
 
     private static string NewId() => Guid.NewGuid().ToString("N");
 
+    private DateTimeOffset StoreNow() => _timeProvider.GetUtcNow();
+
     private static string Timestamp(DateTimeOffset value) =>
         value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
@@ -60,6 +82,12 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
     private static byte[] ReadBytes(IDataRecord record, int ordinal) =>
         (byte[])record.GetValue(ordinal);
 
+    private static bool IsInMemoryPath(string databasePath) =>
+        databasePath.Equals(":memory:", StringComparison.OrdinalIgnoreCase) ||
+        (databasePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) &&
+         (databasePath.Contains(":memory:", StringComparison.OrdinalIgnoreCase) ||
+          databasePath.Contains("mode=memory", StringComparison.OrdinalIgnoreCase)));
+
     private static string Required(string? value, string parameterName, int maximumLength = 256) {
         if (value is null || value.Length > maximumLength || value.Any(char.IsControl)) {
             throw new ArgumentException("A bounded durable coordinate is required.", parameterName);
@@ -68,6 +96,20 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         return normalized.Length == 0
             ? throw new ArgumentException("A bounded durable coordinate is required.", parameterName)
             : normalized;
+    }
+
+    private static string RequiredOpaque(string? value, string parameterName, int maximumLength = 256) {
+        if (value is null ||
+            value.Length == 0 ||
+            value.Length > maximumLength ||
+            value.Any(char.IsControl) ||
+            char.IsWhiteSpace(value[0]) ||
+            char.IsWhiteSpace(value[value.Length - 1])) {
+            throw new ArgumentException(
+                "Opaque durable coordinates must already be canonical bounded text.",
+                parameterName);
+        }
+        return value;
     }
 
     private static void ValidateClaim(
@@ -81,6 +123,22 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         if (leaseDuration < TimeSpan.FromSeconds(1) || leaseDuration > TimeSpan.FromHours(1)) {
             throw new ArgumentOutOfRangeException(nameof(leaseDuration));
         }
+    }
+
+    private static string[] ValidatePayloadTypes(IReadOnlyCollection<string> payloadTypes) {
+        if (payloadTypes is null) {
+            throw new ArgumentNullException(nameof(payloadTypes));
+        }
+        if (payloadTypes.Count is < 1 or > 64) {
+            throw new ArgumentOutOfRangeException(nameof(payloadTypes));
+        }
+        var normalized = payloadTypes
+            .Select(value => Required(value, nameof(payloadTypes)))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return normalized.Length == 0
+            ? throw new ArgumentException("At least one supported payload type is required.", nameof(payloadTypes))
+            : normalized;
     }
 
     private static void ValidateFailure(

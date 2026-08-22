@@ -5,6 +5,7 @@
     "MessageX.Core": "0.1.X",
     "MessageX.Discord": "0.1.X",
     "MessageX.Hosting": "0.1.X",
+    "MessageX.Persistence.DbaClientX": "0.1.X",
     "MessageX.Slack": "0.1.X",
     "MessageX.Teams": "0.1.X",
     "MessageX.Teams.Hosting.AspNetCore": "0.1.X"

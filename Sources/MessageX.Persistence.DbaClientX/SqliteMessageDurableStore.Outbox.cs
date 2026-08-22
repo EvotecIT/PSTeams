@@ -9,31 +9,41 @@ public sealed partial class SqliteMessageDurableStore {
         string ownerId,
         int maximumCount,
         TimeSpan leaseDuration,
-        DateTimeOffset now,
+        IReadOnlyCollection<string> payloadTypes,
         CancellationToken cancellationToken = default) {
         ValidateClaim(ownerId, maximumCount, leaseDuration);
+        var supportedPayloadTypes = ValidatePayloadTypes(payloadTypes);
         ownerId = ownerId.Trim();
+        var now = StoreNow();
         var nowText = Timestamp(now);
         var leaseExpires = now.ToUniversalTime().Add(leaseDuration);
+        var payloadParameters = supportedPayloadTypes
+            .Select((_, index) => $"@payload_type_{index}")
+            .ToArray();
+        var parameters = new Dictionary<string, object?> {
+            ["pending"] = (int)MessageDurableStatus.Pending,
+            ["leased"] = (int)MessageDurableStatus.Leased,
+            ["now"] = nowText,
+            ["maximum_count"] = maximumCount
+        };
+        for (var index = 0; index < supportedPayloadTypes.Length; index++) {
+            parameters[$"payload_type_{index}"] = supportedPayloadTypes[index];
+        }
         await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
         return await session.RunInTransactionAsync(async (transaction, token) => {
             var candidates = await transaction.QueryAsListAsync(
-                """
+                $"""
                 SELECT record_id, provider, installation_id, deduplication_key,
                        operation, payload_type, payload, available_at, attempt_count
                 FROM messagex_outbox
-                WHERE (status = @pending AND available_at <= @now)
-                   OR (status = @leased AND lease_expires_at <= @now)
+                WHERE ((status = @pending AND available_at <= @now)
+                   OR (status = @leased AND lease_expires_at <= @now))
+                  AND payload_type IN ({string.Join(", ", payloadParameters)})
                 ORDER BY available_at, record_id
                 LIMIT @maximum_count;
                 """,
                 static row => ReadOutboxCandidate(row),
-                new Dictionary<string, object?> {
-                    ["pending"] = (int)MessageDurableStatus.Pending,
-                    ["leased"] = (int)MessageDurableStatus.Leased,
-                    ["now"] = nowText,
-                    ["maximum_count"] = maximumCount
-                },
+                parameters,
                 cancellationToken: token).ConfigureAwait(false);
             var leases = new List<MessageOutboxLease>(candidates.Count);
             foreach (var candidate in candidates) {
@@ -71,20 +81,34 @@ public sealed partial class SqliteMessageDurableStore {
     }
 
     /// <inheritdoc />
+    public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
+        string recordId,
+        string leaseToken,
+        TimeSpan leaseDuration,
+        CancellationToken cancellationToken = default) =>
+        RenewLeaseAsync(
+            "messagex_outbox",
+            recordId,
+            leaseToken,
+            leaseDuration,
+            cancellationToken);
+
+    /// <inheritdoc />
     public async Task<bool> CompleteOutboxAsync(
         string recordId,
         string leaseToken,
-        DateTimeOffset completedAt,
         CancellationToken cancellationToken = default) {
-        recordId = Required(recordId, nameof(recordId));
-        leaseToken = Required(leaseToken, nameof(leaseToken));
+        recordId = RequiredOpaque(recordId, nameof(recordId));
+        leaseToken = RequiredOpaque(leaseToken, nameof(leaseToken));
+        var completedAt = StoreNow();
         await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
         var updated = await session.ExecuteNonQueryAsync(
             """
             UPDATE messagex_outbox
             SET status = @completed, completed_at = @completed_at,
                 lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL
-            WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token;
+            WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token
+              AND lease_expires_at > @completed_at;
             """,
             new Dictionary<string, object?> {
                 ["completed"] = (int)MessageDurableStatus.Completed,
@@ -102,7 +126,6 @@ public sealed partial class SqliteMessageDurableStore {
         string recordId,
         string leaseToken,
         MessageDurableFailureKind failureKind,
-        DateTimeOffset now,
         TimeSpan retryDelay,
         int maximumAttempts,
         CancellationToken cancellationToken = default) =>
@@ -111,7 +134,6 @@ public sealed partial class SqliteMessageDurableStore {
             recordId,
             leaseToken,
             failureKind,
-            now,
             retryDelay,
             maximumAttempts,
             cancellationToken);

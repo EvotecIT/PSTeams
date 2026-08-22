@@ -220,6 +220,150 @@ public sealed class SqliteMessageDurableStoreTests {
         Assert.DoesNotContain("exception-message", schema, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task DurableCommandQualifierRoundTripsThroughStorage() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(new MessageDurableRecord(
+            MessageProviders.Discord,
+            "application-a",
+            "interaction-1",
+            MessageRoute.ForCommand("inspect", "2"),
+            BaseTime,
+            "discord.interaction.v1",
+            Array.Empty<byte>()));
+
+        var lease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+
+        Assert.Equal("inspect", lease.Record.Route.Name);
+        Assert.Equal("2", lease.Record.Route.Qualifier);
+    }
+
+    [Fact]
+    public async Task StoreClockGuardsExpiryAndRenewalForInbox() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-renew"));
+        var renewedInbox = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+        var renewal = await store.RenewInboxLeaseAsync(
+            renewedInbox.RecordId,
+            renewedInbox.LeaseToken,
+            TimeSpan.FromMinutes(1),
+            BaseTime.AddSeconds(30));
+
+        Assert.NotNull(renewal);
+        Assert.Equal(BaseTime.AddSeconds(90), renewal.LeaseExpiresAt);
+        Assert.True(await store.CompleteInboxAsync(
+            renewedInbox.RecordId,
+            renewedInbox.LeaseToken,
+            BaseTime.AddSeconds(61)));
+
+        await store.AcceptInboxAsync(Record("installation-a", "event-expired"));
+        var expiredInbox = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime.AddHours(1)));
+        var expiredAt = BaseTime.AddHours(1).AddMinutes(1);
+
+        Assert.Null(await store.RenewInboxLeaseAsync(
+            expiredInbox.RecordId,
+            expiredInbox.LeaseToken,
+            TimeSpan.FromMinutes(1),
+            expiredAt));
+        Assert.False(await store.CompleteInboxAsync(
+            expiredInbox.RecordId,
+            expiredInbox.LeaseToken,
+            expiredAt));
+        Assert.Equal(MessageDurableFailureStatus.LeaseLost, (await store.FailInboxAsync(
+            expiredInbox.RecordId,
+            expiredInbox.LeaseToken,
+            MessageDurableFailureKind.Transient,
+            expiredAt,
+            TimeSpan.Zero,
+            3)).Status);
+        Assert.Single(await store.ClaimInboxAsync(
+            "worker-b", 1, TimeSpan.FromMinutes(1), expiredAt));
+    }
+
+    [Fact]
+    public async Task StoreClockGuardsExpiryAndRenewalForOutbox() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-outbox"));
+        var inbox = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+        await store.CompleteInboxAsync(
+            inbox.RecordId,
+            inbox.LeaseToken,
+            BaseTime,
+            new[] {
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "send-renew",
+                    "send-message",
+                    "discord.send.v1",
+                    Array.Empty<byte>(),
+                    BaseTime),
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "send-expire",
+                    "send-message",
+                    "discord.send.v1",
+                    Array.Empty<byte>(),
+                    BaseTime)
+            });
+        var deliveries = await store.ClaimOutboxAsync(
+            "sender-a", 2, TimeSpan.FromMinutes(1), BaseTime);
+        var renewedOutbox = Assert.Single(deliveries, lease =>
+            lease.Record.DeduplicationKey == "send-renew");
+        var expiredOutbox = Assert.Single(deliveries, lease =>
+            lease.Record.DeduplicationKey == "send-expire");
+        var renewal = await store.RenewOutboxLeaseAsync(
+            renewedOutbox.RecordId,
+            renewedOutbox.LeaseToken,
+            TimeSpan.FromMinutes(1),
+            BaseTime.AddSeconds(30));
+
+        Assert.NotNull(renewal);
+        Assert.True(await store.CompleteOutboxAsync(
+            renewedOutbox.RecordId,
+            renewedOutbox.LeaseToken,
+            BaseTime.AddSeconds(61)));
+
+        var expiredAt = BaseTime.AddMinutes(1);
+        Assert.Null(await store.RenewOutboxLeaseAsync(
+            expiredOutbox.RecordId,
+            expiredOutbox.LeaseToken,
+            TimeSpan.FromMinutes(1),
+            expiredAt));
+        Assert.False(await store.CompleteOutboxAsync(
+            expiredOutbox.RecordId,
+            expiredOutbox.LeaseToken,
+            expiredAt));
+        Assert.Equal(MessageDurableFailureStatus.LeaseLost, (await store.FailOutboxAsync(
+            expiredOutbox.RecordId,
+            expiredOutbox.LeaseToken,
+            MessageDurableFailureKind.Transient,
+            expiredAt,
+            TimeSpan.Zero,
+            3)).Status);
+        Assert.Single(await store.ClaimOutboxAsync(
+            "sender-b", 1, TimeSpan.FromMinutes(1), expiredAt));
+    }
+
+    [Theory]
+    [InlineData(":memory:")]
+    [InlineData("file::memory:?cache=shared")]
+    [InlineData("file:messagex?mode=memory&cache=shared")]
+    public void InMemoryDatabasePathsAreRejected(string databasePath) {
+        Assert.Throws<ArgumentException>(() => new SqliteMessageDurableStore(databasePath));
+    }
+
     private static MessageDurableRecord Record(
         string installationId,
         string deduplicationKey,
@@ -234,9 +378,17 @@ public sealed class SqliteMessageDurableStoreTests {
         payload ?? Array.Empty<byte>());
 
     private sealed class TestStore : IDisposable {
+        private static readonly string[] SupportedPayloadTypes = {
+            "slack.action.v1",
+            "discord.interaction.v1",
+            "slack.send.v1",
+            "discord.send.v1"
+        };
         private readonly SqliteMessageDurableStore _store;
+        private readonly MutableTimeProvider _timeProvider = new();
 
-        public TestStore(string databasePath) => _store = new SqliteMessageDurableStore(databasePath);
+        public TestStore(string databasePath) =>
+            _store = SqliteMessageDurableStore.CreateWithTimeProvider(databasePath, _timeProvider);
 
         public Task InitializeAsync() =>
             _store.InitializeAsync(TestContext.Current.CancellationToken);
@@ -244,27 +396,45 @@ public sealed class SqliteMessageDurableStoreTests {
         public Task<MessageDurableAcceptance> AcceptInboxAsync(MessageDurableRecord record) =>
             _store.AcceptInboxAsync(record, TestContext.Current.CancellationToken);
 
+        public Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            DateTimeOffset now) {
+            _timeProvider.Set(now);
+            return _store.RenewInboxLeaseAsync(
+                recordId,
+                leaseToken,
+                leaseDuration,
+                TestContext.Current.CancellationToken);
+        }
+
         public Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,
-            DateTimeOffset now) => _store.ClaimInboxAsync(
+            DateTimeOffset now) {
+            _timeProvider.Set(now);
+            return _store.ClaimInboxAsync(
                 ownerId,
                 maximumCount,
                 leaseDuration,
-                now,
+                SupportedPayloadTypes,
                 TestContext.Current.CancellationToken);
+        }
 
         public Task<bool> CompleteInboxAsync(
             string recordId,
             string leaseToken,
             DateTimeOffset completedAt,
-            IReadOnlyList<MessageOutboxRecord>? outbox = null) => _store.CompleteInboxAsync(
+            IReadOnlyList<MessageOutboxRecord>? outbox = null) {
+            _timeProvider.Set(completedAt);
+            return _store.CompleteInboxAsync(
                 recordId,
                 leaseToken,
-                completedAt,
-                outbox,
+                outbox is null ? null : new MessageOutboxBatch(outbox),
                 TestContext.Current.CancellationToken);
+        }
 
         public Task<MessageDurableFailureResult> FailInboxAsync(
             string recordId,
@@ -272,34 +442,54 @@ public sealed class SqliteMessageDurableStoreTests {
             MessageDurableFailureKind failureKind,
             DateTimeOffset now,
             TimeSpan retryDelay,
-            int maximumAttempts) => _store.FailInboxAsync(
+            int maximumAttempts) {
+            _timeProvider.Set(now);
+            return _store.FailInboxAsync(
                 recordId,
                 leaseToken,
                 failureKind,
-                now,
                 retryDelay,
                 maximumAttempts,
                 TestContext.Current.CancellationToken);
+        }
 
         public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,
-            DateTimeOffset now) => _store.ClaimOutboxAsync(
+            DateTimeOffset now) {
+            _timeProvider.Set(now);
+            return _store.ClaimOutboxAsync(
                 ownerId,
                 maximumCount,
                 leaseDuration,
-                now,
+                SupportedPayloadTypes,
                 TestContext.Current.CancellationToken);
+        }
+
+        public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            DateTimeOffset now) {
+            _timeProvider.Set(now);
+            return _store.RenewOutboxLeaseAsync(
+                recordId,
+                leaseToken,
+                leaseDuration,
+                TestContext.Current.CancellationToken);
+        }
 
         public Task<bool> CompleteOutboxAsync(
             string recordId,
             string leaseToken,
-            DateTimeOffset completedAt) => _store.CompleteOutboxAsync(
+            DateTimeOffset completedAt) {
+            _timeProvider.Set(completedAt);
+            return _store.CompleteOutboxAsync(
                 recordId,
                 leaseToken,
-                completedAt,
                 TestContext.Current.CancellationToken);
+        }
 
         public Task<MessageDurableFailureResult> FailOutboxAsync(
             string recordId,
@@ -307,16 +497,26 @@ public sealed class SqliteMessageDurableStoreTests {
             MessageDurableFailureKind failureKind,
             DateTimeOffset now,
             TimeSpan retryDelay,
-            int maximumAttempts) => _store.FailOutboxAsync(
+            int maximumAttempts) {
+            _timeProvider.Set(now);
+            return _store.FailOutboxAsync(
                 recordId,
                 leaseToken,
                 failureKind,
-                now,
                 retryDelay,
                 maximumAttempts,
                 TestContext.Current.CancellationToken);
+        }
 
         public void Dispose() => _store.Dispose();
+    }
+
+    private sealed class MutableTimeProvider : TimeProvider {
+        private DateTimeOffset _utcNow = BaseTime;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Set(DateTimeOffset utcNow) => _utcNow = utcNow.ToUniversalTime();
     }
 
     private sealed class TemporaryDatabase : IDisposable {
