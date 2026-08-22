@@ -51,7 +51,7 @@ internal static class TeamsActivityMapper {
             TeamsInboundActivityKind.Message,
             eventKind,
             route,
-            activity.TextWithoutMentions,
+            RemoveRecipientMention(activity, recipientId),
             null,
             Array.Empty<string>(),
             Array.Empty<string>(),
@@ -178,13 +178,21 @@ internal static class TeamsActivityMapper {
         var replyToId = NormalizeOptional(
             verifiedSource?.ReplyToId ?? activity.ReplyToId,
             "replyToId");
+        var messageId = activityKind == TeamsInboundActivityKind.ReactionChanged
+            ? replyToId ?? throw new ArgumentException(
+                "A Teams reaction must identify the reacted-to message.",
+                "activity.ReplyToId")
+            : activityId;
         var teamId = NormalizeOptional(
             activity.ChannelData?.Team?.Id ?? activity.ChannelData?.TeamsTeamId,
             "teamId");
         var channelId = NormalizeOptional(
             activity.ChannelData?.Channel?.Id ?? activity.ChannelData?.TeamsChannelId,
             "channelId");
-        var conversationKind = GetConversationKind(activity, verifiedSource);
+        var conversationKind = GetConversationKind(
+            activity,
+            verifiedSource,
+            useReplyAsThread: activityKind != TeamsInboundActivityKind.ReactionChanged);
         var timestampText = GetTimestamp(activity, verifiedSource);
         var timestamp = ParseTimestamp(timestampText);
         var locale = NormalizeOptional(activity.Locale, "locale");
@@ -220,14 +228,14 @@ internal static class TeamsActivityMapper {
                 ScopeId = tenantId,
                 ConversationId = conversationId,
                 ConversationKind = conversationKind,
-                ThreadId = replyToId
+                ThreadId = conversationKind == MessageConversationKind.Thread ? replyToId : null
             },
-            Message = new MessageReference(MessageProviders.Teams, activityId) {
+            Message = new MessageReference(MessageProviders.Teams, messageId) {
                 InstallationId = safeInstallationId,
                 ScopeId = tenantId,
                 ConversationId = conversationId,
                 ConversationKind = conversationKind,
-                ThreadId = replyToId,
+                ThreadId = conversationKind == MessageConversationKind.Thread ? replyToId : null,
                 Timestamp = timestamp
             }
         };
@@ -236,8 +244,10 @@ internal static class TeamsActivityMapper {
 
     private static MessageConversationKind GetConversationKind(
         TeamsActivity activity,
-        CoreActivity? verifiedSource) {
-        if (!string.IsNullOrWhiteSpace(verifiedSource?.ReplyToId ?? activity.ReplyToId)) {
+        CoreActivity? verifiedSource,
+        bool useReplyAsThread = true) {
+        if (useReplyAsThread &&
+            !string.IsNullOrWhiteSpace(verifiedSource?.ReplyToId ?? activity.ReplyToId)) {
             return MessageConversationKind.Thread;
         }
 
@@ -252,6 +262,20 @@ internal static class TeamsActivityMapper {
             return MessageConversationKind.Channel;
         }
         return MessageConversationKind.Unknown;
+    }
+
+    private static string? RemoveRecipientMention(MessageActivity activity, string? recipientId) {
+        var text = activity.Text;
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(recipientId)) {
+            return text?.Trim();
+        }
+        foreach (var mention in activity.GetMentions()) {
+            if (string.Equals(mention.Mentioned?.Id, recipientId, StringComparison.Ordinal) &&
+                !string.IsNullOrEmpty(mention.Text)) {
+                text = text.Replace(mention.Text, string.Empty, StringComparison.Ordinal);
+            }
+        }
+        return text.Trim();
     }
 
     private static string? GetTimestamp(

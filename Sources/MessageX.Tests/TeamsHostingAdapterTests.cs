@@ -66,12 +66,15 @@ public sealed class TeamsHostingAdapterTests {
             MessageDeleteActivity.FromActivity(Core("messageDelete")),
             "tenant-installation",
             ReceivedAt);
+        var reactionSource = Core(
+            "messageReaction",
+            "\"reactionsAdded\":[{\"type\":\"like\"}],\"reactionsRemoved\":[{\"type\":\"heart\"}]",
+            replyToId: "target-message");
         var reaction = TeamsActivityMapper.MapReaction(
-            MessageReactionActivity.FromActivity(Core(
-                "messageReaction",
-                "\"reactionsAdded\":[{\"type\":\"like\"}],\"reactionsRemoved\":[{\"type\":\"heart\"}]")),
+            MessageReactionActivity.FromActivity(reactionSource),
             "tenant-installation",
-            ReceivedAt);
+            ReceivedAt,
+            reactionSource);
 
         Assert.Equal(MessageEventKind.MessageChanged, update.Envelope.Kind);
         Assert.Equal(TeamsInboundActivityKind.MessageUpdated, update.Envelope.Payload.Kind);
@@ -79,6 +82,9 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal(MessageEventKind.MessageDeleted, delete.Envelope.Kind);
         Assert.Equal(TeamsInboundActivityKind.MessageDeleted, delete.Envelope.Payload.Kind);
         Assert.Equal(MessageEventKind.ReactionChanged, reaction.Envelope.Kind);
+        Assert.Equal("target-message", reaction.Envelope.Message?.MessageId);
+        Assert.Equal(MessageConversationKind.Channel, reaction.Envelope.Conversation?.ConversationKind);
+        Assert.Null(reaction.Envelope.Conversation?.ThreadId);
         Assert.Equal(["like"], reaction.Envelope.Payload.ReactionsAdded);
         Assert.Equal(["heart"], reaction.Envelope.Payload.ReactionsRemoved);
     }
@@ -139,13 +145,22 @@ public sealed class TeamsHostingAdapterTests {
     public void RecipientMentionUsesMentionRouteAndRemovesOnlyTheBotMention() {
         var activity = MessageActivity.FromActivity(Core(
             "message",
-            "\"text\":\"<at>MessageX</at> help\",\"entities\":[{\"type\":\"mention\",\"mentioned\":{\"id\":\"bot-1\"},\"text\":\"<at>MessageX</at>\"}]"));
+            "\"text\":\"<at>MessageX</at> ask <at>Ada</at> for help\",\"entities\":[{\"type\":\"mention\",\"mentioned\":{\"id\":\"bot-1\"},\"text\":\"<at>MessageX</at>\"},{\"type\":\"mention\",\"mentioned\":{\"id\":\"user-2\"},\"text\":\"<at>Ada</at>\"}]"));
 
         var dispatch = TeamsActivityMapper.MapMessage(activity, "install-a", ReceivedAt);
 
         Assert.Equal(MessageRouteKind.Mention, dispatch.Route.Kind);
         Assert.Equal(MessageEventKind.AppMentioned, dispatch.Envelope.Kind);
-        Assert.Equal("help", dispatch.Envelope.Payload.Text);
+        Assert.Equal("ask <at>Ada</at> for help", dispatch.Envelope.Payload.Text);
+    }
+
+    [Fact]
+    public void ExistingConversationKindNumbersRemainStable() {
+        Assert.Equal(0, (int)MessageConversationKind.Unknown);
+        Assert.Equal(1, (int)MessageConversationKind.Channel);
+        Assert.Equal(2, (int)MessageConversationKind.DirectMessage);
+        Assert.Equal(3, (int)MessageConversationKind.Thread);
+        Assert.Equal(4, (int)MessageConversationKind.GroupChat);
     }
 
     [Fact]
