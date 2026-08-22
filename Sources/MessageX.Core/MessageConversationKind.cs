@@ -11,6 +11,9 @@ public enum MessageConversationKind {
     /// <summary>A direct or private conversation.</summary>
     DirectMessage,
 
+    /// <summary>A private group conversation with more than two participants.</summary>
+    GroupChat,
+
     /// <summary>A thread or reply-chain conversation.</summary>
     Thread
 }

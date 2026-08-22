@@ -927,7 +927,9 @@ Current Phase 4 source and packed-artifact contracts are complete. Live provider
 
 - [x] Implement MessageX.Hosting routing and handler contracts.
 - [ ] Implement ASP.NET Core raw-body receivers, verification, acknowledgement, queueing, and health checks.
-- [ ] Deliver Teams bot/agent events, Slack Events API/interactions, and Discord HTTP interactions.
+- [x] Implement Slack Events API/interactions and Discord HTTP interactions with verified raw-request handling and safe acknowledgements.
+- [x] Integrate verified Microsoft Teams SDK message, update, delete, reaction, and Adaptive Card action activities through a thin modern-.NET MessageX hosting adapter.
+- [ ] Expand Teams installation, membership, and other provider lifecycle events only where they earn truthful shared event contracts.
 - [ ] Add DbaClientX persistence for installations, deduplication, references, and outbox state.
 - [ ] Add restart, replay, duplicate, failure, and multi-installation tests.
 

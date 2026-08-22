@@ -5,5 +5,6 @@
   <Project Path="MessageX.PowerShell/MessageX.PowerShell.csproj" />
   <Project Path="MessageX.Slack/MessageX.Slack.csproj" />
   <Project Path="MessageX.Teams/MessageX.Teams.csproj" />
+  <Project Path="MessageX.Teams.Hosting.AspNetCore/MessageX.Teams.Hosting.AspNetCore.csproj" />
   <Project Path="MessageX.Tests/MessageX.Tests.csproj" />
 </Solution>
