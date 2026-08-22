@@ -58,7 +58,7 @@ internal sealed class SlackWebApiInvoker {
                 return result;
             }
 
-            result.ErrorKind = invalidSuccessEnvelope || !parsed.IsValid
+            result.ErrorKind = invalidSuccessEnvelope || (!parsed.IsValid && response.IsSuccessStatusCode)
                 ? MessageErrorKind.Transient
                 : SlackHttpResponseSupport.Classify(statusCode, result.ProviderCode);
             result.ErrorMessage = result.ProviderCode is null

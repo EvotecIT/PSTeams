@@ -52,6 +52,14 @@ internal static class SlackMessageRenderer {
         }
 
         var payload = CreateMessagePayload(message);
+        // Slack retains omitted fields during chat.update. Emit both mutable
+        // fields so the request represents a replacement rather than a merge.
+        if (!payload.ContainsKey("text")) {
+            payload["text"] = string.Empty;
+        }
+        if (!payload.ContainsKey("blocks")) {
+            payload["blocks"] = Array.Empty<object>();
+        }
         payload["channel"] = conversationId;
         payload["ts"] = timestamp;
         return JsonSerializer.Serialize(payload, Options);
