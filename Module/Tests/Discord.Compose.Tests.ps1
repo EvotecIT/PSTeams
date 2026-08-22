@@ -107,6 +107,49 @@ Describe 'MessageX Discord PowerShell surface' {
         { Send-DiscordMessage -Text 'hello' -UserId '323456789012345678' -Connection $connection -WhatIf } | Should -Not -Throw
     }
 
+    It 'supports bot and webhook lifecycle parameter sets under WhatIf without network access' {
+        $token = ConvertTo-SecureString 'discord-super-secret-token-value' -AsPlainText -Force
+        $connection = New-DiscordConnection -BotToken $token
+        $message = New-DiscordMessage -Content 'updated'
+        $botReference = [MessageX.Core.MessageReference]::new('discord', '623456789012345678')
+        $botReference.ConversationId = '123456789012345678'
+        $botReference.Capabilities = [MessageX.Core.MessageCapabilities]::Update -bor
+            [MessageX.Core.MessageCapabilities]::Delete -bor
+            [MessageX.Core.MessageCapabilities]::React -bor
+            [MessageX.Core.MessageCapabilities]::Read
+
+        $webhook = New-DiscordWebhookTarget -Uri 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456' -ThreadId '223456789012345678'
+        $webhookReference = [MessageX.Core.MessageReference]::new('discord', '623456789012345678')
+        $webhookReference.ConversationId = '223456789012345678'
+        $webhookReference.ThreadId = '223456789012345678'
+        $webhookReference.Capabilities = [MessageX.Core.MessageCapabilities]::Update -bor
+            [MessageX.Core.MessageCapabilities]::Delete -bor
+            [MessageX.Core.MessageCapabilities]::Read
+
+        { Update-DiscordMessage -Message $message -Reference $botReference -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Remove-DiscordMessage -Reference $botReference -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Add-DiscordReaction -Reference $botReference -Reaction 'eyes:723456789012345678' -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Remove-DiscordReaction -Reference $botReference -Reaction 'eyes:723456789012345678' -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Update-DiscordMessage -Message $message -Reference $webhookReference -WebhookTarget $webhook -WhatIf } |
+            Should -Not -Throw
+        { Remove-DiscordMessage -Reference $webhookReference -WebhookTarget $webhook -WhatIf } |
+            Should -Not -Throw
+    }
+
+    It 'keeps Discord retrieval parameter sets explicit' {
+        $sets = Get-Command Get-DiscordMessage | Select-Object -ExpandProperty ParameterSets
+
+        $sets.Name | Should -Be @('Bot', 'Webhook')
+        ($sets | Where-Object Name -EQ Bot).Parameters.Name | Should -Contain 'Connection'
+        ($sets | Where-Object Name -EQ Bot).Parameters.Name | Should -Not -Contain 'WebhookTarget'
+        ($sets | Where-Object Name -EQ Webhook).Parameters.Name | Should -Contain 'WebhookTarget'
+        ($sets | Where-Object Name -EQ Webhook).Parameters.Name | Should -Not -Contain 'Connection'
+    }
+
     It 'keeps typed messages as the single owner of their mention policy' {
         $typedParameters = (Get-Command Send-DiscordMessage).ParameterSets |
             Where-Object Name -EQ 'Typed' |
@@ -126,12 +169,14 @@ Describe 'MessageX Discord PowerShell surface' {
 
     It 'exports each Discord command and alias from PSTeams' {
         $commands = @(
-            'ConvertTo-DiscordJson', 'New-DiscordAllowedMentions', 'New-DiscordAttachment',
+            'Add-DiscordReaction', 'ConvertTo-DiscordJson', 'Get-DiscordMessage',
+            'New-DiscordAllowedMentions', 'New-DiscordAttachment',
             'New-DiscordAuthor', 'New-DiscordChannelTarget', 'New-DiscordConnection',
             'New-DiscordDirectMessageTarget', 'New-DiscordFact', 'New-DiscordFooter',
             'New-DiscordImage', 'New-DiscordMessage', 'New-DiscordSection',
-            'New-DiscordThreadTarget', 'New-DiscordWebhookTarget', 'Send-DiscordMessage',
-            'Test-DiscordInteractionSignature'
+            'New-DiscordThreadTarget', 'New-DiscordWebhookTarget', 'Remove-DiscordMessage',
+            'Remove-DiscordReaction', 'Send-DiscordMessage', 'Test-DiscordInteractionSignature',
+            'Update-DiscordMessage'
         )
         foreach ($command in $commands) {
             (Get-Command $command).Source | Should -Be 'PSTeams'
