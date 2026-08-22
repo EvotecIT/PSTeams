@@ -35,6 +35,7 @@ internal static class DiscordHttpResponseSupport {
             result.Reference = new MessageReference(MessageProviders.Discord, messageId) {
                 ScopeId = target.GuildId,
                 ConversationId = channelId,
+                ConversationKind = GetConversationKind(deliveryMethod, target),
                 ThreadId = target.ThreadId,
                 Timestamp = parsed.Timestamp,
                 CorrelationId = result.CorrelationId,
@@ -101,6 +102,7 @@ internal static class DiscordHttpResponseSupport {
             InstallationId = source.InstallationId,
             ScopeId = source.ScopeId,
             ConversationId = conversationId,
+            ConversationKind = source.ConversationKind,
             ThreadId = threadId,
             Timestamp = source.Timestamp,
             CorrelationId = correlationId ?? source.CorrelationId,
@@ -120,6 +122,7 @@ internal static class DiscordHttpResponseSupport {
             string.Equals(result.Reference.ConversationId, conversationId, StringComparison.Ordinal)) {
             result.Reference.InstallationId = source.InstallationId;
             result.Reference.ScopeId = source.ScopeId;
+            result.Reference.ConversationKind = source.ConversationKind;
             result.Reference.ThreadId = source.ThreadId is null
                 ? null
                 : DiscordSnowflake.Normalize(source.ThreadId, nameof(source));
@@ -153,6 +156,15 @@ internal static class DiscordHttpResponseSupport {
         }
         return MessageErrorKind.Validation;
     }
+
+    private static MessageConversationKind GetConversationKind(
+        DiscordDeliveryMethod deliveryMethod,
+        DiscordMessageTarget target) => deliveryMethod switch {
+            DiscordDeliveryMethod.BotDirectMessage => MessageConversationKind.DirectMessage,
+            DiscordDeliveryMethod.BotThread => MessageConversationKind.Thread,
+            DiscordDeliveryMethod.IncomingWebhook when target.ThreadId is not null => MessageConversationKind.Thread,
+            _ => MessageConversationKind.Channel
+        };
 
     public static TimeSpan? ReadRetryAfter(HttpResponseMessage response, double? bodySeconds = null) {
         if (response.Headers.RetryAfter?.Delta is not null) {

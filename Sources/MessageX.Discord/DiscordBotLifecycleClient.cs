@@ -48,21 +48,26 @@ public sealed class DiscordBotLifecycleClient :
     }
 
     /// <inheritdoc />
-    public Task<DiscordDeliveryResult> DeleteAsync(
+    public async Task<DiscordDeliveryResult> DeleteAsync(
         MessageReference reference,
         CancellationToken cancellationToken = default) {
         var coordinates = DiscordLifecycleReference.Validate(reference, MessageCapabilities.Delete);
         var target = CreateTarget(reference, coordinates.ConversationId);
+        await DiscordBotMessageOwnership.VerifyAsync(
+            _httpClient,
+            _connection,
+            coordinates,
+            cancellationToken).ConfigureAwait(false);
         var request = CreateAuthorizedRequest(
             HttpMethod.Delete,
             $"channels/{coordinates.ConversationId}/messages/{coordinates.MessageId}");
-        return ExecuteStatusAsync(
+        return await ExecuteStatusAsync(
             request,
             target,
             reference,
             MessageCapabilities.None,
             "bot message deletion",
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -102,7 +107,7 @@ public sealed class DiscordBotLifecycleClient :
         CancellationToken cancellationToken) {
         var coordinates = DiscordLifecycleReference.Validate(reference, MessageCapabilities.React);
         var target = CreateTarget(reference, coordinates.ConversationId);
-        var encodedReaction = Uri.EscapeDataString(ValidateReaction(reaction));
+        var encodedReaction = Uri.EscapeDataString(DiscordReaction.Normalize(reaction));
         var method = remove ? HttpMethod.Delete : HttpMethod.Put;
         var request = CreateAuthorizedRequest(
             method,
@@ -166,28 +171,12 @@ public sealed class DiscordBotLifecycleClient :
     }
 
     private static DiscordMessageTarget CreateTarget(MessageReference reference, string conversationId) {
-        return reference.ThreadId is null
-            ? DiscordMessageTarget.ForChannel(conversationId, reference.ScopeId)
-            : DiscordMessageTarget.ForThread(conversationId, reference.ScopeId);
-    }
-
-    private static string ValidateReaction(string reaction) {
-        var normalized = reaction?.Trim();
-        if (string.IsNullOrEmpty(normalized) || normalized!.Length > 100 ||
-            normalized.Any(character => char.IsWhiteSpace(character) || char.IsControl(character))) {
-            throw new ArgumentException("A valid Discord Unicode emoji or custom emoji coordinate is required.", nameof(reaction));
+        if (reference.ConversationKind == MessageConversationKind.DirectMessage) {
+            return DiscordMessageTarget.ForDirectMessageChannel(conversationId);
         }
-        var colon = normalized.LastIndexOf(':');
-        if (colon >= 0) {
-            var name = normalized.Substring(0, colon);
-            if (normalized.IndexOf(':') != colon || name.Length is < 2 or > 32 ||
-                name.Any(character => !(character is >= 'a' and <= 'z' or
-                    >= 'A' and <= 'Z' or >= '0' and <= '9' or '_')) ||
-                !DiscordSnowflake.TryNormalize(normalized.Substring(colon + 1), out _)) {
-                throw new ArgumentException("Discord custom reactions must use the name:id format.", nameof(reaction));
-            }
-        }
-        return normalized;
+        return reference.ConversationKind == MessageConversationKind.Thread || reference.ThreadId is not null
+            ? DiscordMessageTarget.ForThread(conversationId, reference.ScopeId)
+            : DiscordMessageTarget.ForChannel(conversationId, reference.ScopeId);
     }
 
     /// <inheritdoc />

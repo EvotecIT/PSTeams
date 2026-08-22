@@ -46,6 +46,7 @@ internal static class DiscordRetrievedMessageParser {
                     InstallationId = source.InstallationId,
                     ScopeId = source.ScopeId,
                     ConversationId = normalizedChannelId,
+                    ConversationKind = source.ConversationKind,
                     ThreadId = source.ThreadId is null
                         ? null
                         : DiscordSnowflake.Normalize(source.ThreadId, nameof(source)),

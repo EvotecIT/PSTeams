@@ -25,6 +25,7 @@ public sealed class DiscordBotMessageSenderTests {
         Assert.Equal("https://discord.com/api/v10/channels/123456789012345678/messages", request.Uri.AbsoluteUri);
         Assert.Equal("623456789012345678", result.Reference?.MessageId);
         Assert.Equal("223456789012345678", result.Reference?.ScopeId);
+        Assert.Equal(MessageConversationKind.Channel, result.Reference?.ConversationKind);
         Assert.Null(result.Reference?.ThreadId);
         Assert.Equal(
             MessageCapabilities.Reply | MessageCapabilities.Update |
@@ -51,6 +52,7 @@ public sealed class DiscordBotMessageSenderTests {
 
         Assert.True(result.IsSuccess);
         Assert.Equal("323456789012345678", result.Reference?.ThreadId);
+        Assert.Equal(MessageConversationKind.Thread, result.Reference?.ConversationKind);
         Assert.Contains("\"message_id\":\"723456789012345678\"", handler.Requests[0].Body, StringComparison.Ordinal);
         Assert.Contains("\"fail_if_not_exists\":false", handler.Requests[0].Body, StringComparison.Ordinal);
     }
@@ -74,6 +76,7 @@ public sealed class DiscordBotMessageSenderTests {
         Assert.Contains("423456789012345678", handler.Requests[0].Body, StringComparison.Ordinal);
         Assert.Equal("https://discord.com/api/v10/channels/823456789012345678/messages", handler.Requests[1].Uri.AbsoluteUri);
         Assert.Equal("823456789012345678", result.Reference?.ConversationId);
+        Assert.Equal(MessageConversationKind.DirectMessage, result.Reference?.ConversationKind);
     }
 
     [Fact]

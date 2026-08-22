@@ -60,6 +60,8 @@ public sealed class DiscordLifecycleClientTests {
     public async Task BotDeleteAndReactionAcceptEmptySuccessBodies() {
         using var handler = new QueueHandler(
             Response(HttpStatusCode.NoContent, string.Empty),
+            Response(HttpStatusCode.OK, "{\"id\":\"423456789012345678\"}"),
+            Response(HttpStatusCode.OK, "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\",\"author\":{\"id\":\"423456789012345678\"}}"),
             Response(HttpStatusCode.NoContent, string.Empty));
         using var client = CreateBotClient(handler);
 
@@ -80,7 +82,11 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal(HttpMethod.Put, handler.Requests[0].Method);
         Assert.True(deletion.IsSuccess);
         Assert.Equal(MessageCapabilities.None, deletion.Reference?.Capabilities);
-        Assert.Equal(HttpMethod.Delete, handler.Requests[1].Method);
+        Assert.Equal(MessageConversationKind.Channel, deletion.Reference?.ConversationKind);
+        Assert.Equal("https://discord.com/api/v10/users/@me", handler.Requests[1].Uri.AbsoluteUri);
+        Assert.Equal(HttpMethod.Get, handler.Requests[1].Method);
+        Assert.Equal(HttpMethod.Get, handler.Requests[2].Method);
+        Assert.Equal(HttpMethod.Delete, handler.Requests[3].Method);
     }
 
     [Fact]
@@ -89,18 +95,118 @@ public sealed class DiscordLifecycleClientTests {
         using var client = CreateBotClient(handler);
         var reference = new MessageReference(MessageProviders.Discord, " 623456789012345678 ") {
             ConversationId = " 123456789012345678 ",
+            ConversationKind = MessageConversationKind.DirectMessage,
             Capabilities = MessageCapabilities.React
         };
 
         var result = await client.AddReactionAsync(
             reference,
-            "eyes",
+            "👀",
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(MessageCapabilities.React, result.Reference?.Capabilities);
         Assert.Equal("623456789012345678", result.Reference?.MessageId);
         Assert.Equal("123456789012345678", result.Reference?.ConversationId);
+        Assert.Equal(MessageConversationKind.DirectMessage, result.Reference?.ConversationKind);
+        Assert.Contains("%F0%9F%91%80", Assert.Single(handler.Requests).Uri.AbsoluteUri, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("👀")]
+    [InlineData("❤️")]
+    [InlineData("👨‍💻")]
+    [InlineData("👍🏽")]
+    [InlineData("1️⃣")]
+    [InlineData("🇵🇱")]
+    public async Task BotReactionAcceptsSingleUnicodeEmojiSequences(string reaction) {
+        using var handler = new QueueHandler(Response(HttpStatusCode.NoContent, string.Empty));
+        using var client = CreateBotClient(handler);
+
+        var result = await client.AddReactionAsync(
+            BotReference(),
+            reaction,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(handler.Requests);
+    }
+
+    [Theory]
+    [InlineData("eyes")]
+    [InlineData("é")]
+    [InlineData("⌁")]
+    [InlineData("♜")]
+    [InlineData("🜀")]
+    [InlineData("1")]
+    [InlineData("👀1")]
+    [InlineData("👀👀")]
+    [InlineData("👀‍")]
+    public async Task BotReactionRejectsNonEmojiColonFreeValues(string reaction) {
+        using var handler = new QueueHandler(Response(HttpStatusCode.NoContent, string.Empty));
+        using var client = CreateBotClient(handler);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => client.AddReactionAsync(
+            BotReference(),
+            reaction,
+            TestContext.Current.CancellationToken));
+
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task BotUpdatePreservesDirectMessageDeliveryMetadata() {
+        using var handler = new QueueHandler(Response(
+            HttpStatusCode.OK,
+            "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\"}"));
+        using var client = CreateBotClient(handler);
+        var reference = BotReference();
+        reference.ScopeId = null;
+        reference.ConversationKind = MessageConversationKind.DirectMessage;
+
+        var result = await client.UpdateAsync(
+            new DiscordMessageRequest { Content = "Updated" },
+            reference,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(DiscordDeliveryMethod.BotDirectMessage, result.DeliveryMethod);
+        Assert.Equal(MessageConversationKind.DirectMessage, result.Reference?.ConversationKind);
+        Assert.Equal("Discord direct message channel 123456789012345678", result.Target);
+    }
+
+    [Fact]
+    public async Task BotDeleteFailsClosedWhenMessageBelongsToAnotherAuthor() {
+        using var handler = new QueueHandler(
+            Response(HttpStatusCode.OK, "{\"id\":\"423456789012345678\"}"),
+            Response(HttpStatusCode.OK, "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\",\"author\":{\"id\":\"523456789012345678\"}}"));
+        using var client = CreateBotClient(handler);
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => client.DeleteAsync(
+            BotReference(),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Authorization, exception.Kind);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.All(handler.Requests, request => Assert.Equal(HttpMethod.Get, request.Method));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, MessageErrorKind.Authentication)]
+    [InlineData(HttpStatusCode.Forbidden, MessageErrorKind.Authorization)]
+    [InlineData(HttpStatusCode.BadGateway, MessageErrorKind.Transient)]
+    public async Task BotDeleteStopsWhenIdentityCannotBeVerified(
+        HttpStatusCode statusCode,
+        MessageErrorKind expectedKind) {
+        using var handler = new QueueHandler(Response(statusCode, "{\"message\":\"Unavailable\"}"));
+        using var client = CreateBotClient(handler);
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => client.DeleteAsync(
+            BotReference(),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(expectedKind, exception.Kind);
+        Assert.Equal("https://discord.com/api/v10/users/@me", Assert.Single(handler.Requests).Uri.AbsoluteUri);
     }
 
     [Fact]
@@ -152,6 +258,10 @@ public sealed class DiscordLifecycleClientTests {
             BotReference(),
             "bad:name:723456789012345678",
             TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.AddReactionAsync(
+            BotReference(),
+            "eyes",
+            TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -199,6 +309,7 @@ public sealed class DiscordLifecycleClientTests {
         Assert.True(updated.IsSuccess);
         Assert.Equal(WebhookCapabilities, updated.Reference?.Capabilities);
         Assert.Equal("guild-scope", updated.Reference?.ScopeId);
+        Assert.Equal(MessageConversationKind.Thread, updated.Reference?.ConversationKind);
         Assert.True(deleted.IsSuccess);
         Assert.Equal(MessageCapabilities.None, deleted.Reference?.Capabilities);
         Assert.All(handler.Requests, item => {
@@ -263,11 +374,13 @@ public sealed class DiscordLifecycleClientTests {
     private static MessageReference BotReference() => new(MessageProviders.Discord, "623456789012345678") {
         ScopeId = "223456789012345678",
         ConversationId = "123456789012345678",
+        ConversationKind = MessageConversationKind.Channel,
         Capabilities = ManagedBotCapabilities
     };
 
     private static MessageReference WebhookReference() => new(MessageProviders.Discord, "623456789012345678") {
         ConversationId = "123456789012345679",
+        ConversationKind = MessageConversationKind.Thread,
         ThreadId = "123456789012345679",
         Capabilities = WebhookCapabilities
     };
