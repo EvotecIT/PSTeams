@@ -25,4 +25,11 @@ public abstract class MessageHttpCmdletBase : AsyncPSCmdlet {
             UserAgent = UserAgent
         };
     }
+
+    /// <summary>Whether provider clients may use their shared default HTTP transport.</summary>
+    protected static bool UsesDefaultTransport(MessageHttpTransportOptions options) {
+        return options.ProxyUri is null &&
+            options.Timeout == MessageHttpTransportOptions.DefaultTimeout &&
+            string.IsNullOrWhiteSpace(options.UserAgent);
+    }
 }

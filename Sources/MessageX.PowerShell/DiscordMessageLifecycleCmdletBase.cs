@@ -29,10 +29,15 @@ public abstract class DiscordMessageLifecycleCmdletBase : MessageHttpCmdletBase 
     /// <inheritdoc />
     protected override Task BeginProcessingAsync() {
         var options = CreateTransportOptions();
+        var useSharedTransport = UsesDefaultTransport(options);
         if (UsesBot) {
-            _botClient = new DiscordBotLifecycleClient(Connection!, options);
+            _botClient = useSharedTransport
+                ? new DiscordBotLifecycleClient(Connection!)
+                : new DiscordBotLifecycleClient(Connection!, options);
         } else {
-            _webhookClient = new DiscordWebhookLifecycleClient(WebhookTarget!, options);
+            _webhookClient = useSharedTransport
+                ? new DiscordWebhookLifecycleClient(WebhookTarget!)
+                : new DiscordWebhookLifecycleClient(WebhookTarget!, options);
         }
         return Task.CompletedTask;
     }
