@@ -926,12 +926,16 @@ Current Phase 4 source and packed-artifact contracts are complete. Live provider
 ### Phase 5 - Inbound interactions and service hosting
 
 - [x] Implement MessageX.Hosting routing and handler contracts.
-- [ ] Implement ASP.NET Core raw-body receivers, verification, acknowledgement, queueing, and health checks.
+- [x] Implement provider-neutral ASP.NET Core bounded raw-body ingress, acknowledgements, queueing, dispatch workers, dependency injection, and payload-free health state.
 - [x] Implement Slack Events API/interactions and Discord HTTP interactions with verified raw-request handling and safe acknowledgements.
 - [x] Integrate verified Microsoft Teams SDK message, update, delete, reaction, and Adaptive Card action activities through a thin modern-.NET MessageX hosting adapter.
 - [ ] Expand Teams installation, membership, and other provider lifecycle events only where they earn truthful shared event contracts.
-- [ ] Add DbaClientX persistence for installations, deduplication, references, and outbox state.
-- [ ] Add restart, replay, duplicate, failure, and multi-installation tests.
+- [x] Add provider-neutral durable inbox, idempotency, lease, retry/dead-letter, and outbox contracts with a thin DbaClientX SQLite adapter.
+- [x] Commit verified work before provider success acknowledgements when durable ingress is enabled; return a retryable failure when durable acceptance is unavailable.
+- [x] Persist safe versioned Slack and Discord projections without raw requests, signing material, credentials, response URLs, trigger IDs, or interaction tokens.
+- [x] Prove restart recovery, replay and duplicate suppression, lease renewal/loss, handler failure isolation, and provider/installation isolation with real SQLite and signed endpoint tests.
+
+The Phase 5 source candidate now keeps Microsoft-owned Teams authentication and request parsing at the host boundary, while MessageX owns shared routing, Slack and Discord verification, bounded ingress, durable acceptance, dispatch, and safe provider projections. The PowerShell module remains a thin outbound and lifecycle surface; hosting packages target modern .NET without removing `net472` support from the provider libraries or PowerShell module.
 
 **Exit:** one service can securely host interactive applications for Teams, Slack, and Discord over HTTP.
 
