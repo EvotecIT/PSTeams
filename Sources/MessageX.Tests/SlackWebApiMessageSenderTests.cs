@@ -33,7 +33,12 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Equal("C0123456789", result.Reference?.ConversationId);
         Assert.Equal("1712000000.000001", result.Reference?.ThreadId);
         Assert.Equal("T0123", result.Reference?.ScopeId);
-        Assert.Equal(MessageCapabilities.Reply, result.Reference?.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Reply |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React,
+            result.Reference?.Capabilities);
         Assert.Equal(
             DateTimeOffset.FromUnixTimeSeconds(1712345678).AddTicks(1_234_560),
             result.Reference?.Timestamp);

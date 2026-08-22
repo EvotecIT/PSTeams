@@ -21,7 +21,13 @@ public sealed class SlackModelTests {
         var target = SlackMessageTarget.ForConversation("C0123456789", "Release alerts");
 
         Assert.Equal("C0123456789", target.ConversationId);
-        Assert.Equal(MessageCapabilities.Send | MessageCapabilities.Reply, target.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Send |
+            MessageCapabilities.Reply |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React,
+            target.Capabilities);
         foreach (var providerId in new[] {
             "C0123456789",
             "G0123456789",
@@ -46,7 +52,14 @@ public sealed class SlackModelTests {
         var connection = SlackConnection.ForBotToken("xoxb-secret-token", workspaceId: "T0123");
 
         Assert.DoesNotContain("secret", connection.ToString(), StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(MessageCapabilities.Send | MessageCapabilities.Reply, connection.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Send |
+            MessageCapabilities.Reply |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React |
+            MessageCapabilities.ResolveConversation,
+            connection.Capabilities);
         Assert.Throws<ArgumentException>(() => SlackConnection.ForBotToken(
             "xoxb-secret-token",
             new Uri("https://attacker.example/api/")));

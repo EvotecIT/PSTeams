@@ -17,7 +17,11 @@ public sealed class SlackMessageTarget : IProviderCapabilities {
     /// <inheritdoc />
     public MessageCapabilities Capabilities => DeliveryMethod switch {
         SlackDeliveryMethod.IncomingWebhook => MessageCapabilities.Send | MessageCapabilities.Reply,
-        SlackDeliveryMethod.WebApi => MessageCapabilities.Send | MessageCapabilities.Reply,
+        SlackDeliveryMethod.WebApi => MessageCapabilities.Send |
+            MessageCapabilities.Reply |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React,
         _ => MessageCapabilities.None
     };
 

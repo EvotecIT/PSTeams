@@ -2,7 +2,6 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 
 namespace MessageX.Slack;
 
@@ -82,7 +81,7 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
         var responseBody = await MessageHttpResponseReader
             .ReadUtf8BodyAsync(response, cancellationToken)
             .ConfigureAwait(false);
-        var parsed = ParseResponse(responseBody);
+        var parsed = SlackApiResponse.Parse(responseBody);
         var parsedTimestamp = SlackMessageValidator.ParseTimestamp(parsed.Timestamp);
         var hasValidChannel = SlackMessageTarget.TryNormalizeProviderIdentifier(
             parsed.Channel,
@@ -109,7 +108,10 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
                 ThreadId = message.ThreadTimestamp,
                 Timestamp = parsedTimestamp,
                 CorrelationId = result.CorrelationId,
-                Capabilities = MessageCapabilities.Reply
+                Capabilities = MessageCapabilities.Reply |
+                    MessageCapabilities.Update |
+                    MessageCapabilities.Delete |
+                    MessageCapabilities.React
             };
             return result;
         }
@@ -134,43 +136,4 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
         }
     }
 
-    private static ParsedResponse ParseResponse(string responseBody) {
-        try {
-            using var document = JsonDocument.Parse(responseBody);
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object ||
-                !root.TryGetProperty("ok", out var okElement) ||
-                okElement.ValueKind is not JsonValueKind.True and not JsonValueKind.False) {
-                return ParsedResponse.Invalid;
-            }
-
-            var ok = okElement.GetBoolean();
-            var error = ReadString(root, "error");
-            return new ParsedResponse {
-                IsValid = ok || !string.IsNullOrWhiteSpace(error),
-                Ok = ok,
-                Error = error,
-                Channel = ReadString(root, "channel"),
-                Timestamp = ReadString(root, "ts")
-            };
-        }
-        catch (JsonException) {
-            return ParsedResponse.Invalid;
-        }
-    }
-
-    private static string? ReadString(JsonElement root, string propertyName) {
-        return root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-    }
-
-    private sealed class ParsedResponse {
-        public static ParsedResponse Invalid { get; } = new();
-        public bool IsValid { get; set; }
-        public bool Ok { get; set; }
-        public string? Error { get; set; }
-        public string? Channel { get; set; }
-        public string? Timestamp { get; set; }
-    }
 }
