@@ -52,7 +52,7 @@ public sealed class SlackWebApiLifecycleClient :
                 parsed.Channel!,
                 parsed.Timestamp!,
                 SlackMessageValidator.ParseTimestamp(parsed.Timestamp),
-                ManagedMessageCapabilities,
+                reference.Capabilities,
                 correlationId),
             cancellationToken);
     }
@@ -69,12 +69,12 @@ public sealed class SlackWebApiLifecycleClient :
         return _invoker.ExecuteAsync(
             "chat.delete",
             json,
-            reference.ConversationId!,
+            coordinates.ConversationId,
             _ => true,
             (_, correlationId) => CloneReference(
                 reference,
-                reference.ConversationId!,
-                reference.MessageId!,
+                coordinates.ConversationId,
+                coordinates.Timestamp,
                 reference.Timestamp,
                 MessageCapabilities.None,
                 correlationId),
@@ -112,19 +112,19 @@ public sealed class SlackWebApiLifecycleClient :
         return _invoker.ExecuteAsync(
             method,
             json,
-            reference.ConversationId!,
+            coordinates.ConversationId,
             _ => true,
             (_, correlationId) => CloneReference(
                 reference,
-                reference.ConversationId!,
-                reference.MessageId!,
+                coordinates.ConversationId,
+                coordinates.Timestamp,
                 reference.Timestamp,
-                ManagedMessageCapabilities,
+                reference.Capabilities,
                 correlationId),
             cancellationToken);
     }
 
-    private static SlackReferenceCoordinates ValidateReference(
+    private SlackReferenceCoordinates ValidateReference(
         MessageReference reference,
         MessageCapabilities requiredCapability) {
         if (reference is null) {
@@ -136,6 +136,14 @@ public sealed class SlackWebApiLifecycleClient :
         if ((reference.Capabilities & requiredCapability) != requiredCapability) {
             throw new InvalidOperationException(
                 $"The Slack message reference does not support '{requiredCapability}'.");
+        }
+        var referenceScope = reference.ScopeId?.Trim();
+        if (!string.IsNullOrWhiteSpace(referenceScope) &&
+            !string.IsNullOrWhiteSpace(_connection.WorkspaceId) &&
+            !string.Equals(referenceScope, _connection.WorkspaceId, StringComparison.Ordinal)) {
+            throw new ArgumentException(
+                "The Slack message reference belongs to a different workspace.",
+                nameof(reference));
         }
 
         var conversationId = SlackMessageTarget.ValidateConversationId(reference.ConversationId);
@@ -181,11 +189,6 @@ public sealed class SlackWebApiLifecycleClient :
             _httpClient.Dispose();
         }
     }
-
-    private const MessageCapabilities ManagedMessageCapabilities = MessageCapabilities.Reply |
-        MessageCapabilities.Update |
-        MessageCapabilities.Delete |
-        MessageCapabilities.React;
 
     private sealed class SlackReferenceCoordinates {
         public SlackReferenceCoordinates(string conversationId, string timestamp) {
