@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX DbaClientX Persistence</Title>
+    <Description>DbaClientX-backed durable inbox and transactional outbox for MessageX.</Description>
+    <AssemblyName>MessageX.Persistence.DbaClientX</AssemblyName>
+    <PackageId>MessageX.Persistence.DbaClientX</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DBAClientX.SQLite" />
+    <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

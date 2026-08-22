@@ -21,6 +21,7 @@
     <ProjectReference Include="..\MessageX.Discord.Hosting.AspNetCore\MessageX.Discord.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
     <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
+    <ProjectReference Include="..\MessageX.Persistence.DbaClientX\MessageX.Persistence.DbaClientX.csproj" />
     <ProjectReference Include="..\MessageX.Slack\MessageX.Slack.csproj" />
     <ProjectReference Include="..\MessageX.Slack.Hosting.AspNetCore\MessageX.Slack.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />
