@@ -26,9 +26,12 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
     /// <inheritdoc />
     public MessageCapabilities Capabilities => DeliveryMethod switch {
         DiscordDeliveryMethod.IncomingWebhook =>
-            MessageCapabilities.Send | MessageCapabilities.UploadFile,
+            MessageCapabilities.Send | MessageCapabilities.UploadFile |
+            MessageCapabilities.Read | MessageCapabilities.Update | MessageCapabilities.Delete,
         DiscordDeliveryMethod.BotChannel or DiscordDeliveryMethod.BotThread or DiscordDeliveryMethod.BotDirectMessage =>
-            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile,
+            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile |
+            MessageCapabilities.Update | MessageCapabilities.Delete | MessageCapabilities.React |
+            MessageCapabilities.Read,
         _ => MessageCapabilities.None
     };
 

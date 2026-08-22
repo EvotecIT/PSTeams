@@ -33,7 +33,9 @@ public sealed class DiscordModelTests {
         Assert.Equal(DiscordDeliveryMethod.BotChannel, channel.DeliveryMethod);
         Assert.Null(channel.ThreadId);
         Assert.Equal(
-            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile,
+            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile |
+            MessageCapabilities.Update | MessageCapabilities.Delete | MessageCapabilities.React |
+            MessageCapabilities.Read,
             channel.Capabilities);
         Assert.Equal(DiscordDeliveryMethod.BotThread, thread.DeliveryMethod);
         Assert.Equal(thread.ChannelId, thread.ThreadId);

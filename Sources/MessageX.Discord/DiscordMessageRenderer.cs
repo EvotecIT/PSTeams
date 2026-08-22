@@ -8,6 +8,31 @@ internal static class DiscordMessageRenderer {
         return JsonSerializer.Serialize(CreatePayload(message, target));
     }
 
+    public static string RenderUpdate(DiscordMessageRequest message, DiscordMessageTarget target) {
+        DiscordMessageValidator.Validate(message, target);
+        if (message.Attachments.Count > 0) {
+            throw new ArgumentException(
+                "Discord message updates do not accept attachments until retained attachment ownership is supplied.",
+                nameof(message));
+        }
+        if (message.TextToSpeech || !string.IsNullOrWhiteSpace(message.Nonce) || message.EnforceNonce ||
+            !string.IsNullOrWhiteSpace(message.ReplyToMessageId) ||
+            !string.IsNullOrWhiteSpace(message.WebhookUsername) || message.WebhookAvatarUrl is not null) {
+            throw new ArgumentException(
+                "Discord message updates do not accept send-only message options.",
+                nameof(message));
+        }
+
+        var payload = CreatePayload(message, target);
+        payload.Remove("tts");
+        payload.Remove("nonce");
+        payload.Remove("enforce_nonce");
+        payload.Remove("message_reference");
+        payload.Remove("username");
+        payload.Remove("avatar_url");
+        return JsonSerializer.Serialize(payload);
+    }
+
     public static Dictionary<string, object?> CreatePayload(
         DiscordMessageRequest message,
         DiscordMessageTarget target) {
