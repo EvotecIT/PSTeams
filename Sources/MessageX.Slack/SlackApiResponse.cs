@@ -15,6 +15,13 @@ internal sealed class SlackApiResponse {
 
     public string? Timestamp { get; private set; }
 
+    public bool? NoOp { get; private set; }
+
+    public bool? AlreadyOpen { get; private set; }
+
+    public bool IsConversationLookupMiss =>
+        Ok && NoOp is true && AlreadyOpen is false && Channel is null;
+
     public static SlackApiResponse Parse(string responseBody) {
         try {
             using var document = JsonDocument.Parse(responseBody);
@@ -32,7 +39,9 @@ internal sealed class SlackApiResponse {
                 Ok = ok,
                 Error = error,
                 Channel = ReadChannel(root),
-                Timestamp = ReadString(root, "ts")
+                Timestamp = ReadString(root, "ts"),
+                NoOp = ReadBoolean(root, "no_op"),
+                AlreadyOpen = ReadBoolean(root, "already_open")
             };
         }
         catch (JsonException) {
@@ -56,5 +65,16 @@ internal sealed class SlackApiResponse {
         return root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+    }
+
+    private static bool? ReadBoolean(JsonElement root, string propertyName) {
+        if (!root.TryGetProperty(propertyName, out var value)) {
+            return null;
+        }
+        return value.ValueKind switch {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            _ => null
+        };
     }
 }

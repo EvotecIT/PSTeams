@@ -51,6 +51,46 @@ public sealed class SlackConversationDirectoryTests {
     }
 
     [Fact]
+    public async Task PreventCreationReturnsNotFoundWhenNoConversationExists() {
+        const string responseBody = "{\"ok\":true,\"no_op\":true,\"already_open\":false}";
+        using var handler = new RecordingHandler(HttpStatusCode.OK, responseBody);
+        using var directory = CreateDirectory(handler);
+
+        var result = await directory.OpenDirectMessageAsync(
+            new[] { "U0123456789" },
+            preventCreation: true,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(MessageErrorKind.NotFound, result.ErrorKind);
+        Assert.Equal("conversation_not_found", result.ProviderCode);
+        Assert.Null(result.Reference);
+        Assert.Equal(responseBody, result.ResponseBody);
+    }
+
+    [Theory]
+    [InlineData(false, "{\"ok\":true,\"no_op\":true,\"already_open\":false}")]
+    [InlineData(true, "{\"ok\":true,\"no_op\":true}")]
+    [InlineData(true, "{\"ok\":true,\"no_op\":true,\"already_open\":true}")]
+    [InlineData(true, "{\"ok\":true,\"no_op\":\"true\",\"already_open\":false}")]
+    public async Task OtherChannelLessSuccessEnvelopesRemainTransient(
+        bool preventCreation,
+        string responseBody) {
+        using var handler = new RecordingHandler(HttpStatusCode.OK, responseBody);
+        using var directory = CreateDirectory(handler);
+
+        var result = await directory.OpenDirectMessageAsync(
+            new[] { "U0123456789" },
+            preventCreation,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(MessageErrorKind.Transient, result.ErrorKind);
+        Assert.Equal("invalid_response", result.ProviderCode);
+        Assert.Null(result.Reference);
+    }
+
+    [Fact]
     public async Task InvalidSuccessEnvelopeDoesNotCreateConversationReference() {
         using var handler = new RecordingHandler(HttpStatusCode.OK, "{\"ok\":true,\"channel\":{}}");
         using var directory = CreateDirectory(handler);

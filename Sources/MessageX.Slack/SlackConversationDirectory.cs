@@ -37,7 +37,7 @@ public sealed class SlackConversationDirectory : IDisposable {
     /// <param name="userIds">Slack user identifiers; display names are not accepted.</param>
     /// <param name="preventCreation">When true, resolves only an already existing conversation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public Task<SlackDeliveryResult> OpenDirectMessageAsync(
+    public async Task<SlackDeliveryResult> OpenDirectMessageAsync(
         IEnumerable<string> userIds,
         bool preventCreation = false,
         CancellationToken cancellationToken = default) {
@@ -49,20 +49,35 @@ public sealed class SlackConversationDirectory : IDisposable {
         var safeTarget = normalizedUserIds.Length == 1
             ? $"Slack direct message to {normalizedUserIds[0]}"
             : $"Slack multiparty direct message to {normalizedUserIds.Length} users";
-        return _invoker.ExecuteAsync(
+        var lookupMiss = false;
+        var result = await _invoker.ExecuteAsync(
             "conversations.open",
             json,
             safeTarget,
-            parsed => SlackMessageTarget.TryNormalizeProviderIdentifier(parsed.Channel, out var channelId) &&
-                channelId[0] is 'D' or 'G',
-            (parsed, correlationId) => new MessageReference(MessageProviders.Slack) {
-                ScopeId = _connection.WorkspaceId,
-                ConversationId = parsed.Channel!.Trim(),
-                ConversationKind = MessageConversationKind.DirectMessage,
-                CorrelationId = correlationId,
-                Capabilities = MessageCapabilities.Send | MessageCapabilities.Reply
+            parsed => {
+                lookupMiss = preventCreation && parsed.IsConversationLookupMiss;
+                return lookupMiss ||
+                    SlackMessageTarget.TryNormalizeProviderIdentifier(parsed.Channel, out var channelId) &&
+                    channelId[0] is 'D' or 'G';
             },
-            cancellationToken);
+            (parsed, correlationId) => lookupMiss
+                ? null
+                : new MessageReference(MessageProviders.Slack) {
+                    ScopeId = _connection.WorkspaceId,
+                    ConversationId = parsed.Channel!.Trim(),
+                    ConversationKind = MessageConversationKind.DirectMessage,
+                    CorrelationId = correlationId,
+                    Capabilities = MessageCapabilities.Send | MessageCapabilities.Reply
+                },
+            cancellationToken).ConfigureAwait(false);
+
+        if (lookupMiss) {
+            result.IsSuccess = false;
+            result.ProviderCode = "conversation_not_found";
+            result.ErrorKind = MessageErrorKind.NotFound;
+            result.ErrorMessage = "Slack did not find an existing direct-message conversation.";
+        }
+        return result;
     }
 
     private static string[] ValidateUserIds(IEnumerable<string> userIds) {
