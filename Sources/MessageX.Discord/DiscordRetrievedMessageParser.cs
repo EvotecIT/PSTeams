@@ -19,10 +19,13 @@ internal static class DiscordRetrievedMessageParser {
             var root = document.RootElement;
             var id = root.GetProperty("id").GetString();
             var channelId = root.GetProperty("channel_id").GetString();
+            var sourceIdIsValid = DiscordSnowflake.TryNormalize(source.MessageId, out var sourceMessageId);
+            var sourceChannelIsValid = DiscordSnowflake.TryNormalize(source.ConversationId, out var sourceChannelId);
             if (!DiscordSnowflake.TryNormalize(id, out var normalizedId) ||
                 !DiscordSnowflake.TryNormalize(channelId, out var normalizedChannelId) ||
-                !string.Equals(normalizedId, source.MessageId, StringComparison.Ordinal) ||
-                !string.Equals(normalizedChannelId, source.ConversationId, StringComparison.Ordinal)) {
+                !sourceIdIsValid || !sourceChannelIsValid ||
+                !string.Equals(normalizedId, sourceMessageId, StringComparison.Ordinal) ||
+                !string.Equals(normalizedChannelId, sourceChannelId, StringComparison.Ordinal)) {
                 throw new JsonException();
             }
             var timestamp = root.TryGetProperty("timestamp", out var timestampElement) &&
@@ -43,7 +46,9 @@ internal static class DiscordRetrievedMessageParser {
                     InstallationId = source.InstallationId,
                     ScopeId = source.ScopeId,
                     ConversationId = normalizedChannelId,
-                    ThreadId = source.ThreadId,
+                    ThreadId = source.ThreadId is null
+                        ? null
+                        : DiscordSnowflake.Normalize(source.ThreadId, nameof(source)),
                     Timestamp = timestamp,
                     CorrelationId = DiscordHttpResponseSupport.ReadHeader(response, "cf-ray"),
                     Capabilities = source.Capabilities

@@ -24,6 +24,12 @@ internal static class DiscordMessageRenderer {
         }
 
         var payload = CreatePayload(message, target);
+        // Discord PATCH retains omitted fields. Emit both mutable fields so
+        // lifecycle updates replace prior content instead of merging with it.
+        payload["content"] = string.IsNullOrWhiteSpace(message.Content) ? null : message.Content;
+        if (!payload.ContainsKey("embeds")) {
+            payload["embeds"] = Array.Empty<object>();
+        }
         payload.Remove("tts");
         payload.Remove("nonce");
         payload.Remove("enforce_nonce");

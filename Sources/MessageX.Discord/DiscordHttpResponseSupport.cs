@@ -92,11 +92,16 @@ internal static class DiscordHttpResponseSupport {
         MessageReference source,
         MessageCapabilities capabilities,
         string? correlationId) {
-        return new MessageReference(MessageProviders.Discord, source.MessageId) {
+        var messageId = DiscordSnowflake.Normalize(source.MessageId, nameof(source));
+        var conversationId = DiscordSnowflake.Normalize(source.ConversationId, nameof(source));
+        var threadId = source.ThreadId is null
+            ? null
+            : DiscordSnowflake.Normalize(source.ThreadId, nameof(source));
+        return new MessageReference(MessageProviders.Discord, messageId) {
             InstallationId = source.InstallationId,
             ScopeId = source.ScopeId,
-            ConversationId = source.ConversationId,
-            ThreadId = source.ThreadId,
+            ConversationId = conversationId,
+            ThreadId = threadId,
             Timestamp = source.Timestamp,
             CorrelationId = correlationId ?? source.CorrelationId,
             Capabilities = capabilities
@@ -109,9 +114,16 @@ internal static class DiscordHttpResponseSupport {
         if (!result.IsSuccess || result.Reference is null) {
             return result;
         }
-        if (string.Equals(result.Reference.MessageId, source.MessageId, StringComparison.Ordinal) &&
-            string.Equals(result.Reference.ConversationId, source.ConversationId, StringComparison.Ordinal)) {
+        if (DiscordSnowflake.TryNormalize(source.MessageId, out var messageId) &&
+            DiscordSnowflake.TryNormalize(source.ConversationId, out var conversationId) &&
+            string.Equals(result.Reference.MessageId, messageId, StringComparison.Ordinal) &&
+            string.Equals(result.Reference.ConversationId, conversationId, StringComparison.Ordinal)) {
             result.Reference.InstallationId = source.InstallationId;
+            result.Reference.ScopeId = source.ScopeId;
+            result.Reference.ThreadId = source.ThreadId is null
+                ? null
+                : DiscordSnowflake.Normalize(source.ThreadId, nameof(source));
+            result.Reference.Capabilities = source.Capabilities;
             return result;
         }
 
