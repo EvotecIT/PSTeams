@@ -148,7 +148,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsListCardItem`
+- `MessageX.Teams.TeamsListCardItem`
 
 ## RELATED LINKS
 

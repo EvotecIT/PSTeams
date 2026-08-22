@@ -11,36 +11,36 @@ Sends a typed or legacy-composed message to Microsoft Teams.
 ## SYNTAX
 ### TypedMessage
 ```powershell
-Send-TeamsMessage [-Message] <TeamsMessageRequest> [-Target] <TeamsMessageTarget> [-PassThru] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [-Message] <TeamsMessageRequest> [-Target] <TeamsMessageTarget> [-PassThru] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### TypedHeroCard
 ```powershell
-Send-TeamsMessage [-HeroCard] <TeamsHeroCard> [-Target] <TeamsMessageTarget> [-PassThru] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [-HeroCard] <TeamsHeroCard> [-Target] <TeamsMessageTarget> [-PassThru] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### TypedThumbnailCard
 ```powershell
-Send-TeamsMessage [-ThumbnailCard] <TeamsThumbnailCard> [-Target] <TeamsMessageTarget> [-PassThru] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [-ThumbnailCard] <TeamsThumbnailCard> [-Target] <TeamsMessageTarget> [-PassThru] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### TypedListCard
 ```powershell
-Send-TeamsMessage [-ListCard] <TeamsListCard> [-Target] <TeamsMessageTarget> [-PassThru] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [-ListCard] <TeamsListCard> [-Target] <TeamsMessageTarget> [-PassThru] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### LegacyScript
 ```powershell
-Send-TeamsMessage [[-SectionsInput] <scriptblock>] -Uri <uri> [-MessageTitle <string>] [-MessageText <string>] [-MessageSummary <string>] [-Color <string>] [-HideOriginalBody] [-Proxy <uri>] [-Suppress <bool>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [[-SectionsInput] <scriptblock>] -Uri <uri> [-MessageTitle <string>] [-MessageText <string>] [-MessageSummary <string>] [-Color <string>] [-HideOriginalBody] [-Suppress <bool>] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### LegacySections
 ```powershell
-Send-TeamsMessage [[-SectionsInput] <scriptblock>] -Uri <uri> -Sections <TeamsMessageSection[]> [-MessageTitle <string>] [-MessageText <string>] [-MessageSummary <string>] [-Color <string>] [-HideOriginalBody] [-Proxy <uri>] [-Suppress <bool>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessage [[-SectionsInput] <scriptblock>] -Uri <uri> -Sections <TeamsMessageSection[]> [-MessageTitle <string>] [-MessageText <string>] [-MessageSummary <string>] [-Color <string>] [-HideOriginalBody] [-Suppress <bool>] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Typed parameter sets accept TeamsX message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.
+Typed parameter sets accept MessageX.Teams message models and targets. Legacy parameter sets preserve the PSTeams composition syntax.
 Workflows webhooks are the recommended notification transport for new automation.
 
 ## EXAMPLES
@@ -204,11 +204,11 @@ Accept wildcard characters: False
 ```
 
 ### -Proxy
-HTTP proxy used by the legacy webhook request.
+HTTP proxy used for provider requests.
 
 ```yaml
 Type: Uri
-Parameter Sets: LegacyScript, LegacySections
+Parameter Sets: TypedMessage, TypedHeroCard, TypedThumbnailCard, TypedListCard, LegacyScript, LegacySections
 Aliases: None
 Possible values:
 
@@ -299,6 +299,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -TimeoutSeconds
+HTTP request timeout in seconds.
+
+```yaml
+Type: Int32
+Parameter Sets: TypedMessage, TypedHeroCard, TypedThumbnailCard, TypedListCard, LegacyScript, LegacySections
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Uri
 HTTPS Teams incoming webhook URL used by the legacy parameter sets.
 
@@ -315,6 +331,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -UserAgent
+Optional product user-agent sent with provider requests.
+
+```yaml
+Type: String
+Parameter Sets: TypedMessage, TypedHeroCard, TypedThumbnailCard, TypedListCard, LegacyScript, LegacySections
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### CommonParameters
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
@@ -324,7 +356,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsDeliveryResult`
+- `MessageX.Teams.TeamsDeliveryResult`
 - `System.String`
 
 ## RELATED LINKS

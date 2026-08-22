@@ -84,7 +84,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveMention`
+- `MessageX.Teams.TeamsAdaptiveMention`
 
 ## RELATED LINKS
 

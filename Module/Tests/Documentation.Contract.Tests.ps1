@@ -1,6 +1,6 @@
 Describe 'Generated command documentation contract' {
     BeforeAll {
-        Get-Module PSTeams, TeamsX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
 
         $docsCandidates = @(
@@ -13,7 +13,10 @@ Describe 'Generated command documentation contract' {
         }
         $script:DocumentedCommands = @(
             Get-ChildItem -LiteralPath $script:DocsPath -Filter '*.md' -File |
-                Where-Object { $_.BaseName -notin @('Readme', 'PowerShell-Surface') } |
+                Where-Object {
+                    Get-Content -LiteralPath $_.FullName -TotalCount 8 |
+                        Where-Object { $_ -match '^external help file:' }
+                } |
                 Select-Object -ExpandProperty BaseName
         )
         $script:ExportedCommands = @(

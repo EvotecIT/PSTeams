@@ -11,7 +11,7 @@ Sends a raw Teams message payload body to an incoming webhook.
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-Send-TeamsMessageBody [-Uri] <uri> [[-Body] <string>] [-Supress <bool>] [-Wrap] [-Proxy <uri>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Send-TeamsMessageBody [-Uri] <uri> [[-Body] <string>] [-Supress <bool>] [-Wrap] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -44,7 +44,7 @@ Accept wildcard characters: False
 ```
 
 ### -Proxy
-HTTP proxy used for the request.
+HTTP proxy used for provider requests.
 
 ```yaml
 Type: Uri
@@ -75,6 +75,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -TimeoutSeconds
+HTTP request timeout in seconds.
+
+```yaml
+Type: Int32
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Uri
 HTTPS Teams incoming webhook or Workflows URL.
 
@@ -86,6 +102,22 @@ Possible values:
 
 Required: True
 Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UserAgent
+Optional product user-agent sent with provider requests.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

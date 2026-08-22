@@ -6,16 +6,16 @@ schema: 2.0.0
 ---
 # New-AdaptiveCard
 ## SYNOPSIS
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-AdaptiveCard [[-Body] <scriptblock>] [-Action <scriptblock>] [-Uri <uri>] [-Proxy <uri>] [-FallBackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [-ReturnJson] [-WhatIf] [-Confirm] [<CommonParameters>]
+New-AdaptiveCard [[-Body] <scriptblock>] [-Action <scriptblock>] [-Uri <uri>] [-FallBackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [-ReturnJson] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -204,7 +204,7 @@ Accept wildcard characters: False
 ```
 
 ### -Proxy
-Gets or sets the HTTP proxy used when the card is sent.
+HTTP proxy used for provider requests.
 
 ```yaml
 Type: Uri
@@ -331,6 +331,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -TimeoutSeconds
+HTTP request timeout in seconds.
+
+```yaml
+Type: Int32
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Uri
 Specifies a value for uri.
 
@@ -338,6 +354,22 @@ Specifies a value for uri.
 Type: Uri
 Parameter Sets: __AllParameterSets
 Aliases: TeamsID, Url
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UserAgent
+Optional product user-agent sent with provider requests.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
 Possible values:
 
 Required: False

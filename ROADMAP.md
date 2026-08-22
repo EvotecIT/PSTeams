@@ -255,12 +255,12 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Notification delivery
 
-- [ ] Support Power Automate Workflow webhook URLs for external notifications.
-- [ ] Support Workflow destinations configured for channels, group chats, and chats.
-- [ ] Support plain text fallback and Adaptive Card payloads accepted by the configured Workflow.
-- [ ] Return a useful delivery result even when the Workflow does not expose a durable Teams message identifier.
-- [ ] Model Workflow endpoints as send-only capabilities rather than pretending they provide inbound conversation support.
-- [ ] Add transport options for proxy, timeout, cancellation, headers that are safe to expose, and redacted diagnostics.
+- [x] Support Power Automate Workflow webhook URLs for external notifications.
+- [x] Support Workflow destinations configured for channels, group chats, and chats as descriptive target metadata.
+- [x] Support plain text fallback and Adaptive Card payloads accepted by the configured Workflow.
+- [x] Return a useful delivery result even when the Workflow does not expose a durable Teams message identifier.
+- [x] Model Workflow endpoints as send-only capabilities rather than pretending they provide inbound conversation support.
+- [x] Add transport options for proxy, timeout, cancellation, a product user agent, safe correlation/retry headers, and redacted diagnostics.
 
 ### Adaptive Cards and legacy card surfaces
 
@@ -310,15 +310,15 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Notification delivery
 
-- [ ] Support Slack incoming webhooks as simple fixed-destination senders.
-- [ ] Support plain text and Block Kit payloads.
-- [ ] Make webhook limitations explicit, including message lifecycle operations that require Web API credentials.
+- [x] Support Slack incoming webhooks as simple fixed-destination senders.
+- [x] Support plain text and initial section/divider Block Kit payloads.
+- [x] Make webhook limitations explicit, including message lifecycle operations that require Web API credentials.
 
 ### Web API messaging
 
-- [ ] Implement bot-token calls needed to send to public channels, private channels, direct messages, and multiparty conversations when scopes and membership allow them.
-- [ ] Support thread replies using `thread_ts` and optional reply broadcast.
-- [ ] Return channel and timestamp identifiers required for update, delete, reply, and reaction operations.
+- [x] Implement bot-token calls needed to send to public channels, private channels, direct messages, and multiparty conversations when scopes and membership allow them.
+- [x] Support thread replies using `thread_ts` and optional reply broadcast.
+- [x] Return channel and timestamp identifiers required for update, delete, reply, and reaction operations.
 - [ ] Support opening or resolving direct-message conversations without encouraging bulk unsolicited DMs.
 - [ ] Implement update and delete for application-owned messages.
 - [ ] Add reactions and current file-upload workflows after the message lifecycle is stable.
@@ -327,9 +327,9 @@ PowerShell should expose simple synchronous command behavior to users while the 
 ### Rich content
 
 - [ ] Add typed builders for common Block Kit blocks, elements, actions, views, and modals.
-- [ ] Preserve top-level fallback text for accessibility and notifications.
-- [ ] Validate provider limits before sending and expose actionable validation errors.
-- [ ] Keep provider-native JSON import/export available for unsupported new Slack elements.
+- [x] Preserve top-level fallback text for accessibility and notifications.
+- [x] Validate limits for the implemented message, section, field, identifier, and block contracts before sending.
+- [ ] Add a safe provider-native extension model for unsupported new Slack elements without weakening typed validation.
 
 ### Inbound events and interactions
 
@@ -829,43 +829,80 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 0C - MessageX architecture baseline
 
-- [ ] Prepare the MessageX source-tree baseline by evolving stabilized TeamsX projects without rewriting repository history or discarding validated behavior.
-- [ ] Plan the repository rename and default-branch landing so repository metadata, links, workflows, and documentation change together.
-- [ ] Reserve the package/module identifiers needed for the intended release family.
-- [ ] Evolve the stabilized TeamsX solution, shared build properties, dependency management, analyzers, formatting, and test projects into the MessageX layout; add only missing infrastructure.
-- [ ] Add the PowerForge/PSPublishModule coordinated release configuration required by the new package family.
-- [ ] Capture current PSTeams and PSDiscord public-surface and issue inventories for explicit migration decisions.
-- [ ] Confirm the exact GraphEssentialsX adapter boundary in the new package layout.
-- [ ] Decide whether `MessageX.Core` or another package provides the version source.
+- [x] Prepare the MessageX source-tree baseline by evolving stabilized TeamsX projects without rewriting repository history or discarding validated behavior.
+- [x] Plan the repository rename and default-branch landing so repository metadata, links, workflows, and documentation change together.
+- [x] Verify the intended package/module identifiers are available; reserve them through the first explicitly authorized preview publication rather than publishing empty placeholders.
+- [x] Evolve the stabilized TeamsX solution, shared build properties, dependency management, analyzers, formatting, and test projects into the MessageX layout; add only missing infrastructure.
+- [x] Add the PowerForge/PSPublishModule coordinated release configuration required by the new package family.
+- [x] Capture current PSTeams and PSDiscord public-surface and issue inventories for explicit migration decisions.
+- [x] Confirm the exact GraphEssentialsX adapter boundary in the new package layout.
+- [x] Use the shared repository version for coordinated packages, with `MessageX.Core` as the primary project in release configuration.
 
 **Exit:** clean restore/build/pack skeleton for the renamed package family, with retained Teams behavior proven and no empty speculative provider packages published.
 
+#### Recorded Phase 0C candidate evidence
+
+- `Sources/MessageX.slnx` contains real `MessageX.Core`, `MessageX.Teams`, `MessageX.PowerShell`, and `MessageX.Tests` projects; no empty Slack, Discord, hosting, Graph, persistence, or aggregate projects were introduced.
+- `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` build without warnings for `net472`, `net8.0`, and `net10.0` on Windows.
+- The provider-neutral core owns message references, capability flags, classified errors, delivery-result state, and the focused generic sender contract. Teams implements that sender/result boundary while retaining its provider-native models.
+- The Microsoft Testing Platform suite passes 32/32 on .NET 8 and .NET 10, including capability discovery through the provider-neutral interface and fail-closed unsupported targets. The retained PSTeams surface passes 38/38 on PowerShell 7 and 38/38 on Windows PowerShell 5.1 while loading `MessageX.PowerShell` from the source tree.
+- Local `MessageX.Core` and `MessageX.Teams` 0.1.0 packages contain the expected three target frameworks and package readme. `MessageX.Teams` depends only on `MessageX.Core`, plus `System.Text.Json` on .NET Framework.
+- A clean .NET 10 sample restored `MessageX.Teams` from the staged feed, received `MessageX.Core` transitively, compiled against both namespaces, and ran successfully.
+- [Legacy-Issue-Migration.md](Docs/Legacy-Issue-Migration.md) maps every currently open PSTeams and PSDiscord issue to an implementation phase and concrete closure evidence.
+- GraphEssentialsX remains outside the initial dependency graph; a future `MessageX.Teams.Graph` project is introduced only with its first real adapter capability.
+
 ### Phase 1 - Teams notification vertical slice
 
-- [ ] Extract or refine minimal core results, errors, and transport options while retaining the current TeamsX Workflow target as the first provider vertical slice.
-- [ ] Retain and modernize existing typed Adaptive Card composition required by real examples.
-- [ ] Preserve and refine the existing `Send-TeamsMessage` and `New-Adaptive*` commands with deliberate parameter-set and compatibility decisions.
-- [ ] Add proxy, timeout, cancellation, diagnostics, serialization fixtures, live Workflow proof, and package/module artifact tests.
+- [x] Extract or refine minimal core results, errors, and transport options while retaining the current Teams Workflow target as the first provider vertical slice.
+- [x] Retain and modernize existing typed Adaptive Card composition required by real examples.
+- [x] Preserve and refine the existing `Send-TeamsMessage` and `New-Adaptive*` commands with deliberate parameter-set and compatibility decisions.
+- [x] Add proxy, timeout, cancellation, safe diagnostics, and serialization fixtures.
+- [x] Complete exact package/module artifact tests for this slice.
+- [ ] Complete live Workflow proof for a test channel and chat.
+
+#### Recorded Phase 1 candidate evidence
+
+- `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` build without warnings for `net472`, `net8.0`, and `net10.0`.
+- The Microsoft Testing Platform suite passes 40/40 on .NET 8 and .NET 10. It covers Workflow destination metadata, send-only capability discovery, proxy/timeout/user-agent configuration, bounded safe correlation and retry headers, fully redacted exception chains, and the distinction between transport timeouts and caller cancellation.
+- The source module passes 41/41 on PowerShell 7 and Windows PowerShell 5.1. Every webhook-capable retained command exposes the same enterprise transport parameters, response bodies stay out of default delivery errors, and pipeline records reuse one lifecycle-scoped client.
+- The exact PowerForge-packed PSTeams 2.4.1 artifact passes 41/41 on PowerShell 7 while loading `MessageX.Core`, `MessageX.Teams`, and `MessageX.PowerShell` from `Lib/Core-net10.0`, and 41/41 on Windows PowerShell 5.1 while loading the same assemblies from `Lib/Default`.
+- Live Workflow delivery remains intentionally pending until the configured test channel and chat URLs are supplied during the authorized provider-validation phase.
 
 **Exit:** C# and PowerShell users can install a packed artifact and send text and Adaptive Cards through a current Teams Workflow.
 
 ### Phase 2 - Slack notification vertical slice
 
-- [ ] Implement incoming webhook and bot-token channel/direct-message sending.
-- [ ] Add initial Block Kit builders and `Send-SlackMessage`.
-- [ ] Return durable message references for authenticated sends.
-- [ ] Add live send, error, rate-limit, package, and dual-runtime PowerShell proof.
-- [ ] Revisit core contracts and remove Teams-only assumptions.
+- [x] Implement incoming webhook and bot-token channel/direct-message sending.
+- [x] Add initial Block Kit builders and `Send-SlackMessage`.
+- [x] Return durable message references for authenticated sends.
+- [ ] Add live send proof in the authorized Slack workspace; error, rate-limit, package, and dual-runtime PowerShell proof are part of the candidate gate.
+- [x] Revisit core HTTP transport and safe diagnostic-token contracts and remove Teams-only ownership.
+
+#### Recorded Phase 2 candidate evidence
+
+- `MessageX.Slack` uses an owned `System.Text.Json` protocol surface and builds with `MessageX.Core` and `MessageX.PowerShell` for `net472`, `net8.0`, and `net10.0` without SlackNet, Discord libraries, or Newtonsoft.Json.
+- Incoming-webhook and authenticated `chat.postMessage` senders cover safe targets, bearer authentication, Block Kit section/divider payloads, thread replies, retry classification, sanitized failures, and durable Slack channel/timestamp references.
+- PowerShell exposes simple and typed parameter sets through `Send-SlackMessage`, secure bot connections, webhook and conversation targets, Block Kit builders, and exact JSON preview while retaining shared proxy, timeout, user-agent, cancellation, and `ShouldProcess` behavior.
+- The committed candidate passes 76 .NET contracts on both .NET 8 and .NET 10 (152 target-framework executions per operating system) on Windows and Linux, plus 49 packed-artifact PowerShell contracts on both PowerShell 7 and Windows PowerShell 5.1. Standalone applications restored the packed `MessageX.Slack` and `MessageX.Core` NuGet artifacts from an isolated feed and executed the Slack composition API on .NET Framework 4.7.2, .NET 8, and .NET 10.
+- Live Slack webhook, channel, direct-message, and thread sends remain intentionally pending for the final authorized provider-validation phase.
 
 **Exit:** Slack webhook and bot sends work from C#, PowerShell 5.1, and PowerShell 7 without pulling Teams implementation details into Slack.
 
 ### Phase 3 - Discord notification vertical slice
 
-- [ ] Implement webhook and bot REST sends.
-- [ ] Implement channels, DMs, replies, threads, embeds, allowed mentions, and initial attachments.
-- [ ] Implement `Send-DiscordMessage` and current Discord builders.
-- [ ] Add rate-limit parsing, Ed25519 foundation, live proof, package proof, and dual-runtime PowerShell proof.
-- [ ] Revisit core contracts after all three providers are proven.
+- [x] Implement webhook and bot REST sends.
+- [x] Implement channels, DMs, replies, threads, embeds, allowed mentions, and initial attachments.
+- [x] Implement `Send-DiscordMessage` and current Discord builders.
+- [ ] Add live send proof in the authorized Discord environment; rate-limit, Ed25519, package, and dual-runtime PowerShell proof are part of the candidate gate.
+- [x] Revisit core contracts after all three providers are proven.
+
+#### Recorded Phase 3 candidate evidence
+
+- `MessageX.Discord` owns its `System.Text.Json` protocol surface and targets `net472`, `net8.0`, and `net10.0` without Discord.Net, NetCord, or Newtonsoft.Json. Bouncy Castle 2.7.0 supplies Ed25519 internally without leaking provider types into public APIs.
+- Incoming webhooks force `wait=true` so acceptance includes durable message coordinates. Bot REST covers channels, semantic thread targets, one-to-one DM channel creation, replies, safe-by-default mentions, embeds, multipart attachments, nonce enforcement, rate-limit metadata, bounded streamed responses, and timeout/cancellation behavior.
+- PowerShell exposes typed and simple parameter sets through `Send-DiscordMessage`, secure bot connections, distinct webhook/channel/thread/DM targets, exact JSON preview, attachment and embed builders, legacy PSDiscord builder aliases, and interaction signature verification.
+- The candidate builds without warnings across all three production target frameworks and passes 103 .NET contracts on both .NET 8 and .NET 10. The exact PowerForge-packed PSTeams artifact passes 56/56 module contracts on PowerShell 7 while loading `MessageX.Discord` and `MessageX.PowerShell` from `Lib/Core-net10.0`, and 56/56 on Windows PowerShell 5.1 while loading them from `Lib/Default`.
+- Live Discord webhook, channel, thread, reply, and direct-message sends remain intentionally pending for the final authorized provider-validation phase.
 
 **Exit:** Discord webhook and bot sends work from C# and PowerShell, and shared contracts reflect three real providers rather than one provider generalized early.
 

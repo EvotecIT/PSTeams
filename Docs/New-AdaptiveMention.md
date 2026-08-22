@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveMention
 ## SYNOPSIS
-Creates a legacy-named adaptive mention backed by the TeamsX model.
+Creates a legacy-named adaptive mention backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveMention [-Text] <string> [-UserPrincipalName] <string> [[-Name] <str
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive mention backed by the TeamsX model.
+Creates a legacy-named adaptive mention backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -84,7 +84,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveMention`
+- `MessageX.Teams.TeamsAdaptiveMention`
 
 ## RELATED LINKS
 

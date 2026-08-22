@@ -1,6 +1,6 @@
-# PSTeams - Microsoft Teams Notifications for PowerShell and .NET
+# PSTeams / MessageX - Messaging for PowerShell and .NET
 
-PSTeams is available as a PowerShell module from PowerShell Gallery and is powered by a reusable C# library named `TeamsX`.
+PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into reusable `MessageX` libraries for Teams, Slack, and Discord while keeping familiar commands such as `Send-TeamsMessage` and `Send-DiscordMessage` and adding provider-native commands such as `Send-SlackMessage`.
 
 ## PowerShell Module
 
@@ -29,18 +29,29 @@ PSTeams is available as a PowerShell module from PowerShell Gallery and is power
 
 PSTeams uses a cleaner architecture:
 
-- `TeamsX` is the reusable C# library for composing and delivering Microsoft Teams messages.
-- `TeamsX.PowerShell` exposes thin binary PowerShell cmdlets over that library.
+- `MessageX.Core` owns provider-neutral delivery results, message references, capability flags, and classified errors.
+- `MessageX.Teams` owns Microsoft Teams composition and delivery.
+- `MessageX.Slack` owns Slack incoming-webhook, Web API, and Block Kit messaging without SlackNet or Newtonsoft.Json.
+- `MessageX.Discord` owns Discord incoming-webhook and bot REST delivery, embeds, attachments, and interaction verification without Discord.Net, NetCord, or Newtonsoft.Json.
+- `MessageX.PowerShell` exposes thin provider-native binary PowerShell cmdlets over those libraries.
 - `PSTeams` remains the PowerShell module users install and import.
 
 ## Capabilities
 
 - Send Microsoft Teams notifications through incoming webhooks and workflow webhooks.
+- Describe whether a Workflow URL delivers to a channel, group chat, or chat without claiming conversation access that the URL does not provide.
+- Configure proxy, timeout, cancellation, and product user-agent behavior for webhook delivery.
 - Compose classic connector-card messages with sections, facts, images, buttons, and activity fields.
 - Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
 - Compose Hero, Thumbnail, and List cards with typed cmdlets.
 - Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
-- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in TeamsX.
+- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in MessageX.Teams.
+- Send Slack text and initial Block Kit messages through fixed-destination incoming webhooks or an authenticated bot connection.
+- Address Slack channels, private channels, direct messages, multiparty conversations, and user IDs through provider identifiers supported by `chat.postMessage`.
+- Reply in Slack threads and retain the returned channel and timestamp as a durable `MessageReference` for later lifecycle work.
+- Send Discord messages through incoming webhooks or bot REST to channels, threads, and one-to-one DMs.
+- Compose Discord embeds and attachments, control mentions with a safe notify-nobody default, and retain durable message/channel/thread references.
+- Verify Discord interaction request signatures through an owned API while keeping Bouncy Castle types internal.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
 ## Installing and Updating
@@ -88,29 +99,95 @@ $message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notific
 Send-TeamsMessage -Message $message -Target $target
 ```
 
+Send an Adaptive Card through a Workflow that is configured to deliver to a channel:
+
+```powershell
+$target = New-TeamsWebhookTarget `
+    -Uri $Env:TEAMS_WORKFLOW_URL `
+    -Workflow `
+    -Destination Channel `
+    -DisplayName 'Release channel'
+
+$card = New-TeamsAdaptiveCard -Body @(
+    New-TeamsAdaptiveTextBlock -Text 'Deployment completed' -Weight Bolder
+)
+$message = New-TeamsMessage -Summary 'Deployment completed' -AdaptiveCard $card
+Send-TeamsMessage -Message $message -Target $target -TimeoutSeconds 30 -PassThru
+```
+
+The destination value is descriptive metadata. Workflow URLs remain send-only: they do not provide message IDs, replies, updates, deletes, or inbound events.
+
 Render the same message as JSON when you want to validate payloads in tests or CI:
 
 ```powershell
 $message | ConvertTo-TeamsJson
 ```
 
+Create and preview a Slack Block Kit message:
+
+```powershell
+$target = New-SlackConversationTarget -ConversationId 'C0123456789' -DisplayName 'Release alerts'
+$message = New-SlackMessage -Text 'Deployment completed' -Blocks @(
+    New-SlackSection -Markdown '*Deployment completed*'
+    New-SlackDivider
+)
+
+$message | ConvertTo-SlackJson -Target $target
+```
+
+Send through a Slack bot connection without placing its token in normal output:
+
+```powershell
+$token = Read-Host 'Slack bot token' -AsSecureString
+$connection = New-SlackConnection -BotToken $token -WorkspaceId 'T0123456789'
+Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru
+```
+
+For a fixed-destination Slack incoming webhook, use `New-SlackWebhookTarget` or the simple `Send-SlackMessage -WebhookText ... -WebhookUri ...` parameter set. Webhook URLs and bot tokens are credentials and should come from a secret store.
+
+Create and preview a Discord message without allowing content to notify mentions by default:
+
+```powershell
+$target = New-DiscordChannelTarget `
+    -ChannelId '123456789012345678' `
+    -GuildId '223456789012345678' `
+    -DisplayName 'Release alerts'
+
+$message = New-DiscordMessage -Content 'Deployment completed' -Embeds @(
+    New-DiscordSection -Title 'Release' -Description 'The deployment completed successfully.' -Color 0x2EB886 -Fields @(
+        New-DiscordFact -Name 'Environment' -Value 'Production' -Inline
+    )
+)
+
+$message | ConvertTo-DiscordJson -Target $target
+```
+
+Send through a Discord bot connection without placing its token in normal output:
+
+```powershell
+$token = Read-Host 'Discord bot token' -AsSecureString
+$connection = New-DiscordConnection -BotToken $token
+Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru
+```
+
+For fixed-destination delivery, use `New-DiscordWebhookTarget` or the simple `Send-DiscordMessage -Text ... -WebhookUri ...` parameter set. `New-DiscordEmbed`, `New-DiscordField`, and `New-DiscordThumbnail` remain aliases for familiar PSDiscord builder names. Webhook URLs and bot tokens are credentials and should come from a secret store. Bot DMs should be user-initiated or otherwise expected, not unsolicited bulk messages.
+
 ## Supported .NET and PowerShell Versions
 
-### TeamsX Library
+### MessageX libraries
 
 - .NET 8.0 and .NET 10.0 for modern cross-platform use
-- .NET Standard 2.0 for compatibility
 - .NET Framework 4.7.2 for Windows PowerShell 5.1 scenarios
 
 ### PowerShell Module
 
-- PowerShell 7.x uses the .NET 8.0 binary build by default during development.
+- PowerShell 7 on .NET 10 uses the .NET 10 binary build; PowerShell 7 on .NET 8 uses the .NET 8 binary build.
 - Windows PowerShell 5.1 uses the .NET Framework 4.7.2 binary build during development.
 - Packaged module builds are produced by `Build\Build-Module.ps1` through PowerForge/PSPublishModule. Development builds are unsigned by default; signing is an explicit release-gate choice.
 
 ## Legacy Branch
 
-The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `TeamsX`, `TeamsX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
+The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, provider libraries such as `MessageX.Teams`, `MessageX.Slack`, and `MessageX.Discord`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
 
 ## Links/Blogs
 
@@ -489,7 +566,7 @@ Send-TeamsMessage `
 
 ## Typed Adaptive Cards
 
-The public adaptive surface is binary-backed through `TeamsX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
+The public adaptive surface is binary-backed through `MessageX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
 
 If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
 
@@ -561,7 +638,7 @@ Typed wrapper-card direct sending currently targets incoming and Workflow webhoo
 
 ## Microsoft Graph Boundary
 
-Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. TeamsX intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
+Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. MessageX.Teams intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
 
 ## Documentation for Message Cards (for development)
 

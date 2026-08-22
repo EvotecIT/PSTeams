@@ -308,7 +308,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveColumn`
+- `MessageX.Teams.TeamsAdaptiveColumn`
 
 ## RELATED LINKS
 

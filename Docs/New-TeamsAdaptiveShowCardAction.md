@@ -324,7 +324,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveShowCardAction`
+- `MessageX.Teams.TeamsAdaptiveShowCardAction`
 
 ## RELATED LINKS
 

@@ -100,7 +100,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsCardButton`
+- `MessageX.Teams.TeamsCardButton`
 
 ## RELATED LINKS
 

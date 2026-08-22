@@ -7,9 +7,15 @@ Locale: en-US
 ---
 # PSTeams Module
 ## Description
-PSTeams provides typed Microsoft Teams message composition and delivery through the reusable TeamsX library and compiled PowerShell cmdlets.
+PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
 
 ## PSTeams Cmdlets
+### [ConvertTo-DiscordJson](ConvertTo-DiscordJson.md)
+Serializes a typed Discord message using the exact provider payload contract.
+
+### [ConvertTo-SlackJson](ConvertTo-SlackJson.md)
+Serializes a typed Slack message using the exact provider payload contract.
+
 ### [ConvertTo-TeamsFact](ConvertTo-TeamsFact.md)
 Converts dictionaries and PowerShell objects into Teams facts.
 
@@ -20,55 +26,55 @@ ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
 Converts dictionaries and PowerShell objects into Teams sections.
 
 ### [New-AdaptiveAction](New-AdaptiveAction.md)
-Creates a legacy-named adaptive action backed by the TeamsX model.
+Creates a legacy-named adaptive action backed by the MessageX.Teams model.
 
 ### [New-AdaptiveActionSet](New-AdaptiveActionSet.md)
-Creates a legacy-named adaptive action set backed by the TeamsX model.
+Creates a legacy-named adaptive action set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveCard](New-AdaptiveCard.md)
-Creates a legacy-named adaptive card message backed by the TeamsX model.
+Creates a legacy-named adaptive card message backed by the MessageX.Teams model.
 
 ### [New-AdaptiveColumn](New-AdaptiveColumn.md)
-Creates a legacy-named adaptive column backed by the TeamsX model.
+Creates a legacy-named adaptive column backed by the MessageX.Teams model.
 
 ### [New-AdaptiveColumnSet](New-AdaptiveColumnSet.md)
-Creates a legacy-named adaptive column set backed by the TeamsX model.
+Creates a legacy-named adaptive column set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveContainer](New-AdaptiveContainer.md)
-Creates a legacy-named adaptive container backed by the TeamsX model.
+Creates a legacy-named adaptive container backed by the MessageX.Teams model.
 
 ### [New-AdaptiveFact](New-AdaptiveFact.md)
-Creates a legacy-named adaptive fact backed by the TeamsX model.
+Creates a legacy-named adaptive fact backed by the MessageX.Teams model.
 
 ### [New-AdaptiveFactSet](New-AdaptiveFactSet.md)
-Creates a legacy-named adaptive fact set backed by the TeamsX model.
+Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveImage](New-AdaptiveImage.md)
-Creates a legacy-named adaptive image backed by the TeamsX model.
+Creates a legacy-named adaptive image backed by the MessageX.Teams model.
 
 ### [New-AdaptiveImageSet](New-AdaptiveImageSet.md)
-Creates a legacy-named adaptive image set backed by the TeamsX model.
+Creates a legacy-named adaptive image set backed by the MessageX.Teams model.
 
 ### [New-AdaptiveLineBreak](New-AdaptiveLineBreak.md)
 Creates a legacy-named adaptive line break backed by a newline text block.
 
 ### [New-AdaptiveMedia](New-AdaptiveMedia.md)
-Creates a legacy-named adaptive media element backed by the TeamsX model.
+Creates a legacy-named adaptive media element backed by the MessageX.Teams model.
 
 ### [New-AdaptiveMediaSource](New-AdaptiveMediaSource.md)
-Creates a legacy-named adaptive media source backed by the TeamsX model.
+Creates a legacy-named adaptive media source backed by the MessageX.Teams model.
 
 ### [New-AdaptiveMention](New-AdaptiveMention.md)
-Creates a legacy-named adaptive mention backed by the TeamsX model.
+Creates a legacy-named adaptive mention backed by the MessageX.Teams model.
 
 ### [New-AdaptiveRichTextBlock](New-AdaptiveRichTextBlock.md)
-Creates a legacy-named adaptive rich text block backed by the TeamsX model.
+Creates a legacy-named adaptive rich text block backed by the MessageX.Teams model.
 
 ### [New-AdaptiveTable](New-AdaptiveTable.md)
 Creates a legacy-named adaptive table by projecting objects into column sets.
 
 ### [New-AdaptiveTextBlock](New-AdaptiveTextBlock.md)
-Creates a legacy-named adaptive text block backed by the TeamsX model.
+Creates a legacy-named adaptive text block backed by the MessageX.Teams model.
 
 ### [New-CardList](New-CardList.md)
 Creates or sends a Teams ListCard payload.
@@ -79,8 +85,68 @@ Creates a button for ListCard, HeroCard, and ThumbnailCard payloads.
 ### [New-CardListItem](New-CardListItem.md)
 Creates one Teams list-card item.
 
+### [New-DiscordAllowedMentions](New-DiscordAllowedMentions.md)
+Creates an explicit Discord mention policy. The default policy notifies nobody.
+
+### [New-DiscordAttachment](New-DiscordAttachment.md)
+Creates an in-memory Discord attachment from a file or byte array.
+
+### [New-DiscordAuthor](New-DiscordAuthor.md)
+Creates Discord embed author metadata.
+
+### [New-DiscordChannelTarget](New-DiscordChannelTarget.md)
+Creates a Discord bot channel target.
+
+### [New-DiscordConnection](New-DiscordConnection.md)
+Creates an authenticated Discord bot connection without exposing its token.
+
+### [New-DiscordDirectMessageTarget](New-DiscordDirectMessageTarget.md)
+Creates a Discord bot direct-message target.
+
+### [New-DiscordFact](New-DiscordFact.md)
+Creates a Discord embed field.
+
+### [New-DiscordFooter](New-DiscordFooter.md)
+Creates Discord embed footer metadata.
+
+### [New-DiscordImage](New-DiscordImage.md)
+Creates Discord embed image or thumbnail media.
+
+### [New-DiscordMessage](New-DiscordMessage.md)
+Creates a provider-native Discord message.
+
+### [New-DiscordSection](New-DiscordSection.md)
+Creates a rich Discord embed.
+
+### [New-DiscordThreadTarget](New-DiscordThreadTarget.md)
+Creates a Discord bot thread-channel target.
+
+### [New-DiscordWebhookTarget](New-DiscordWebhookTarget.md)
+Creates a Discord incoming-webhook target, optionally within an existing thread.
+
 ### [New-HeroCard](New-HeroCard.md)
 Creates or sends a Teams HeroCard payload.
+
+### [New-SlackConnection](New-SlackConnection.md)
+Creates an authenticated Slack bot connection without exposing its token.
+
+### [New-SlackConversationTarget](New-SlackConversationTarget.md)
+Creates a Slack channel, direct-message, multiparty-message, or user target.
+
+### [New-SlackDivider](New-SlackDivider.md)
+Creates a Slack Block Kit divider.
+
+### [New-SlackMessage](New-SlackMessage.md)
+Creates a provider-native Slack message.
+
+### [New-SlackSection](New-SlackSection.md)
+Creates a Slack Block Kit section.
+
+### [New-SlackText](New-SlackText.md)
+Creates typed Slack plain-text or mrkdwn content.
+
+### [New-SlackWebhookTarget](New-SlackWebhookTarget.md)
+Creates a fixed-destination Slack incoming-webhook target.
 
 ### [New-TeamsActivityImage](New-TeamsActivityImage.md)
 Creates a typed activity-image directive for connector-card sections.
@@ -190,13 +256,23 @@ Creates a connector-card section.
 New-TeamsThumbnailCard [-Title <string>] [-SubTitle <string>] [-Text <string>] [-Images <TeamsCardImage[]>] [-Buttons <TeamsCardButton[]>] [<CommonParameters>]
 
 ### [New-TeamsWebhookTarget](New-TeamsWebhookTarget.md)
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Workflow] [<CommonParameters>]
+Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 
 ### [New-ThumbnailCard](New-ThumbnailCard.md)
 Creates or sends a Teams ThumbnailCard payload.
+
+### [Send-DiscordMessage](Send-DiscordMessage.md)
+Sends simple or typed messages through Discord incoming webhooks or authenticated bot REST.
+
+### [Send-SlackMessage](Send-SlackMessage.md)
+Sends simple or typed messages through Slack incoming webhooks or the authenticated Web API.
 
 ### [Send-TeamsMessage](Send-TeamsMessage.md)
 Sends a typed or legacy-composed message to Microsoft Teams.
 
 ### [Send-TeamsMessageBody](Send-TeamsMessageBody.md)
 Sends a raw Teams message payload body to an incoming webhook.
+
+### [Test-DiscordInteractionSignature](Test-DiscordInteractionSignature.md)
+Verifies a Discord interaction signature and bounds its age. The hosting service must separately
+reject duplicate signatures because an age window alone does not prevent replay.

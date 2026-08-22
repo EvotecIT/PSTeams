@@ -68,7 +68,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveImageSet`
+- `MessageX.Teams.TeamsAdaptiveImageSet`
 
 ## RELATED LINKS
 

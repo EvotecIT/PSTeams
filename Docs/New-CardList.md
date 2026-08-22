@@ -11,7 +11,7 @@ Creates or sends a Teams ListCard payload.
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-CardList [-Content] <scriptblock> [-Title <string>] [-Uri <uri>] [-Proxy <uri>] [-WhatIf] [-Confirm] [<CommonParameters>]
+New-CardList [-Content] <scriptblock> [-Title <string>] [-Uri <uri>] [-Proxy <uri>] [-TimeoutSeconds <int>] [-UserAgent <string>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -44,10 +44,26 @@ Accept wildcard characters: False
 ```
 
 ### -Proxy
-Gets or sets the HTTP proxy used when the card is sent.
+HTTP proxy used for provider requests.
 
 ```yaml
 Type: Uri
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TimeoutSeconds
+HTTP request timeout in seconds.
+
+```yaml
+Type: Int32
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
@@ -80,6 +96,22 @@ Specifies a value for uri.
 
 ```yaml
 Type: Uri
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UserAgent
+Optional product user-agent sent with provider requests.
+
+```yaml
+Type: String
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:

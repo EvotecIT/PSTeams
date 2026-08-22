@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX PowerShell</Title>
+    <Description>Thin provider-specific PowerShell cmdlets over MessageX libraries.</Description>
+    <AssemblyName>MessageX.PowerShell</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <Target Name="RemoveFilesAfterBuild" AfterTargets="Build">
+    <Delete Files="$(OutDir)System.Management.Automation.dll" />
+    <Delete Files="$(OutDir)System.Management.dll" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MessageX.Discord\MessageX.Discord.csproj" />
+    <ProjectReference Include="..\MessageX.Slack\MessageX.Slack.csproj" />
+    <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />
+  </ItemGroup>
+</Project>

@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveFactSet
 ## SYNOPSIS
-Creates a legacy-named adaptive fact set backed by the TeamsX model.
+Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveFactSet [[-Facts] <scriptblock>] [-Spacing <string>] [-Height <strin
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive fact set backed by the TeamsX model.
+Creates a legacy-named adaptive fact set backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -100,7 +100,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveFactSet`
+- `MessageX.Teams.TeamsAdaptiveFactSet`
 
 ## RELATED LINKS
 

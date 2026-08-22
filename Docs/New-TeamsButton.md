@@ -84,7 +84,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsMessageButton`
+- `MessageX.Teams.TeamsMessageButton`
 
 ## RELATED LINKS
 

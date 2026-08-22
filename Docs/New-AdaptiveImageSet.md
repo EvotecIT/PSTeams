@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveImageSet
 ## SYNOPSIS
-Creates a legacy-named adaptive image set backed by the TeamsX model.
+Creates a legacy-named adaptive image set backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveImageSet [[-Images] <scriptblock>] [-Size <string>] [-Spacing <strin
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive image set backed by the TeamsX model.
+Creates a legacy-named adaptive image set backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -164,7 +164,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveImageSet`
+- `MessageX.Teams.TeamsAdaptiveImageSet`
 
 ## RELATED LINKS
 

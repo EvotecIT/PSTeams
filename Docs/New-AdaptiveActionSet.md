@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveActionSet
 ## SYNOPSIS
-Creates a legacy-named adaptive action set backed by the TeamsX model.
+Creates a legacy-named adaptive action set backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveActionSet [[-Action] <scriptblock>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive action set backed by the TeamsX model.
+Creates a legacy-named adaptive action set backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -52,7 +52,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveActionSet`
+- `MessageX.Teams.TeamsAdaptiveActionSet`
 
 ## RELATED LINKS
 

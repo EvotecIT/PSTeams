@@ -116,7 +116,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsThumbnailCard`
+- `MessageX.Teams.TeamsThumbnailCard`
 
 ## RELATED LINKS
 

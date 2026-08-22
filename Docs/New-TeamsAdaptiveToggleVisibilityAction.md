@@ -68,7 +68,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveToggleVisibilityAction`
+- `MessageX.Teams.TeamsAdaptiveToggleVisibilityAction`
 
 ## RELATED LINKS
 

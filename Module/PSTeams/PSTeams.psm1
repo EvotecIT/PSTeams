@@ -4,7 +4,7 @@ $Private = @(Get-ChildItem -Path $PSScriptRoot\Private\*.ps1 -ErrorAction Silent
 $Classes = @(Get-ChildItem -Path $PSScriptRoot\Classes\*.ps1 -ErrorAction SilentlyContinue -Recurse -File)
 $Enums = @(Get-ChildItem -Path $PSScriptRoot\Enums\*.ps1 -ErrorAction SilentlyContinue -Recurse -File)
 
-$binaryModuleName = 'TeamsX.PowerShell.dll'
+$binaryModuleName = 'MessageX.PowerShell.dll'
 $binaryModules = @(
     $binaryModuleName
 )
@@ -12,12 +12,14 @@ $binaryModules = @(
 # Keep the source-tree module usable during development. Prefer the PowerShell 7.x support build.
 # Production packaging is handled by Build-Module.ps1.
 $development = $true
-$developmentPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\TeamsX.PowerShell\bin\Debug'
+$developmentPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\Sources\MessageX.PowerShell\bin\Debug'
 $developmentFolderDefault = 'net472'
-$preferredDevelopmentCoreFolders = if ([System.Environment]::Version.Major -ge 8) {
-    @('net8.0', 'net10.0', 'netstandard2.0')
+$preferredDevelopmentCoreFolders = if ([System.Environment]::Version.Major -ge 10) {
+    @('net10.0', 'net8.0')
+} elseif ([System.Environment]::Version.Major -ge 8) {
+    @('net8.0')
 } else {
-    @('net8.0', 'netstandard2.0')
+    @('net8.0')
 }
 
 $developmentFolderCore = foreach ($folder in $preferredDevelopmentCoreFolders) {

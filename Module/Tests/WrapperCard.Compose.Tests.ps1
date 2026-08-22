@@ -1,6 +1,6 @@
 Describe 'Wrapper-card migration cmdlets' {
     BeforeEach {
-        Get-Module PSTeams, TeamsX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
     }
 

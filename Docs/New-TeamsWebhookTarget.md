@@ -6,33 +6,60 @@ schema: 2.0.0
 ---
 # New-TeamsWebhookTarget
 ## SYNOPSIS
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Workflow] [<CommonParameters>]
+Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 
 ## SYNTAX
-### __AllParameterSets
+### IncomingWebhook (Default)
 ```powershell
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Workflow] [<CommonParameters>]
+New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [<CommonParameters>]
+```
+
+### WorkflowWebhook
+```powershell
+New-TeamsWebhookTarget [-Uri] <uri> -Workflow [-DisplayName <string>] [-Destination <TeamsWorkflowDestinationKind>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Workflow] [<CommonParameters>]
+Workflow destination metadata documents where the configured flow delivers messages. It does not add reply, update, delete, or conversation capabilities.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsWebhookTarget -DisplayName 'Name'
+New-TeamsWebhookTarget -Uri $workflowUrl -Workflow -Destination Channel -DisplayName 'Release alerts'
+```
+
+
+### EXAMPLE 2
+```powershell
+New-TeamsWebhookTarget -Uri $incomingWebhookUrl -DisplayName 'Legacy alerts'
 ```
 
 
 ## PARAMETERS
+
+### -Destination
+Specifies a value for destination.
+
+```yaml
+Type: TeamsWorkflowDestinationKind
+Parameter Sets: WorkflowWebhook
+Aliases: None
+Possible values: Unknown, Channel, GroupChat, Chat
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -DisplayName
 Specifies a value for display name.
 
 ```yaml
 Type: String
-Parameter Sets: __AllParameterSets
+Parameter Sets: IncomingWebhook, WorkflowWebhook
 Aliases: None
 Possible values:
 
@@ -48,7 +75,7 @@ Specifies a value for uri.
 
 ```yaml
 Type: Uri
-Parameter Sets: __AllParameterSets
+Parameter Sets: IncomingWebhook, WorkflowWebhook
 Aliases: None
 Possible values:
 
@@ -64,11 +91,11 @@ Specifies the workflow switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: __AllParameterSets
+Parameter Sets: WorkflowWebhook
 Aliases: None
 Possible values:
 
-Required: False
+Required: True
 Position: named
 Default value: None
 Accept pipeline input: False
@@ -84,7 +111,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsMessageTarget`
+- `MessageX.Teams.TeamsMessageTarget`
 
 ## RELATED LINKS
 

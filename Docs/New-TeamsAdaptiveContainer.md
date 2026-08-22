@@ -356,7 +356,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveContainer`
+- `MessageX.Teams.TeamsAdaptiveContainer`
 
 ## RELATED LINKS
 

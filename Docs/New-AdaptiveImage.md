@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-AdaptiveImage
 ## SYNOPSIS
-Creates a legacy-named adaptive image backed by the TeamsX model.
+Creates a legacy-named adaptive image backed by the MessageX.Teams model.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-AdaptiveImage [[-Url] <string>] [-Style <string>] [-AlternateText <string>] 
 ```
 
 ## DESCRIPTION
-Creates a legacy-named adaptive image backed by the TeamsX model.
+Creates a legacy-named adaptive image backed by the MessageX.Teams model.
 
 ## EXAMPLES
 
@@ -324,7 +324,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-- `TeamsX.TeamsAdaptiveImage`
+- `MessageX.Teams.TeamsAdaptiveImage`
 
 ## RELATED LINKS
 
