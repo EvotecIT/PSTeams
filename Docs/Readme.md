@@ -10,6 +10,12 @@ Locale: en-US
 PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
 
 ## PSTeams Cmdlets
+### [Add-DiscordReaction](Add-DiscordReaction.md)
+Adds the authenticated Discord bot's reaction to a message.
+
+### [Add-SlackReaction](Add-SlackReaction.md)
+Adds the authenticated Slack application's reaction to a message.
+
 ### [ConvertTo-DiscordJson](ConvertTo-DiscordJson.md)
 Serializes a typed Discord message using the exact provider payload contract.
 
@@ -24,6 +30,9 @@ ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
 
 ### [ConvertTo-TeamsSection](ConvertTo-TeamsSection.md)
 Converts dictionaries and PowerShell objects into Teams sections.
+
+### [Get-DiscordMessage](Get-DiscordMessage.md)
+Retrieves an application-owned Discord message through a bot or owning webhook.
 
 ### [New-AdaptiveAction](New-AdaptiveAction.md)
 Creates a legacy-named adaptive action backed by the MessageX.Teams model.
@@ -261,6 +270,21 @@ Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 ### [New-ThumbnailCard](New-ThumbnailCard.md)
 Creates or sends a Teams ThumbnailCard payload.
 
+### [Remove-DiscordMessage](Remove-DiscordMessage.md)
+Deletes an application-owned Discord message through a bot or owning webhook.
+
+### [Remove-DiscordReaction](Remove-DiscordReaction.md)
+Removes the authenticated Discord bot's reaction from a message.
+
+### [Remove-SlackMessage](Remove-SlackMessage.md)
+Deletes an application-owned Slack message.
+
+### [Remove-SlackReaction](Remove-SlackReaction.md)
+Removes the authenticated Slack application's reaction from a message.
+
+### [Resolve-SlackConversation](Resolve-SlackConversation.md)
+Resolves or opens a Slack direct-message conversation for explicit user identifiers.
+
 ### [Send-DiscordMessage](Send-DiscordMessage.md)
 Sends simple or typed messages through Discord incoming webhooks or authenticated bot REST.
 
@@ -276,3 +300,9 @@ Sends a raw Teams message payload body to an incoming webhook.
 ### [Test-DiscordInteractionSignature](Test-DiscordInteractionSignature.md)
 Verifies a Discord interaction signature and bounds its age. The hosting service must separately
 reject duplicate signatures because an age window alone does not prevent replay.
+
+### [Update-DiscordMessage](Update-DiscordMessage.md)
+Updates an application-owned Discord message through a bot or owning webhook.
+
+### [Update-SlackMessage](Update-SlackMessage.md)
+Updates an application-owned Slack message.
