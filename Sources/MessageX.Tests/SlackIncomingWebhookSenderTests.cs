@@ -47,6 +47,21 @@ public sealed class SlackIncomingWebhookSenderTests {
     }
 
     [Fact]
+    public async Task ArchivedWebhookDestinationIsClassifiedAsNotFound() {
+        using var handler = new RecordingHandler(HttpStatusCode.Gone, "channel_is_archived");
+        using var sender = new SlackIncomingWebhookSender(new HttpClient(handler), disposeHttpClient: true);
+
+        var result = await sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForIncomingWebhook(new Uri("https://hooks.slack.com/services/T/B/secret")),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(MessageErrorKind.NotFound, result.ErrorKind);
+        Assert.Equal("channel_is_archived", result.ProviderCode);
+    }
+
+    [Fact]
     public async Task UnsafeProviderAndCorrelationTextIsNotPromotedToDiagnostics() {
         using var handler = new RecordingHandler(
             HttpStatusCode.BadRequest,

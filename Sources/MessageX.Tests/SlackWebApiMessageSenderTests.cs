@@ -77,8 +77,44 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Equal("invalid_response", result.ProviderCode);
     }
 
+    [Fact]
+    public async Task ProviderEvolvedResponseIdentifierRemainsASuccessfulDelivery() {
+        const string responseBody = "{\"ok\":true,\"channel\":\"Xprovider-evolved-α\",\"ts\":\"1712345678.123456\"}";
+        using var handler = new RecordingHandler(HttpStatusCode.OK, responseBody);
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+
+        var result = await sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation("C0123456789"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Xprovider-evolved-α", result.Reference?.ConversationId);
+    }
+
+    [Fact]
+    public async Task NegativeEnvelopeWithoutErrorCodeIsRejectedAsTransient() {
+        using var handler = new RecordingHandler(HttpStatusCode.OK, "{\"ok\":false}");
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+
+        var result = await sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation("C0123456789"),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("invalid_response", result.ProviderCode);
+        Assert.Equal(MessageErrorKind.Transient, result.ErrorKind);
+    }
+
     [Theory]
-    [InlineData("{\"ok\":true,\"channel\":\"arbitrary text\",\"ts\":\"1712345678.123456\"}")]
+    [InlineData("{\"ok\":true,\"channel\":\" \",\"ts\":\"1712345678.123456\"}")]
     [InlineData("{\"ok\":true,\"channel\":\"C0123456789\",\"ts\":\"not-a-timestamp\"}")]
     [InlineData("{\"ok\":true,\"channel\":\"C0123456789\",\"ts\":\"9999999999999999999999999999.1\"}")]
     public async Task MalformedSuccessCoordinatesAreRejectedWithoutThrowing(string responseBody) {

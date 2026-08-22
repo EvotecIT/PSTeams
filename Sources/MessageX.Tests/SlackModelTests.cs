@@ -12,7 +12,7 @@ public sealed class SlackModelTests {
         var target = SlackMessageTarget.ForIncomingWebhook(
             new Uri("https://hooks.slack.com/services/T000/B000/secret"));
 
-        Assert.Equal(MessageCapabilities.Send, target.Capabilities);
+        Assert.Equal(MessageCapabilities.Send | MessageCapabilities.Reply, target.Capabilities);
         Assert.DoesNotContain("secret", target.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -27,11 +27,13 @@ public sealed class SlackModelTests {
             "G0123456789",
             "D0123456789",
             "U0123456789",
-            "W0123456789"
+            "W0123456789",
+            "Cprovider-evolved-α"
         }) {
             Assert.Equal(providerId, SlackMessageTarget.ForConversation(providerId).ConversationId);
         }
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("release alerts"));
+        Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("C release alerts"));
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("general"));
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("release-alerts"));
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForConversation("#release-alerts"));
@@ -108,6 +110,12 @@ public sealed class SlackModelTests {
         Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(
             new SlackMessageRequest { Text = "hello", ThreadTimestamp = "1712345678" },
             target));
+
+        var invalidStyle = new SlackMessageRequest { Text = "fallback" };
+        invalidStyle.Blocks.Add(new SlackSectionBlock {
+            Text = new SlackTextObject { Style = (SlackTextStyle)42, Text = "unsupported" }
+        });
+        Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(invalidStyle, target));
 
         var tooManyBlocks = new SlackMessageRequest { Text = "fallback" };
         for (var index = 0; index < 51; index++) {

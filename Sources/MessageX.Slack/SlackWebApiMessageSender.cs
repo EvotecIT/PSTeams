@@ -84,7 +84,7 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
             .ConfigureAwait(false);
         var parsed = ParseResponse(responseBody);
         var parsedTimestamp = SlackMessageValidator.ParseTimestamp(parsed.Timestamp);
-        var hasValidChannel = SlackMessageTarget.TryNormalizeConversationId(
+        var hasValidChannel = SlackMessageTarget.TryNormalizeProviderIdentifier(
             parsed.Channel,
             out var normalizedChannel);
         var statusCode = (int)response.StatusCode;
@@ -144,10 +144,12 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
                 return ParsedResponse.Invalid;
             }
 
+            var ok = okElement.GetBoolean();
+            var error = ReadString(root, "error");
             return new ParsedResponse {
-                IsValid = true,
-                Ok = okElement.GetBoolean(),
-                Error = ReadString(root, "error"),
+                IsValid = ok || !string.IsNullOrWhiteSpace(error),
+                Ok = ok,
+                Error = error,
                 Channel = ReadString(root, "channel"),
                 Timestamp = ReadString(root, "ts")
             };

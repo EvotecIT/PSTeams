@@ -16,7 +16,7 @@ public sealed class SlackMessageTarget : IProviderCapabilities {
 
     /// <inheritdoc />
     public MessageCapabilities Capabilities => DeliveryMethod switch {
-        SlackDeliveryMethod.IncomingWebhook => MessageCapabilities.Send,
+        SlackDeliveryMethod.IncomingWebhook => MessageCapabilities.Send | MessageCapabilities.Reply,
         SlackDeliveryMethod.WebApi => MessageCapabilities.Send | MessageCapabilities.Reply,
         _ => MessageCapabilities.None
     };
@@ -64,35 +64,25 @@ public sealed class SlackMessageTarget : IProviderCapabilities {
     }
 
     internal static string ValidateConversationId(string? conversationId) {
-        var normalized = conversationId?.Trim();
-        if (string.IsNullOrEmpty(normalized) || normalized!.Length < 9 || normalized.Length > 255) {
+        if (!TryNormalizeProviderIdentifier(conversationId, out var normalized)) {
             throw new ArgumentException("A Slack conversation or user identifier is required.", nameof(conversationId));
         }
 
         var prefix = normalized[0];
-        if (prefix is not ('C' or 'G' or 'D' or 'U' or 'W')) {
+        if (prefix is not ('C' or 'G' or 'D' or 'U' or 'W') || normalized.Skip(1).Any(char.IsWhiteSpace)) {
             throw new ArgumentException("Slack targets must use provider identifiers rather than display names.", nameof(conversationId));
-        }
-
-        for (var index = 1; index < normalized.Length; index++) {
-            var character = normalized[index];
-            var allowed = character is >= 'A' and <= 'Z' or >= '0' and <= '9';
-            if (!allowed) {
-                throw new ArgumentException("Slack targets must use provider identifiers rather than display names.", nameof(conversationId));
-            }
         }
 
         return normalized;
     }
 
-    internal static bool TryNormalizeConversationId(string? conversationId, out string normalized) {
-        try {
-            normalized = ValidateConversationId(conversationId);
-            return true;
-        } catch (ArgumentException) {
+    internal static bool TryNormalizeProviderIdentifier(string? identifier, out string normalized) {
+        normalized = identifier?.Trim() ?? string.Empty;
+        if (normalized.Length < 2 || normalized.Length > 255 || normalized.Any(char.IsControl)) {
             normalized = string.Empty;
             return false;
         }
+        return true;
     }
 
     internal string SafeLabel() {

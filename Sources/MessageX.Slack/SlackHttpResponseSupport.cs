@@ -36,7 +36,8 @@ internal static class SlackHttpResponseSupport {
             code?.StartsWith("restricted_action_", StringComparison.Ordinal) == true) {
             return MessageErrorKind.Authorization;
         }
-        if (statusCode == 404 || code is "channel_not_found" or "team_not_found" or "user_not_found") {
+        if (statusCode is 404 or 410 || code is
+            "channel_not_found" or "channel_is_archived" or "team_not_found" or "user_not_found") {
             return MessageErrorKind.NotFound;
         }
         if (statusCode == 408 || statusCode >= 500) {

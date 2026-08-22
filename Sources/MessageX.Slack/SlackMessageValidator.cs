@@ -67,6 +67,9 @@ internal static class SlackMessageValidator {
     }
 
     private static void ValidateText(SlackTextObject text, int maximumLength, string label) {
+        if (text.Style is not SlackTextStyle.PlainText and not SlackTextStyle.Markdown) {
+            throw new ArgumentException("Slack text objects must use a supported text style.", nameof(text));
+        }
         if (string.IsNullOrEmpty(text.Text) || text.Text.Length > maximumLength) {
             throw new ArgumentException($"{label} must contain between 1 and {maximumLength} characters.", nameof(text));
         }
