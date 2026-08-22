@@ -9,8 +9,8 @@ public sealed class DiscordTransientInteractionContext {
 
     internal DiscordTransientInteractionContext(
         string applicationId,
-        string token,
-        DateTimeOffset expiresAt) {
+        string? token,
+        DateTimeOffset? expiresAt) {
         ApplicationId = applicationId;
         Token = token;
         ExpiresAt = expiresAt;
@@ -20,9 +20,12 @@ public sealed class DiscordTransientInteractionContext {
     public string ApplicationId { get; }
 
     /// <summary>Interaction-token expiration used to prevent late follow-up attempts.</summary>
-    public DateTimeOffset ExpiresAt { get; }
+    public DateTimeOffset? ExpiresAt { get; }
+
+    /// <summary>Whether this in-memory context still has a usable follow-up capability.</summary>
+    public bool CanFollowUp => Token is not null && ExpiresAt is not null;
 
     /// <summary>Short-lived interaction token. Never persist, serialize, or log this value.</summary>
     [JsonIgnore]
-    public string Token { get; }
+    public string? Token { get; }
 }

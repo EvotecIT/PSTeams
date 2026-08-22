@@ -9,6 +9,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MessageX.Core\MessageX.Core.csproj" />
   </ItemGroup>

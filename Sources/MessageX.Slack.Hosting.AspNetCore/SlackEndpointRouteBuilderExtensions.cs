@@ -12,6 +12,8 @@ public static class SlackEndpointRouteBuilderExtensions {
     public static IServiceCollection AddMessageXSlackAspNetCore(this IServiceCollection services) {
         ArgumentNullException.ThrowIfNull(services);
         services.AddMessageXHostingAspNetCore();
+        services.AddMessageXDurableCodec<SlackInboundEvent, SlackInboundEventDurableCodec>();
+        services.AddMessageXDurableCodec<SlackInteractionEvent, SlackInteractionEventDurableCodec>();
         services.TryAddSingleton<SlackHttpEndpointHandler>();
         return services;
     }

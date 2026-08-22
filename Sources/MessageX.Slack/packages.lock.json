@@ -104,7 +104,8 @@
       "messagex.hosting": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )",
+          "System.Text.Json": "[10.0.11, )"
         }
       }
     },

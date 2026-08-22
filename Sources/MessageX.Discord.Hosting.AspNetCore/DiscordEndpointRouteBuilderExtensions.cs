@@ -12,6 +12,7 @@ public static class DiscordEndpointRouteBuilderExtensions {
     public static IServiceCollection AddMessageXDiscordAspNetCore(this IServiceCollection services) {
         ArgumentNullException.ThrowIfNull(services);
         services.AddMessageXHostingAspNetCore();
+        services.AddMessageXDurableCodec<DiscordInboundInteraction, DiscordInteractionDurableCodec>();
         services.TryAddSingleton<DiscordHttpEndpointHandler>();
         return services;
     }
