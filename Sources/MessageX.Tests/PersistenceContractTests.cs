@@ -23,6 +23,18 @@ public sealed class PersistenceContractTests {
     }
 
     [Fact]
+    public void DurableCommandRouteCoordinatesPreserveProviderQualifier() {
+        var route = MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "inspect",
+            "2");
+
+        Assert.Equal("inspect", route.Name);
+        Assert.Equal("2", route.Qualifier);
+    }
+
+    [Fact]
     public void DurableRouteCoordinatesRejectMismatchedKindsNamesAndEvents() {
         Assert.ThrowsAny<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
             MessageRouteKind.Command,
@@ -35,6 +47,7 @@ public sealed class PersistenceContractTests {
         Assert.ThrowsAny<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
             MessageRouteKind.Event,
             MessageEventKind.Unknown));
+        Assert.Throws<ArgumentOutOfRangeException>(() => MessageRoute.ForEvent((MessageEventKind)999));
     }
 
     [Fact]
@@ -108,6 +121,33 @@ public sealed class PersistenceContractTests {
             DateTimeOffset.UtcNow,
             0,
             record));
+        Assert.Throws<ArgumentException>(() => new MessageDurableLease(
+            " record-1",
+            "lease-1",
+            DateTimeOffset.UtcNow,
+            1,
+            record));
+        Assert.Throws<ArgumentException>(() => new MessageOutboxLease(
+            "record-1",
+            "lease-1 ",
+            DateTimeOffset.UtcNow,
+            1,
+            OutboxRecord()));
+        Assert.Throws<ArgumentException>(() => new MessageDurableAcceptance(
+            " record-1",
+            MessageDurableAcceptanceStatus.Accepted));
+    }
+
+    [Fact]
+    public void TransactionalOutboxBatchIsImmutableAndBounded() {
+        var source = new List<MessageOutboxRecord> { OutboxRecord() };
+        var batch = new MessageOutboxBatch(source);
+        source.Clear();
+
+        Assert.Single(batch);
+        Assert.Throws<ArgumentException>(() => new MessageOutboxBatch(
+            Enumerable.Range(0, MessageOutboxBatch.MaximumCount + 1)
+                .Select(index => OutboxRecord($"reply-{index}"))));
     }
 
     private static MessageDurableRecord Record() => new(
@@ -118,4 +158,13 @@ public sealed class PersistenceContractTests {
         new DateTimeOffset(2026, 8, 22, 19, 0, 0, TimeSpan.Zero),
         "teams.message.v1",
         Array.Empty<byte>());
+
+    private static MessageOutboxRecord OutboxRecord(string deduplicationKey = "reply-event-1") => new(
+        MessageProviders.Discord,
+        "application-a",
+        deduplicationKey,
+        "send-message",
+        "discord.send.v1",
+        Array.Empty<byte>(),
+        new DateTimeOffset(2026, 8, 22, 19, 1, 0, TimeSpan.Zero));
 }

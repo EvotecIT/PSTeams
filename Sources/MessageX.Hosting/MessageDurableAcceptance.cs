@@ -4,7 +4,7 @@ namespace MessageX.Hosting;
 public sealed class MessageDurableAcceptance {
     /// <summary>Creates one acceptance result.</summary>
     public MessageDurableAcceptance(string recordId, MessageDurableAcceptanceStatus status) {
-        RecordId = MessageDurableValidation.Required(recordId, nameof(recordId));
+        RecordId = MessageDurableValidation.RequiredOpaque(recordId, nameof(recordId));
         Status = status;
     }
 

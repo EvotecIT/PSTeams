@@ -34,7 +34,8 @@ public sealed class MessageRoute {
 
     /// <summary>Creates a provider-neutral event route.</summary>
     public static MessageRoute ForEvent(MessageEventKind eventKind) {
-        if (eventKind == MessageEventKind.Unknown) {
+        if (eventKind == MessageEventKind.Unknown ||
+            !Enum.IsDefined(typeof(MessageEventKind), eventKind)) {
             throw new ArgumentOutOfRangeException(nameof(eventKind), "A routable event kind is required.");
         }
         return new MessageRoute(MessageRouteKind.Event, eventKind, null);
@@ -88,9 +89,10 @@ public sealed class MessageRoute {
     public static MessageRoute FromDurableCoordinates(
         MessageRouteKind kind,
         MessageEventKind eventKind,
-        string? name = null) => kind switch {
+        string? name = null,
+        string? qualifier = null) => kind switch {
             MessageRouteKind.Event when name is null => ForEvent(eventKind),
-            MessageRouteKind.Command when eventKind == MessageEventKind.CommandInvoked => ForCommand(name!),
+            MessageRouteKind.Command when eventKind == MessageEventKind.CommandInvoked => ForCommand(name!, qualifier),
             MessageRouteKind.Mention when eventKind == MessageEventKind.AppMentioned && name is null => ForMention(),
             MessageRouteKind.DirectMessage when eventKind == MessageEventKind.MessageReceived && name is null => ForDirectMessage(),
             MessageRouteKind.Action when eventKind == MessageEventKind.ActionInvoked => ForAction(name!),

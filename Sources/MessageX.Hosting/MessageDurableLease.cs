@@ -9,8 +9,8 @@ public sealed class MessageDurableLease {
         DateTimeOffset leaseExpiresAt,
         int attemptCount,
         MessageDurableRecord record) {
-        RecordId = MessageDurableValidation.Required(recordId, nameof(recordId));
-        LeaseToken = MessageDurableValidation.Required(leaseToken, nameof(leaseToken));
+        RecordId = MessageDurableValidation.RequiredOpaque(recordId, nameof(recordId));
+        LeaseToken = MessageDurableValidation.RequiredOpaque(leaseToken, nameof(leaseToken));
         if (attemptCount < 1) {
             throw new ArgumentOutOfRangeException(nameof(attemptCount));
         }

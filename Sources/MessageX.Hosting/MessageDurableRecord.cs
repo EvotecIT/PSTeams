@@ -35,7 +35,7 @@ public sealed class MessageDurableRecord {
     /// <summary>Trusted non-secret installation identifier.</summary>
     public string InstallationId { get; }
 
-    /// <summary>Provider-derived idempotency coordinate, scoped by installation.</summary>
+    /// <summary>Provider-derived idempotency coordinate, scoped by provider and installation.</summary>
     public string DeduplicationKey { get; }
 
     /// <summary>Validated application route.</summary>

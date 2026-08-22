@@ -35,7 +35,7 @@ public sealed class MessageOutboxRecord {
     /// <summary>Trusted non-secret installation identifier.</summary>
     public string InstallationId { get; }
 
-    /// <summary>Installation-scoped idempotency coordinate.</summary>
+    /// <summary>Provider-and-installation-scoped idempotency coordinate.</summary>
     public string DeduplicationKey { get; }
 
     /// <summary>Codec-owned outbound operation name.</summary>
