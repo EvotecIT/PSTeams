@@ -13,5 +13,7 @@ public enum MessageRouteKind {
     /// <summary>Route a named interactive action.</summary>
     Action,
     /// <summary>Route a named modal or dialog submission.</summary>
-    Submission
+    Submission,
+    /// <summary>Route a named provider-native autocomplete request.</summary>
+    Autocomplete
 }

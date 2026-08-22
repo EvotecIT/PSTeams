@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" />
     <ProjectReference Include="..\MessageX.Core\MessageX.Core.csproj" />
+    <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,6 +14,8 @@ public enum MessageEventKind {
     ActionInvoked,
     /// <summary>A modal or dialog was submitted.</summary>
     ModalSubmitted,
+    /// <summary>Provider-native command autocomplete choices were requested.</summary>
+    AutocompleteRequested,
     /// <summary>A reaction was added, removed, or changed.</summary>
     ReactionChanged,
     /// <summary>An existing message was changed.</summary>

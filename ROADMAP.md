@@ -378,10 +378,10 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### HTTP interactions
 
-- [ ] Verify `X-Signature-Ed25519` and `X-Signature-Timestamp` against the raw request body before parsing.
+- [x] Verify `X-Signature-Ed25519` and `X-Signature-Timestamp` against the raw request body before parsing.
 - [x] Keep Bouncy Castle types internal to MessageX.Discord.
-- [ ] Respond to endpoint validation pings.
-- [ ] Support commands, message/user commands, components, autocomplete, and modal submissions.
+- [x] Respond to endpoint validation pings.
+- [x] Support commands, message/user commands, components, autocomplete, and modal submissions.
 - [ ] Send or defer the initial response within the provider deadline and manage the limited follow-up token lifetime explicitly.
 - [ ] Support editing and deleting original and follow-up interaction responses.
 

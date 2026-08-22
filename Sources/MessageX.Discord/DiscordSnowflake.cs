@@ -4,8 +4,11 @@ namespace MessageX.Discord;
 
 internal static class DiscordSnowflake {
     public static string Normalize(string? value, string parameterName) {
-        var normalized = value?.Trim();
-        if (string.IsNullOrEmpty(normalized) || normalized!.Length > 20 ||
+        if (value is null || value.Length > 20 || value.Any(char.IsControl)) {
+            throw new ArgumentException("A valid Discord snowflake identifier is required.", parameterName);
+        }
+        var normalized = value.Trim();
+        if (string.IsNullOrEmpty(normalized) ||
             !ulong.TryParse(normalized, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ||
             parsed == 0) {
             throw new ArgumentException("A valid Discord snowflake identifier is required.", parameterName);

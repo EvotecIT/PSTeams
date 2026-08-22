@@ -157,7 +157,8 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "MessageX.Core": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.hosting": {
@@ -359,7 +360,8 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "MessageX.Core": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.hosting": {

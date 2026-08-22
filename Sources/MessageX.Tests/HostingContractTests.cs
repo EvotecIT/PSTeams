@@ -158,6 +158,29 @@ public sealed class HostingContractTests {
     }
 
     [Fact]
+    public async Task RouterKeepsAutocompleteDistinctFromCommandDispatch() {
+        var router = new MessageRouter();
+        MessageEventKind? observedKind = null;
+        router.OnAutocomplete<TestPayload>("search", (context, _) => {
+            observedKind = context.Envelope.Kind;
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+
+        var autocomplete = await router.DispatchAsync(
+            MessageRoute.ForAutocomplete("SEARCH"),
+            Envelope(new TestPayload("x"), MessageEventKind.AutocompleteRequested),
+            TestContext.Current.CancellationToken);
+        var command = await router.DispatchAsync(
+            MessageRoute.ForCommand("search"),
+            Envelope(new TestPayload("x"), MessageEventKind.CommandInvoked),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(autocomplete.RouteMatched);
+        Assert.Equal(MessageEventKind.AutocompleteRequested, observedKind);
+        Assert.False(command.RouteMatched);
+    }
+
+    [Fact]
     public async Task RouterHonorsCancellationBeforeDispatch() {
         var router = new MessageRouter();
         router.OnDirectMessage<TestPayload>((_, _) =>

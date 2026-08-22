@@ -37,6 +37,12 @@ public sealed class MessageRouter {
         MessageEventHandler<TProviderPayload> handler) =>
         Register(MessageRoute.ForSubmission(name), handler);
 
+    /// <summary>Registers a named provider-native autocomplete handler.</summary>
+    public void OnAutocomplete<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler) =>
+        Register(MessageRoute.ForAutocomplete(name), handler);
+
     /// <summary>Dispatches a verified event to an exact route and payload-type registration.</summary>
     public async Task<MessageDispatchResult> DispatchAsync<TProviderPayload>(
         MessageRoute route,
