@@ -15,7 +15,7 @@ public sealed class DiscordBotLifecycleClient :
 
     /// <summary>Creates a lifecycle client with default MessageX transport behavior.</summary>
     public DiscordBotLifecycleClient(DiscordConnection connection)
-        : this(connection, DiscordHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(connection, DiscordHttpClientPool.Shared) {
     }
 
     /// <summary>Creates a lifecycle client with configured MessageX transport behavior.</summary>
