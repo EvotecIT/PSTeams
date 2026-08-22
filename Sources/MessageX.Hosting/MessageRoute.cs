@@ -44,14 +44,18 @@ public sealed class MessageRoute {
         new(MessageRouteKind.Action, MessageEventKind.ActionInvoked, NormalizeName(name, nameof(name)));
 
     internal static string NormalizeName(string? value, string parameterName) {
-        var normalized = value?.Trim();
-        if (string.IsNullOrEmpty(normalized) ||
-            normalized!.Length > MaximumNameLength ||
-            normalized.Any(char.IsControl)) {
+        if (value is not null &&
+            (value.Length > MaximumNameLength || value.Any(char.IsControl))) {
             throw new ArgumentException(
                 "Route names must be bounded non-empty text without control characters.",
                 parameterName);
         }
-        return normalized;
+        var normalized = value?.Trim();
+        if (string.IsNullOrEmpty(normalized)) {
+            throw new ArgumentException(
+                "Route names must be bounded non-empty text without control characters.",
+                parameterName);
+        }
+        return normalized!;
     }
 }

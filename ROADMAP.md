@@ -334,7 +334,7 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Inbound events and interactions
 
-- [ ] Verify HTTP requests from the raw body with timestamp replay protection and HMAC-SHA256.
+- [x] Verify HTTP requests from the raw body with timestamp replay protection and HMAC-SHA256.
 - [ ] Support URL verification, Events API envelopes, retries, and event deduplication.
 - [ ] Support app mentions, direct messages, subscribed channel messages, slash commands, shortcuts, buttons, selections, and modal submissions.
 - [ ] Acknowledge valid commands and interactions within Slack's deadline, then continue work asynchronously.

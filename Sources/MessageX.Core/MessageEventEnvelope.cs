@@ -90,12 +90,13 @@ public sealed class MessageEventEnvelope<TProviderPayload> {
     }
 
     private static string? NormalizeOptional(string? value, string parameterName) {
+        if (value is not null &&
+            (value.Length > MaximumCoordinateLength || value.Any(char.IsControl))) {
+            throw new ArgumentException("Event coordinates must be bounded text without control characters.", parameterName);
+        }
         var normalized = value?.Trim();
         if (string.IsNullOrEmpty(normalized)) {
             return null;
-        }
-        if (normalized!.Length > MaximumCoordinateLength || normalized.Any(char.IsControl)) {
-            throw new ArgumentException("Event coordinates must be bounded text without control characters.", parameterName);
         }
         return normalized;
     }

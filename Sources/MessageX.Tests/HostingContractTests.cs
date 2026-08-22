@@ -147,6 +147,52 @@ public sealed class HostingContractTests {
             cancellation.Token));
     }
 
+    [Fact]
+    public void InboundRequestAndAcknowledgementOwnExactIndependentBodies() {
+        var requestBody = new byte[] { 1, 2, 3 };
+        var request = new MessageInboundRequest(
+            " installation-1 ",
+            " application/json ",
+            requestBody,
+            new DateTimeOffset(2026, 8, 22, 12, 0, 0, TimeSpan.Zero));
+        requestBody[0] = 9;
+        var firstRead = request.CopyBody();
+        firstRead[1] = 9;
+
+        var responseBody = new byte[] { 4, 5, 6 };
+        var acknowledgement = new MessageAcknowledgement(200, " application/json ", responseBody);
+        responseBody[0] = 9;
+        var firstResponseRead = acknowledgement.CopyBody();
+        firstResponseRead[1] = 9;
+
+        Assert.Equal(new byte[] { 1, 2, 3 }, request.CopyBody());
+        Assert.Equal("installation-1", request.InstallationId);
+        Assert.Equal("application/json", request.ContentType);
+        Assert.Equal(new byte[] { 4, 5, 6 }, acknowledgement.CopyBody());
+        Assert.Equal("application/json", acknowledgement.ContentType);
+    }
+
+    [Fact]
+    public void ReceiveResultEnforcesRouteAndEnvelopeClassification() {
+        var envelope = Envelope(new TestPayload("x"), MessageEventKind.MessageReceived);
+
+        var dispatch = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForDirectMessage(),
+            envelope,
+            MessageAcknowledgement.Empty(200));
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, dispatch.Status);
+        Assert.Equal(MessageReceiveFailureKind.None, dispatch.FailureKind);
+        Assert.Same(envelope, dispatch.Envelope);
+        Assert.Throws<ArgumentException>(() => MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            envelope,
+            MessageAcknowledgement.Empty(200)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => MessageReceiveResult<TestPayload>.Reject(
+            MessageReceiveFailureKind.None,
+            MessageAcknowledgement.Empty(400)));
+    }
+
     private static MessageEventEnvelope<TPayload> Envelope<TPayload>(
         TPayload payload,
         MessageEventKind kind) => new(

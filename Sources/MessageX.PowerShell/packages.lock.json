@@ -99,10 +99,17 @@
           "System.Text.Json": "[10.0.11, )"
         }
       },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
           "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )",
           "System.Text.Json": "[10.0.11, )"
         }
       },
@@ -153,10 +160,17 @@
           "MessageX.Core": "[0.1.0, )"
         }
       },
-      "messagex.slack": {
+      "messagex.hosting": {
         "type": "Project",
         "dependencies": {
           "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {
@@ -189,10 +203,17 @@
           "MessageX.Core": "[0.1.0, )"
         }
       },
-      "messagex.slack": {
+      "messagex.hosting": {
         "type": "Project",
         "dependencies": {
           "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {

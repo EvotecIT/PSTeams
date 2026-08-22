@@ -100,16 +100,34 @@
       },
       "messagex.core": {
         "type": "Project"
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
       }
     },
     "net10.0": {
       "messagex.core": {
         "type": "Project"
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
       }
     },
     "net8.0": {
       "messagex.core": {
         "type": "Project"
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
       }
     }
   }

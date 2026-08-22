@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MessageX.Core\MessageX.Core.csproj" />
+    <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

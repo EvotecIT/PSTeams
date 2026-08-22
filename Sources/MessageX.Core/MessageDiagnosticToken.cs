@@ -1,8 +1,10 @@
 namespace MessageX.Core;
 
-internal static class MessageDiagnosticToken {
+/// <summary>Normalizes non-secret provider and transport diagnostic identifiers.</summary>
+public static class MessageDiagnosticToken {
     private const int MaximumLength = 128;
 
+    /// <summary>Returns a bounded safe diagnostic identifier, or null when the value is unsuitable.</summary>
     public static string? Normalize(string? value) {
         var candidate = value?.Trim();
         if (string.IsNullOrEmpty(candidate) || candidate!.Length > MaximumLength) {

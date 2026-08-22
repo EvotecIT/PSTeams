@@ -169,7 +169,8 @@
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {
@@ -370,7 +371,8 @@
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {
