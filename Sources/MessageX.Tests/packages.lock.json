@@ -160,6 +160,12 @@
           "MessageX.Core": "[0.1.0, )"
         }
       },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
@@ -352,6 +358,12 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
           "MessageX.Core": "[0.1.0, )"
         }
       },

@@ -925,7 +925,7 @@ Current Phase 4 source and packed-artifact contracts are complete. Live provider
 
 ### Phase 5 - Inbound interactions and service hosting
 
-- [ ] Implement MessageX.Hosting routing and handler contracts.
+- [x] Implement MessageX.Hosting routing and handler contracts.
 - [ ] Implement ASP.NET Core raw-body receivers, verification, acknowledgement, queueing, and health checks.
 - [ ] Deliver Teams bot/agent events, Slack Events API/interactions, and Discord HTTP interactions.
 - [ ] Add DbaClientX persistence for installations, deduplication, references, and outbox state.
