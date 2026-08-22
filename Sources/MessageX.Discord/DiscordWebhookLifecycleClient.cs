@@ -36,7 +36,7 @@ public sealed class DiscordWebhookLifecycleClient :
     }
 
     /// <inheritdoc />
-    public Task<DiscordDeliveryResult> UpdateAsync(
+    public async Task<DiscordDeliveryResult> UpdateAsync(
         DiscordMessageRequest message,
         MessageReference reference,
         CancellationToken cancellationToken = default) {
@@ -44,16 +44,26 @@ public sealed class DiscordWebhookLifecycleClient :
         var request = new HttpRequestMessage(new HttpMethod("PATCH"), CreateMessageUri(coordinates.MessageId)) {
             Content = DiscordHttpContentFactory.CreateUpdate(message, _target)
         };
-        return ExecuteStatusOrMessageAsync(request, reference, expectMessage: true, cancellationToken);
+        return await ExecuteVerifiedMutationAsync(
+            request,
+            coordinates,
+            reference,
+            expectMessage: true,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public Task<DiscordDeliveryResult> DeleteAsync(
+    public async Task<DiscordDeliveryResult> DeleteAsync(
         MessageReference reference,
         CancellationToken cancellationToken = default) {
         var coordinates = ValidateReference(reference, MessageCapabilities.Delete);
         var request = new HttpRequestMessage(HttpMethod.Delete, CreateMessageUri(coordinates.MessageId));
-        return ExecuteStatusOrMessageAsync(request, reference, expectMessage: false, cancellationToken);
+        return await ExecuteVerifiedMutationAsync(
+            request,
+            coordinates,
+            reference,
+            expectMessage: false,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -98,6 +108,53 @@ public sealed class DiscordWebhookLifecycleClient :
                 ? DiscordHttpResponseSupport.RequireMatchingCoordinates(result, reference)
                 : result;
         }
+    }
+
+    private async Task<DiscordDeliveryResult> ExecuteVerifiedMutationAsync(
+        HttpRequestMessage mutationRequest,
+        DiscordLifecycleReference.Coordinates coordinates,
+        MessageReference reference,
+        bool expectMessage,
+        CancellationToken cancellationToken) {
+        using var operationCancellation = MessageHttpClientFactory.CreateOperationCancellation(
+            _httpClient,
+            cancellationToken);
+        try {
+            await VerifyCoordinatesAsync(
+                coordinates,
+                reference,
+                operationCancellation.Token).ConfigureAwait(false);
+            return await ExecuteStatusOrMessageAsync(
+                mutationRequest,
+                reference,
+                expectMessage,
+                operationCancellation.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
+            mutationRequest.Dispose();
+            throw new MessageDeliveryException(
+                expectMessage
+                    ? "Discord webhook message update request timed out."
+                    : "Discord webhook message deletion request timed out.",
+                MessageErrorKind.Transient);
+        }
+        catch {
+            mutationRequest.Dispose();
+            throw;
+        }
+    }
+
+    private async Task VerifyCoordinatesAsync(
+        DiscordLifecycleReference.Coordinates coordinates,
+        MessageReference reference,
+        CancellationToken cancellationToken) {
+        using var request = new HttpRequestMessage(HttpMethod.Get, CreateMessageUri(coordinates.MessageId));
+        _ = await DiscordLifecycleHttp.ExecuteAsync(
+            _httpClient,
+            request,
+            "webhook message coordinate verification",
+            (response, body) => DiscordRetrievedMessageParser.Parse(response, body, reference),
+            cancellationToken).ConfigureAwait(false);
     }
 
     private DiscordLifecycleReference.Coordinates ValidateReference(

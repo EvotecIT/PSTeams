@@ -306,7 +306,9 @@ public sealed class DiscordLifecycleClientTests {
         const string message = "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345679\",\"content\":\"Current\",\"timestamp\":\"2026-08-21T08:00:00Z\"}";
         using var handler = new QueueHandler(
             Response(HttpStatusCode.OK, message),
+            Response(HttpStatusCode.OK, message),
             Response(HttpStatusCode.OK, message.Replace("Current", "Updated")),
+            Response(HttpStatusCode.OK, message),
             Response(HttpStatusCode.NoContent, string.Empty));
         var target = DiscordMessageTarget.ForIncomingWebhook(WebhookUri, "123456789012345679");
         using var client = new DiscordWebhookLifecycleClient(
@@ -336,7 +338,62 @@ public sealed class DiscordLifecycleClientTests {
             Assert.Contains("thread_id=123456789012345679", item.Uri.Query, StringComparison.Ordinal);
             Assert.DoesNotContain("abcdefghijklmnopqrstuvwxyz", item.Body ?? string.Empty, StringComparison.Ordinal);
         });
-        Assert.Equal(new[] { "GET", "PATCH", "DELETE" }, handler.Requests.Select(item => item.Method.Method));
+        Assert.Equal(
+            new[] { "GET", "GET", "PATCH", "GET", "DELETE" },
+            handler.Requests.Select(item => item.Method.Method));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WebhookMutationVerifiesConversationBeforeChangingMessage(bool delete) {
+        const string message = "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345679\"}";
+        using var handler = new QueueHandler(Response(HttpStatusCode.OK, message));
+        using var client = new DiscordWebhookLifecycleClient(
+            DiscordMessageTarget.ForIncomingWebhook(WebhookUri),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+        var mismatched = WebhookReference();
+        mismatched.ConversationId = "223456789012345679";
+        mismatched.ConversationKind = MessageConversationKind.Channel;
+        mismatched.ThreadId = null;
+
+        var exception = delete
+            ? await Assert.ThrowsAsync<MessageDeliveryException>(() => client.DeleteAsync(
+                mismatched,
+                TestContext.Current.CancellationToken))
+            : await Assert.ThrowsAsync<MessageDeliveryException>(() => client.UpdateAsync(
+                new DiscordMessageRequest { Content = "Updated" },
+                mismatched,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.Equal(HttpMethod.Get, Assert.Single(handler.Requests).Method);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WebhookMutationUsesOneTimeoutAcrossVerificationAndMutation(bool delete) {
+        using var handler = new StagedWebhookMutationTimeoutHandler();
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(600) };
+        using var client = new DiscordWebhookLifecycleClient(
+            DiscordMessageTarget.ForIncomingWebhook(WebhookUri, "123456789012345679"),
+            httpClient);
+
+        var exception = delete
+            ? await Assert.ThrowsAsync<MessageDeliveryException>(() => client.DeleteAsync(
+                WebhookReference(),
+                TestContext.Current.CancellationToken))
+            : await Assert.ThrowsAsync<MessageDeliveryException>(() => client.UpdateAsync(
+                new DiscordMessageRequest { Content = "Updated" },
+                WebhookReference(),
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.Contains("timed out", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, handler.RequestCount);
+        Assert.True(handler.SecondRequestDuration < TimeSpan.FromMilliseconds(500));
     }
 
     [Fact]
@@ -455,6 +512,33 @@ public sealed class DiscordLifecycleClientTests {
             try {
                 await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
                 throw new InvalidOperationException("The ownership request should have timed out.");
+            }
+            finally {
+                SecondRequestDuration = stopwatch.Elapsed;
+            }
+        }
+    }
+
+    private sealed class StagedWebhookMutationTimeoutHandler : HttpMessageHandler {
+        public int RequestCount { get; private set; }
+
+        public TimeSpan SecondRequestDuration { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) {
+            RequestCount++;
+            if (RequestCount == 1) {
+                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                return Response(
+                    HttpStatusCode.OK,
+                    "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345679\"}");
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            try {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                throw new InvalidOperationException("The webhook mutation should have timed out.");
             }
             finally {
                 SecondRequestDuration = stopwatch.Elapsed;
