@@ -60,6 +60,14 @@ Describe 'MessageX Slack PowerShell surface' {
         $connection.PSObject.Properties.Name | Should -Not -Contain 'BotToken'
     }
 
+    It 'accepts rotating bot access tokens without exposing them' {
+        $secureToken = ConvertTo-SecureString 'xoxe.xoxb-rotating-secret-token' -AsPlainText -Force
+        $connection = New-SlackConnection -BotToken $secureToken
+
+        $connection.ToString() | Should -Not -Match 'rotating-secret-token'
+        $connection.PSObject.Properties.Name | Should -Not -Contain 'BotToken'
+    }
+
     It 'supports simple webhook and conversation WhatIf flows' {
         $secureToken = ConvertTo-SecureString 'xoxb-secret-token' -AsPlainText -Force
         $connection = New-SlackConnection -BotToken $secureToken

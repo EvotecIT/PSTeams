@@ -29,12 +29,15 @@ public sealed class SlackConnection : IProviderCapabilities {
         string botToken,
         Uri? apiBaseUri = null,
         string? workspaceId = null) {
-        if (string.IsNullOrWhiteSpace(botToken) || !botToken.Trim().StartsWith("xoxb-", StringComparison.Ordinal)) {
+        var normalizedToken = botToken?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedToken) ||
+            (!normalizedToken!.StartsWith("xoxb-", StringComparison.Ordinal) &&
+             !normalizedToken.StartsWith("xoxe.xoxb-", StringComparison.Ordinal))) {
             throw new ArgumentException("A Slack bot token is required.", nameof(botToken));
         }
 
         var normalizedBaseUri = NormalizeApiBaseUri(apiBaseUri ?? DefaultApiBaseUri);
-        return new SlackConnection(botToken.Trim(), normalizedBaseUri, workspaceId);
+        return new SlackConnection(normalizedToken, normalizedBaseUri, workspaceId);
     }
 
     /// <inheritdoc />

@@ -55,6 +55,24 @@ public sealed class SlackModelTests {
             new Uri("https://slack.com/redirect/")));
     }
 
+    [Theory]
+    [InlineData("xoxb-long-lived-bot-token")]
+    [InlineData("xoxe.xoxb-rotating-bot-access-token")]
+    public void BotConnectionAcceptsCurrentBotAccessTokenForms(string token) {
+        var connection = SlackConnection.ForBotToken(token);
+
+        Assert.DoesNotContain(token, connection.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("xoxe-refresh-token")]
+    [InlineData("xoxe.xoxp-rotating-user-access-token")]
+    [InlineData("xoxp-user-token")]
+    [InlineData("xapp-app-token")]
+    public void BotConnectionRejectsNonBotSlackTokens(string token) {
+        Assert.Throws<ArgumentException>(() => SlackConnection.ForBotToken(token));
+    }
+
     [Fact]
     public void RendererProducesProviderNativeBlockKitAndThreadPayload() {
         var message = new SlackMessageRequest {

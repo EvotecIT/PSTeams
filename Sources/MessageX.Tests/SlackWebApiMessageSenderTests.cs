@@ -34,7 +34,9 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Equal("1712000000.000001", result.Reference?.ThreadId);
         Assert.Equal("T0123", result.Reference?.ScopeId);
         Assert.Equal(MessageCapabilities.Reply, result.Reference?.Capabilities);
-        Assert.NotNull(result.Reference?.Timestamp);
+        Assert.Equal(
+            DateTimeOffset.FromUnixTimeSeconds(1712345678).AddTicks(1_234_560),
+            result.Reference?.Timestamp);
     }
 
     [Fact]
@@ -184,6 +186,12 @@ public sealed class SlackWebApiMessageSenderTests {
     [InlineData("app_access_restricted", MessageErrorKind.Authorization)]
     [InlineData("ekm_access_denied", MessageErrorKind.Authorization)]
     [InlineData("not_in_channel", MessageErrorKind.Authorization)]
+    [InlineData("is_archived", MessageErrorKind.NotFound)]
+    [InlineData("channel_is_archived", MessageErrorKind.NotFound)]
+    [InlineData("thread_not_found", MessageErrorKind.NotFound)]
+    [InlineData("message_not_found", MessageErrorKind.NotFound)]
+    [InlineData("duplicate_channel_not_found", MessageErrorKind.NotFound)]
+    [InlineData("duplicate_message_not_found", MessageErrorKind.NotFound)]
     [InlineData("org_login_required", MessageErrorKind.Transient)]
     public async Task DocumentedProviderErrorsHaveActionableClassification(
         string providerCode,

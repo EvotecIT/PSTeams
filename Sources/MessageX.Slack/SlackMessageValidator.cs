@@ -35,8 +35,8 @@ internal static class SlackMessageValidator {
         }
 
         try {
-            var milliseconds = checked((long)(seconds * 1000m));
-            return DateTimeOffset.FromUnixTimeMilliseconds(milliseconds);
+            var ticks = checked((long)(seconds * TimeSpan.TicksPerSecond));
+            return DateTimeOffset.FromUnixTimeSeconds(0).AddTicks(ticks);
         } catch (Exception exception) when (exception is ArgumentOutOfRangeException or OverflowException) {
             return null;
         }

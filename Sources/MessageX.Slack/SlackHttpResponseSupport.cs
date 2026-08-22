@@ -37,7 +37,9 @@ internal static class SlackHttpResponseSupport {
             return MessageErrorKind.Authorization;
         }
         if (statusCode is 404 or 410 || code is
-            "channel_not_found" or "channel_is_archived" or "team_not_found" or "user_not_found") {
+            "channel_not_found" or "duplicate_channel_not_found" or "channel_is_archived" or "is_archived" or
+            "message_not_found" or "duplicate_message_not_found" or "thread_not_found" or
+            "team_not_found" or "user_not_found") {
             return MessageErrorKind.NotFound;
         }
         if (statusCode == 408 || statusCode >= 500) {
