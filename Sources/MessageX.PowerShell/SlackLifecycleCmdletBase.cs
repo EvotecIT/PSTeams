@@ -23,9 +23,15 @@ public abstract class SlackLifecycleCmdletBase : MessageHttpCmdletBase {
 
     /// <inheritdoc />
     protected override Task BeginProcessingAsync() {
-        _httpClient = MessageHttpClientFactory.CreateClient(CreateTransportOptions());
-        _lifecycleClient = new SlackWebApiLifecycleClient(Connection, _httpClient);
-        _conversationDirectory = new SlackConversationDirectory(Connection, _httpClient);
+        var options = CreateTransportOptions();
+        if (UsesDefaultTransport(options)) {
+            _lifecycleClient = new SlackWebApiLifecycleClient(Connection);
+            _conversationDirectory = new SlackConversationDirectory(Connection);
+        } else {
+            _httpClient = MessageHttpClientFactory.CreateClient(options);
+            _lifecycleClient = new SlackWebApiLifecycleClient(Connection, _httpClient);
+            _conversationDirectory = new SlackConversationDirectory(Connection, _httpClient);
+        }
         return Task.CompletedTask;
     }
 

@@ -16,7 +16,10 @@ public abstract class DiscordBotLifecycleCmdletBase : MessageHttpCmdletBase {
 
     /// <inheritdoc />
     protected override Task BeginProcessingAsync() {
-        _client = new DiscordBotLifecycleClient(Connection, CreateTransportOptions());
+        var options = CreateTransportOptions();
+        _client = UsesDefaultTransport(options)
+            ? new DiscordBotLifecycleClient(Connection)
+            : new DiscordBotLifecycleClient(Connection, options);
         return Task.CompletedTask;
     }
 
