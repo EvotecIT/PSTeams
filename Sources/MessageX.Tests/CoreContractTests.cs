@@ -32,6 +32,22 @@ public sealed class CoreContractTests {
     }
 
     [Fact]
+    public void LifecycleCapabilitiesRemainIndependentlyDiscoverable() {
+        var capabilities = MessageCapabilities.Read |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React |
+            MessageCapabilities.ResolveConversation;
+
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Read));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Update));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Delete));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.React));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.ResolveConversation));
+        Assert.False(capabilities.HasFlag(MessageCapabilities.Send));
+    }
+
+    [Fact]
     public void TeamsWebhookTarget_AdvertisesSendThroughSharedContract() {
         IProviderCapabilities capabilities = TeamsMessageTarget.ForWorkflowWebhook(
             new Uri("https://example.test/workflows/secret-token"));
