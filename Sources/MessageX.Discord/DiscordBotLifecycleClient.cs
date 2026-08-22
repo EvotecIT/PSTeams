@@ -111,7 +111,7 @@ public sealed class DiscordBotLifecycleClient :
             request,
             target,
             reference,
-            DiscordHttpResponseSupport.BotMessageCapabilities,
+            reference.Capabilities,
             remove ? "bot reaction removal" : "bot reaction addition",
             cancellationToken);
     }
@@ -168,7 +168,7 @@ public sealed class DiscordBotLifecycleClient :
     private static DiscordMessageTarget CreateTarget(MessageReference reference, string conversationId) {
         return reference.ThreadId is null
             ? DiscordMessageTarget.ForChannel(conversationId, reference.ScopeId)
-            : DiscordMessageTarget.ForThread(reference.ThreadId, reference.ScopeId);
+            : DiscordMessageTarget.ForThread(conversationId, reference.ScopeId);
     }
 
     private static string ValidateReaction(string reaction) {

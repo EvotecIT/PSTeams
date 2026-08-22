@@ -32,7 +32,28 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal("discord-super-secret-token-value", request.AuthorizationParameter);
         using var payload = JsonDocument.Parse(request.Body!);
         Assert.Equal("Updated", payload.RootElement.GetProperty("content").GetString());
+        Assert.Empty(payload.RootElement.GetProperty("embeds").EnumerateArray());
         Assert.Equal(ManagedBotCapabilities, result.Reference?.Capabilities);
+    }
+
+    [Fact]
+    public async Task BotUpdateClearsOmittedContentAndPreservesCapabilities() {
+        using var handler = new QueueHandler(Response(
+            HttpStatusCode.OK,
+            "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\"}"));
+        using var client = CreateBotClient(handler);
+        var reference = BotReference();
+        reference.Capabilities = MessageCapabilities.Update | MessageCapabilities.Read;
+        var message = new DiscordMessageRequest();
+        message.Embeds.Add(new DiscordEmbed { Description = "Replacement" });
+
+        var result = await client.UpdateAsync(message, reference, TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(reference.Capabilities, result.Reference?.Capabilities);
+        using var payload = JsonDocument.Parse(Assert.Single(handler.Requests).Body!);
+        Assert.Equal(JsonValueKind.Null, payload.RootElement.GetProperty("content").ValueKind);
+        Assert.Single(payload.RootElement.GetProperty("embeds").EnumerateArray());
     }
 
     [Fact]
@@ -63,6 +84,26 @@ public sealed class DiscordLifecycleClientTests {
     }
 
     [Fact]
+    public async Task BotReactionPreservesSourceCapabilitiesAndNormalizesCoordinates() {
+        using var handler = new QueueHandler(Response(HttpStatusCode.NoContent, string.Empty));
+        using var client = CreateBotClient(handler);
+        var reference = new MessageReference(MessageProviders.Discord, " 623456789012345678 ") {
+            ConversationId = " 123456789012345678 ",
+            Capabilities = MessageCapabilities.React
+        };
+
+        var result = await client.AddReactionAsync(
+            reference,
+            "eyes",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(MessageCapabilities.React, result.Reference?.Capabilities);
+        Assert.Equal("623456789012345678", result.Reference?.MessageId);
+        Assert.Equal("123456789012345678", result.Reference?.ConversationId);
+    }
+
+    [Fact]
     public async Task BotRetrievesExactReferencedMessage() {
         using var handler = new QueueHandler(Response(
             HttpStatusCode.OK,
@@ -75,6 +116,22 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal(ManagedBotCapabilities, result.Reference.Capabilities);
         Assert.Equal(HttpMethod.Get, Assert.Single(handler.Requests).Method);
         Assert.Equal("Bot", handler.Requests[0].AuthorizationScheme);
+    }
+
+    [Fact]
+    public async Task BotRetrievalMatchesNormalizedReferenceCoordinates() {
+        using var handler = new QueueHandler(Response(
+            HttpStatusCode.OK,
+            "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\",\"content\":\"Current\"}"));
+        using var client = CreateBotClient(handler);
+        var reference = BotReference();
+        reference.MessageId = " 623456789012345678 ";
+        reference.ConversationId = " 123456789012345678 ";
+
+        var result = await client.GetAsync(reference, TestContext.Current.CancellationToken);
+
+        Assert.Equal("623456789012345678", result.Reference.MessageId);
+        Assert.Equal("123456789012345678", result.Reference.ConversationId);
     }
 
     [Fact]
@@ -128,6 +185,7 @@ public sealed class DiscordLifecycleClientTests {
             new HttpClient(handler),
             disposeHttpClient: true);
         var reference = WebhookReference();
+        reference.ScopeId = "guild-scope";
 
         var retrieved = await client.GetAsync(reference, TestContext.Current.CancellationToken);
         var updated = await client.UpdateAsync(
@@ -140,6 +198,7 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal(WebhookCapabilities, retrieved.Reference.Capabilities);
         Assert.True(updated.IsSuccess);
         Assert.Equal(WebhookCapabilities, updated.Reference?.Capabilities);
+        Assert.Equal("guild-scope", updated.Reference?.ScopeId);
         Assert.True(deleted.IsSuccess);
         Assert.Equal(MessageCapabilities.None, deleted.Reference?.Capabilities);
         Assert.All(handler.Requests, item => {

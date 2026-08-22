@@ -104,7 +104,8 @@ public sealed class DiscordWebhookLifecycleClient :
         MessageReference reference,
         MessageCapabilities requiredCapability) {
         var coordinates = DiscordLifecycleReference.Validate(reference, requiredCapability);
-        if (!string.Equals(reference.ThreadId, _target.ThreadId, StringComparison.Ordinal)) {
+        var referenceThreadId = reference.ThreadId is null ? null : coordinates.ConversationId;
+        if (!string.Equals(referenceThreadId, _target.ThreadId, StringComparison.Ordinal)) {
             throw new ArgumentException(
                 "The Discord webhook target and message reference have different thread coordinates.",
                 nameof(reference));
