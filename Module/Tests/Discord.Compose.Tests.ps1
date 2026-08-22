@@ -19,6 +19,13 @@ Describe 'MessageX Discord PowerShell surface' {
         $target.ThreadId | Should -BeNullOrEmpty
     }
 
+    It 'rejects completely empty embeds before delivery' {
+        $message = New-DiscordMessage -Embeds (New-DiscordSection)
+        $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
+
+        { $message | ConvertTo-DiscordJson -Target $target } | Should -Throw
+    }
+
     It 'preserves legacy PSDiscord builder names as aliases' {
         (Get-Command New-DiscordEmbed).CommandType | Should -Be 'Alias'
         (Get-Command New-DiscordField).CommandType | Should -Be 'Alias'

@@ -152,6 +152,15 @@ internal static class DiscordMessageValidator {
         if (embed is null) {
             throw new ArgumentException("Discord embed collections cannot contain null values.", nameof(embed));
         }
+        if (!HasRenderableEmbedProperty(embed)) {
+            throw new ArgumentException("Discord embeds require at least one renderable property.", nameof(embed));
+        }
+        if (embed.Title is not null && string.IsNullOrWhiteSpace(embed.Title)) {
+            throw new ArgumentException("Discord embed titles cannot be empty or whitespace.", nameof(embed));
+        }
+        if (embed.Description is not null && string.IsNullOrWhiteSpace(embed.Description)) {
+            throw new ArgumentException("Discord embed descriptions cannot be empty or whitespace.", nameof(embed));
+        }
         if (embed.Title?.Length > 256) {
             throw new ArgumentException("Discord embed titles cannot exceed 256 characters.", nameof(embed));
         }
@@ -208,6 +217,18 @@ internal static class DiscordMessageValidator {
         }
         return characters;
     }
+
+    private static bool HasRenderableEmbedProperty(DiscordEmbed embed) =>
+        !string.IsNullOrWhiteSpace(embed.Title) ||
+        !string.IsNullOrWhiteSpace(embed.Description) ||
+        embed.Url is not null ||
+        embed.Color is not null ||
+        embed.Timestamp is not null ||
+        embed.Author is not null ||
+        embed.Footer is not null ||
+        embed.Image is not null ||
+        embed.Thumbnail is not null ||
+        embed.Fields.Count > 0;
 
     private static void ValidateHttpsUri(Uri uri, string label) {
         if (!uri.IsAbsoluteUri || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)) {

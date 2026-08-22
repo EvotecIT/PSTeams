@@ -124,6 +124,43 @@ public sealed class DiscordModelTests {
     }
 
     [Fact]
+    public void RendererRejectsEmptyOrWhitespaceOnlyEmbeds() {
+        foreach (var embed in new[] {
+            new DiscordEmbed(),
+            new DiscordEmbed { Title = " " },
+            new DiscordEmbed { Description = "\t" }
+        }) {
+            var message = new DiscordMessageRequest();
+            message.Embeds.Add(embed);
+
+            Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+                message,
+                DiscordMessageTarget.ForChannel("123456789012345678")));
+        }
+    }
+
+    [Fact]
+    public void RendererAcceptsEachNonTextEmbedOwnerAsContent() {
+        var embeds = new[] {
+            new DiscordEmbed { Url = new Uri("https://example.com/release") },
+            new DiscordEmbed { Color = 0x336699 },
+            new DiscordEmbed { Timestamp = DateTimeOffset.UtcNow },
+            new DiscordEmbed { Author = new DiscordEmbedAuthor { Name = "Build" } },
+            new DiscordEmbed { Footer = new DiscordEmbedFooter { Text = "Build" } },
+            new DiscordEmbed { Image = new DiscordEmbedMedia { Url = new Uri("https://example.com/image.png") } },
+            new DiscordEmbed { Thumbnail = new DiscordEmbedMedia { Url = new Uri("https://example.com/thumb.png") } }
+        };
+
+        foreach (var embed in embeds) {
+            var message = new DiscordMessageRequest();
+            message.Embeds.Add(embed);
+            Assert.NotEmpty(DiscordJsonSerializer.Serialize(
+                message,
+                DiscordMessageTarget.ForChannel("123456789012345678")));
+        }
+    }
+
+    [Fact]
     public void AttachmentJsonContainsMetadataButNeverFileBytes() {
         var message = new DiscordMessageRequest { Content = "report" };
         message.Attachments.Add(DiscordAttachment.FromBytes(
