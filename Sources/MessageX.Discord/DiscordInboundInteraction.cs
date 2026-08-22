@@ -12,6 +12,7 @@ public sealed class DiscordInboundInteraction {
         string? locale,
         string? guildLocale,
         int? context,
+        DiscordApplicationCommandType? commandType,
         JsonElement data,
         DiscordTransientInteractionContext transientContext) {
         Kind = kind;
@@ -20,6 +21,7 @@ public sealed class DiscordInboundInteraction {
         Locale = locale;
         GuildLocale = guildLocale;
         Context = context;
+        CommandType = commandType;
         Data = data;
         TransientContext = transientContext;
     }
@@ -41,6 +43,9 @@ public sealed class DiscordInboundInteraction {
 
     /// <summary>Discord interaction context value.</summary>
     public int? Context { get; }
+
+    /// <summary>Application-command type when the interaction is a command or autocomplete request.</summary>
+    public DiscordApplicationCommandType? CommandType { get; }
 
     /// <summary>Provider-native interaction data. May contain user input and is intentionally transient.</summary>
     [JsonIgnore]

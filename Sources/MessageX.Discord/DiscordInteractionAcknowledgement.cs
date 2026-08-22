@@ -35,6 +35,26 @@ public static class DiscordInteractionAcknowledgement {
         }
     });
 
+    /// <summary>Creates an immediate autocomplete response from handler-produced typed choices.</summary>
+    public static MessageAcknowledgement Autocomplete(IEnumerable<DiscordAutocompleteChoice> choices) {
+        if (choices is null) {
+            throw new ArgumentNullException(nameof(choices));
+        }
+        var values = choices.ToArray();
+        if (values.Length > 25 || values.Any(value => value is null)) {
+            throw new ArgumentException("Discord autocomplete responses support at most 25 choices.", nameof(choices));
+        }
+        return Create(new Dictionary<string, object?> {
+            ["type"] = 8,
+            ["data"] = new Dictionary<string, object?> {
+                ["choices"] = values.Select(value => new Dictionary<string, object?> {
+                    ["name"] = value.Name,
+                    ["value"] = value.Value
+                }).ToArray()
+            }
+        });
+    }
+
     private static MessageAcknowledgement Create(IReadOnlyDictionary<string, object?> payload) =>
         new(
             200,

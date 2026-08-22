@@ -4,10 +4,17 @@ namespace MessageX.Hosting;
 public sealed class MessageRoute {
     private const int MaximumNameLength = 128;
 
-    private MessageRoute(MessageRouteKind kind, MessageEventKind eventKind, string? name) {
+    private MessageRoute(
+        MessageRouteKind kind,
+        MessageEventKind eventKind,
+        string? name,
+        MessageRouteNameComparison nameComparison = MessageRouteNameComparison.None,
+        string? qualifier = null) {
         Kind = kind;
         EventKind = eventKind;
         Name = name;
+        NameComparison = nameComparison;
+        Qualifier = qualifier;
     }
 
     /// <summary>Application route category.</summary>
@@ -19,6 +26,12 @@ public sealed class MessageRoute {
     /// <summary>Normalized command or action name.</summary>
     public string? Name { get; }
 
+    /// <summary>Comparison semantics for the normalized route name.</summary>
+    public MessageRouteNameComparison NameComparison { get; }
+
+    /// <summary>Optional provider-native route variant, such as an application-command type.</summary>
+    public string? Qualifier { get; }
+
     /// <summary>Creates a provider-neutral event route.</summary>
     public static MessageRoute ForEvent(MessageEventKind eventKind) {
         if (eventKind == MessageEventKind.Unknown) {
@@ -28,8 +41,16 @@ public sealed class MessageRoute {
     }
 
     /// <summary>Creates a named command route.</summary>
-    public static MessageRoute ForCommand(string name) =>
-        new(MessageRouteKind.Command, MessageEventKind.CommandInvoked, NormalizeName(name, nameof(name)));
+    public static MessageRoute ForCommand(string name) => ForCommand(name, null);
+
+    /// <summary>Creates a named command route with an exact provider-native variant.</summary>
+    public static MessageRoute ForCommand(string name, string? qualifier) =>
+        new(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            NormalizeName(name, nameof(name)),
+            MessageRouteNameComparison.OrdinalIgnoreCase,
+            NormalizeQualifier(qualifier, nameof(qualifier)));
 
     /// <summary>Creates an application-mention route.</summary>
     public static MessageRoute ForMention() =>
@@ -41,15 +62,27 @@ public sealed class MessageRoute {
 
     /// <summary>Creates a named interactive-action route.</summary>
     public static MessageRoute ForAction(string name) =>
-        new(MessageRouteKind.Action, MessageEventKind.ActionInvoked, NormalizeName(name, nameof(name)));
+        new(
+            MessageRouteKind.Action,
+            MessageEventKind.ActionInvoked,
+            NormalizeName(name, nameof(name)),
+            MessageRouteNameComparison.Ordinal);
 
     /// <summary>Creates a named modal or dialog submission route.</summary>
     public static MessageRoute ForSubmission(string name) =>
-        new(MessageRouteKind.Submission, MessageEventKind.ModalSubmitted, NormalizeName(name, nameof(name)));
+        new(
+            MessageRouteKind.Submission,
+            MessageEventKind.ModalSubmitted,
+            NormalizeName(name, nameof(name)),
+            MessageRouteNameComparison.Ordinal);
 
     /// <summary>Creates a named provider-native autocomplete route.</summary>
     public static MessageRoute ForAutocomplete(string name) =>
-        new(MessageRouteKind.Autocomplete, MessageEventKind.AutocompleteRequested, NormalizeName(name, nameof(name)));
+        new(
+            MessageRouteKind.Autocomplete,
+            MessageEventKind.AutocompleteRequested,
+            NormalizeName(name, nameof(name)),
+            MessageRouteNameComparison.OrdinalIgnoreCase);
 
     internal static string NormalizeName(string? value, string parameterName) {
         if (value is not null &&
@@ -65,5 +98,12 @@ public sealed class MessageRoute {
                 parameterName);
         }
         return normalized!;
+    }
+
+    private static string? NormalizeQualifier(string? value, string parameterName) {
+        if (value is null) {
+            return null;
+        }
+        return NormalizeName(value, parameterName);
     }
 }

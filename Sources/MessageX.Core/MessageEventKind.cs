@@ -5,25 +5,25 @@ public enum MessageEventKind {
     /// <summary>The provider event has no shared classification.</summary>
     Unknown = 0,
     /// <summary>A message was received.</summary>
-    MessageReceived,
+    MessageReceived = 1,
     /// <summary>The application or bot was mentioned.</summary>
-    AppMentioned,
+    AppMentioned = 2,
     /// <summary>A command was invoked.</summary>
-    CommandInvoked,
+    CommandInvoked = 3,
     /// <summary>An interactive action was invoked.</summary>
-    ActionInvoked,
+    ActionInvoked = 4,
     /// <summary>A modal or dialog was submitted.</summary>
-    ModalSubmitted,
-    /// <summary>Provider-native command autocomplete choices were requested.</summary>
-    AutocompleteRequested,
+    ModalSubmitted = 5,
     /// <summary>A reaction was added, removed, or changed.</summary>
-    ReactionChanged,
+    ReactionChanged = 6,
     /// <summary>An existing message was changed.</summary>
-    MessageChanged,
+    MessageChanged = 7,
     /// <summary>An existing message was deleted.</summary>
-    MessageDeleted,
+    MessageDeleted = 8,
     /// <summary>The application was installed in a provider scope.</summary>
-    Installed,
+    Installed = 9,
     /// <summary>The application was removed from a provider scope.</summary>
-    Removed
+    Removed = 10,
+    /// <summary>Provider-native command autocomplete choices were requested.</summary>
+    AutocompleteRequested = 11
 }

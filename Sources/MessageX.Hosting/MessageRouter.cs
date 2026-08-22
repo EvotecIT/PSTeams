@@ -17,6 +17,13 @@ public sealed class MessageRouter {
         MessageEventHandler<TProviderPayload> handler) =>
         Register(MessageRoute.ForCommand(name), handler);
 
+    /// <summary>Registers a named command handler for one exact provider-native command variant.</summary>
+    public void OnCommand<TProviderPayload>(
+        string name,
+        string qualifier,
+        MessageEventHandler<TProviderPayload> handler) =>
+        Register(MessageRoute.ForCommand(name, qualifier), handler);
+
     /// <summary>Registers an application-mention handler.</summary>
     public void OnMention<TProviderPayload>(MessageEventHandler<TProviderPayload> handler) =>
         Register(MessageRoute.ForMention(), handler);
@@ -123,11 +130,15 @@ public sealed class MessageRouter {
             Type payloadType,
             MessageRouteKind routeKind,
             MessageEventKind eventKind,
-            string? name) {
+            string? name,
+            MessageRouteNameComparison nameComparison,
+            string? qualifier) {
             PayloadType = payloadType;
             RouteKind = routeKind;
             EventKind = eventKind;
             Name = name;
+            NameComparison = nameComparison;
+            Qualifier = qualifier;
         }
 
         private Type PayloadType { get; }
@@ -138,17 +149,30 @@ public sealed class MessageRouter {
 
         private string? Name { get; }
 
+        private MessageRouteNameComparison NameComparison { get; }
+
+        private string? Qualifier { get; }
+
         public static HandlerKey Create<TProviderPayload>(MessageRoute route) => new(
             typeof(TProviderPayload),
             route.Kind,
             route.EventKind,
-            route.Name);
+            route.Name,
+            route.NameComparison,
+            route.Qualifier);
 
         public bool Equals(HandlerKey other) =>
             PayloadType == other.PayloadType &&
             RouteKind == other.RouteKind &&
             EventKind == other.EventKind &&
-            string.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase);
+            NameComparison == other.NameComparison &&
+            string.Equals(Qualifier, other.Qualifier, StringComparison.Ordinal) &&
+            string.Equals(
+                Name,
+                other.Name,
+                NameComparison == MessageRouteNameComparison.OrdinalIgnoreCase
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal);
 
         public override bool Equals(object? obj) => obj is HandlerKey other && Equals(other);
 
@@ -157,9 +181,15 @@ public sealed class MessageRouter {
                 var hashCode = PayloadType.GetHashCode();
                 hashCode = (hashCode * 397) ^ (int)RouteKind;
                 hashCode = (hashCode * 397) ^ (int)EventKind;
+                hashCode = (hashCode * 397) ^ (int)NameComparison;
+                hashCode = (hashCode * 397) ^ (Qualifier is null
+                    ? 0
+                    : StringComparer.Ordinal.GetHashCode(Qualifier));
                 hashCode = (hashCode * 397) ^ (Name is null
                     ? 0
-                    : StringComparer.OrdinalIgnoreCase.GetHashCode(Name));
+                    : (NameComparison == MessageRouteNameComparison.OrdinalIgnoreCase
+                        ? StringComparer.OrdinalIgnoreCase.GetHashCode(Name)
+                        : StringComparer.Ordinal.GetHashCode(Name)));
                 return hashCode;
             }
         }

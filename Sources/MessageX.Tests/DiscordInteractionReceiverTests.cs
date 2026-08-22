@@ -65,6 +65,8 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
         Assert.Equal(MessageRouteKind.Command, result.Route?.Kind);
         Assert.Equal("status", result.Route?.Name);
+        Assert.Equal("1", result.Route?.Qualifier);
+        Assert.Equal(DiscordApplicationCommandType.ChatInput, result.Envelope?.Payload.CommandType);
         Assert.Equal(MessageEventKind.CommandInvoked, result.Envelope?.Kind);
         Assert.Equal("100000000000000001", result.Envelope?.EventId);
         Assert.Equal("100000000000000003", result.Envelope?.ScopeId);
@@ -124,9 +126,60 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(5, AckType(modalResult.Acknowledgement));
         Assert.Equal(MessageRouteKind.Autocomplete, autocompleteResult.Route?.Kind);
         Assert.Equal(MessageEventKind.AutocompleteRequested, autocompleteResult.Envelope?.Kind);
+        Assert.True(autocompleteResult.RequiresSynchronousDispatch);
         Assert.Equal(8, AckType(autocompleteResult.Acknowledgement));
         using var autocompleteAck = JsonDocument.Parse(autocompleteResult.Acknowledgement.CopyBody());
         Assert.Empty(autocompleteAck.RootElement.GetProperty("data").GetProperty("choices").EnumerateArray());
+        var handlerResponse = DiscordInteractionAcknowledgement.Autocomplete(new[] {
+            DiscordAutocompleteChoice.FromString("Alpha", "alpha")
+        });
+        using var response = JsonDocument.Parse(handlerResponse.CopyBody());
+        Assert.Equal("alpha", response.RootElement.GetProperty("data").GetProperty("choices")[0].GetProperty("value").GetString());
+    }
+
+    [Fact]
+    public async Task ComponentAndModalIdentifiersUseExactRoutingAndThreadsRemainThreads() {
+        const string json = """
+            {
+              "id":"100000000000000051","application_id":"100000000000000052","type":3,
+              "token":"token","guild_id":"100000000000000053","channel_id":"100000000000000054",
+              "channel":{"id":"100000000000000054","type":11},
+              "member":{"user":{"id":"100000000000000055"}},
+              "message":{"id":"100000000000000056"},
+              "data":{"custom_id":"Approve","component_type":2}
+            }
+            """;
+        var result = Receive(json);
+        var router = new MessageRouter();
+        router.OnAction<DiscordInboundInteraction>("approve", (_, _) =>
+            Task.FromResult(MessageHandlerResult.Completed()));
+
+        var dispatch = await router.DispatchAsync(
+            result.Route!,
+            result.Envelope!,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(MessageConversationKind.Thread, result.Envelope?.Conversation?.ConversationKind);
+        Assert.Equal("100000000000000054", result.Envelope?.Conversation?.ThreadId);
+        Assert.False(dispatch.RouteMatched);
+    }
+
+    [Fact]
+    public void SameNamedApplicationCommandTypesHaveDistinctRouteIdentity() {
+        const string userCommand = """
+            {"id":"100000000000000061","application_id":"100000000000000062","type":2,"token":"t","user":{"id":"100000000000000063"},"data":{"name":"inspect","type":2}}
+            """;
+        const string messageCommand = """
+            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","user":{"id":"100000000000000073"},"data":{"name":"inspect","type":3}}
+            """;
+
+        var user = Receive(userCommand);
+        var message = Receive(messageCommand);
+
+        Assert.Equal("2", user.Route?.Qualifier);
+        Assert.Equal("3", message.Route?.Qualifier);
+        Assert.Equal(DiscordApplicationCommandType.User, user.Envelope?.Payload.CommandType);
+        Assert.Equal(DiscordApplicationCommandType.Message, message.Envelope?.Payload.CommandType);
     }
 
     [Fact]
@@ -173,7 +226,7 @@ public sealed class DiscordInteractionReceiverTests {
     [Fact]
     public void DeduplicationKeyIsScopedToTrustedInstallationRoute() {
         const string json = """
-            {"id":"100000000000000041","application_id":"100000000000000042","type":2,"token":"t","user":{"id":"100000000000000043"},"data":{"name":"status"}}
+            {"id":"100000000000000041","application_id":"100000000000000042","type":2,"token":"t","user":{"id":"100000000000000043"},"data":{"name":"status","type":1}}
             """;
         var signature = Sign(Timestamp, json);
         var first = DiscordInteractionReceiver.Receive(

@@ -122,8 +122,11 @@ public sealed class HostingContractTests {
         router.OnAction<TestPayload>("approve", (_, _) =>
             Task.FromResult(MessageHandlerResult.Completed()));
 
-        Assert.Throws<InvalidOperationException>(() => router.OnAction<TestPayload>(
+        router.OnAction<TestPayload>(
             "APPROVE",
+            (_, _) => Task.FromResult(MessageHandlerResult.Completed()));
+        Assert.Throws<InvalidOperationException>(() => router.OnAction<TestPayload>(
+            "approve",
             (_, _) => Task.FromResult(MessageHandlerResult.Completed())));
         Assert.Throws<ArgumentException>(() => router.OnCommand<TestPayload>(
             " ",
@@ -143,7 +146,7 @@ public sealed class HostingContractTests {
         });
 
         var dispatch = await router.DispatchAsync(
-            MessageRoute.ForSubmission("APPROVAL"),
+            MessageRoute.ForSubmission("approval"),
             Envelope(new TestPayload("x"), MessageEventKind.ModalSubmitted),
             TestContext.Current.CancellationToken);
         var action = await router.DispatchAsync(
@@ -155,6 +158,47 @@ public sealed class HostingContractTests {
         Assert.Equal(MessageRouteKind.Submission, observedRoute);
         Assert.True(dispatch.HandlerResult?.Handled);
         Assert.False(action.RouteMatched);
+    }
+
+    [Fact]
+    public async Task RouterKeepsExactActionIdentifiersAndCommandVariantsIndependent() {
+        var router = new MessageRouter();
+        router.OnAction<TestPayload>("approve", (_, _) => Task.FromResult(MessageHandlerResult.Completed()));
+        router.OnAction<TestPayload>("APPROVE", (_, _) => Task.FromResult(MessageHandlerResult.Ignored()));
+        router.OnCommand<TestPayload>("inspect", "2", (_, _) => Task.FromResult(MessageHandlerResult.Completed()));
+        router.OnCommand<TestPayload>("inspect", "3", (_, _) => Task.FromResult(MessageHandlerResult.Ignored()));
+
+        var lower = await router.DispatchAsync(
+            MessageRoute.ForAction("approve"),
+            Envelope(new TestPayload("x"), MessageEventKind.ActionInvoked),
+            TestContext.Current.CancellationToken);
+        var upper = await router.DispatchAsync(
+            MessageRoute.ForAction("APPROVE"),
+            Envelope(new TestPayload("x"), MessageEventKind.ActionInvoked),
+            TestContext.Current.CancellationToken);
+        var userCommand = await router.DispatchAsync(
+            MessageRoute.ForCommand("inspect", "2"),
+            Envelope(new TestPayload("x"), MessageEventKind.CommandInvoked),
+            TestContext.Current.CancellationToken);
+        var messageCommand = await router.DispatchAsync(
+            MessageRoute.ForCommand("inspect", "3"),
+            Envelope(new TestPayload("x"), MessageEventKind.CommandInvoked),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(lower.HandlerResult?.Handled);
+        Assert.False(upper.HandlerResult?.Handled);
+        Assert.True(userCommand.HandlerResult?.Handled);
+        Assert.False(messageCommand.HandlerResult?.Handled);
+    }
+
+    [Fact]
+    public void ExistingEventKindNumbersRemainStable() {
+        Assert.Equal(6, (int)MessageEventKind.ReactionChanged);
+        Assert.Equal(7, (int)MessageEventKind.MessageChanged);
+        Assert.Equal(8, (int)MessageEventKind.MessageDeleted);
+        Assert.Equal(9, (int)MessageEventKind.Installed);
+        Assert.Equal(10, (int)MessageEventKind.Removed);
+        Assert.Equal(11, (int)MessageEventKind.AutocompleteRequested);
     }
 
     [Fact]

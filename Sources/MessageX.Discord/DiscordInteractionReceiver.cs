@@ -88,6 +88,7 @@ public static class DiscordInteractionReceiver {
             data.ValueKind != JsonValueKind.Object ||
             !TryOptionalSnowflake(root, "guild_id", out var guildId) ||
             !TryOptionalSnowflake(root, "channel_id", out var channelId) ||
+            !TryNestedOptionalInt(root, "channel", "type", out var channelType) ||
             !TryOptional(root, "locale", 64, out var locale) ||
             !TryOptional(root, "guild_locale", 64, out var guildLocale) ||
             !TryOptionalContext(root, out var context) ||
@@ -98,14 +99,20 @@ public static class DiscordInteractionReceiver {
         }
 
         string name;
+        DiscordApplicationCommandType? commandType = null;
         MessageRoute route;
         MessageAcknowledgement acknowledgement;
         switch (kind) {
             case DiscordInteractionKind.ApplicationCommand:
-                if (!TryRequired(data, "name", 128, out name)) {
+                if (!TryRequired(data, "name", 128, out name) ||
+                    !TryRequiredInt(data, "type", out var commandTypeValue) ||
+                    commandTypeValue is < 1 or > 3) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
-                route = MessageRoute.ForCommand(name);
+                commandType = (DiscordApplicationCommandType)commandTypeValue;
+                route = MessageRoute.ForCommand(
+                    name,
+                    commandTypeValue.ToString(CultureInfo.InvariantCulture));
                 acknowledgement = DiscordInteractionAcknowledgement.DeferredMessage();
                 break;
             case DiscordInteractionKind.MessageComponent:
@@ -116,9 +123,12 @@ public static class DiscordInteractionReceiver {
                 acknowledgement = DiscordInteractionAcknowledgement.DeferredUpdate();
                 break;
             case DiscordInteractionKind.Autocomplete:
-                if (!TryRequired(data, "name", 128, out name)) {
+                if (!TryRequired(data, "name", 128, out name) ||
+                    !TryRequiredInt(data, "type", out var autocompleteTypeValue) ||
+                    autocompleteTypeValue != (int)DiscordApplicationCommandType.ChatInput) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
+                commandType = DiscordApplicationCommandType.ChatInput;
                 route = MessageRoute.ForAutocomplete(name);
                 acknowledgement = DiscordInteractionAcknowledgement.EmptyAutocomplete();
                 break;
@@ -145,6 +155,7 @@ public static class DiscordInteractionReceiver {
             locale,
             guildLocale,
             context,
+            commandType,
             data.Clone(),
             transientContext);
         var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signatureHex);
@@ -161,7 +172,10 @@ public static class DiscordInteractionReceiver {
             CorrelationId = request.CorrelationId
         };
         if (channelId is not null) {
-            var conversationKind = context is 1 or 2
+            var isThread = channelType is 10 or 11 or 12;
+            var conversationKind = isThread
+                ? MessageConversationKind.Thread
+                : context is 1 or 2
                 ? MessageConversationKind.DirectMessage
                 : guildId is not null
                     ? MessageConversationKind.Channel
@@ -170,6 +184,7 @@ public static class DiscordInteractionReceiver {
                 InstallationId = request.InstallationId,
                 ScopeId = scopeId,
                 ConversationId = channelId,
+                ThreadId = isThread ? channelId : null,
                 ConversationKind = conversationKind
             };
             if (messageId is not null) {
@@ -177,6 +192,7 @@ public static class DiscordInteractionReceiver {
                     InstallationId = request.InstallationId,
                     ScopeId = scopeId,
                     ConversationId = channelId,
+                    ThreadId = isThread ? channelId : null,
                     ConversationKind = conversationKind
                 };
             }
@@ -184,7 +200,8 @@ public static class DiscordInteractionReceiver {
         return MessageReceiveResult<DiscordInboundInteraction>.Dispatch(
             route,
             envelope,
-            acknowledgement);
+            acknowledgement,
+            requiresSynchronousDispatch: kind == DiscordInteractionKind.Autocomplete);
     }
 
     private static string CreateDeduplicationKey(string installationId, string signatureHex) {
@@ -271,6 +288,31 @@ public static class DiscordInteractionReceiver {
         return root.TryGetProperty(propertyName, out var property) &&
             property.ValueKind == JsonValueKind.Number &&
             property.TryGetInt32(out value);
+    }
+
+    private static bool TryNestedOptionalInt(
+        JsonElement root,
+        string ownerName,
+        string propertyName,
+        out int? value) {
+        value = null;
+        if (!root.TryGetProperty(ownerName, out var owner) || owner.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (owner.ValueKind != JsonValueKind.Object) {
+            return false;
+        }
+        if (!owner.TryGetProperty(propertyName, out var property)) {
+            return true;
+        }
+        if (
+            property.ValueKind != JsonValueKind.Number ||
+            !property.TryGetInt32(out var parsed) ||
+            parsed is < 0 or > 16) {
+            return false;
+        }
+        value = parsed;
+        return true;
     }
 
     private static bool TryRequiredSnowflake(JsonElement root, string propertyName, out string value) {

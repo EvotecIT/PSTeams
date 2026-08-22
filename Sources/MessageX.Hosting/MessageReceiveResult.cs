@@ -8,12 +8,14 @@ public sealed class MessageReceiveResult<TProviderPayload> {
         MessageReceiveFailureKind failureKind,
         MessageAcknowledgement acknowledgement,
         MessageRoute? route,
-        MessageEventEnvelope<TProviderPayload>? envelope) {
+        MessageEventEnvelope<TProviderPayload>? envelope,
+        bool requiresSynchronousDispatch) {
         Status = status;
         FailureKind = failureKind;
         Acknowledgement = acknowledgement;
         Route = route;
         Envelope = envelope;
+        RequiresSynchronousDispatch = requiresSynchronousDispatch;
     }
 
     /// <summary>Action selected for the host.</summary>
@@ -31,6 +33,9 @@ public sealed class MessageReceiveResult<TProviderPayload> {
     /// <summary>Verified typed envelope for a dispatch-ready result.</summary>
     public MessageEventEnvelope<TProviderPayload>? Envelope { get; }
 
+    /// <summary>Whether the provider response must be produced by dispatching the handler before acknowledgement.</summary>
+    public bool RequiresSynchronousDispatch { get; }
+
     /// <summary>Creates a rejected receive result.</summary>
     public static MessageReceiveResult<TProviderPayload> Reject(
         MessageReceiveFailureKind failureKind,
@@ -43,7 +48,8 @@ public sealed class MessageReceiveResult<TProviderPayload> {
             failureKind,
             acknowledgement ?? throw new ArgumentNullException(nameof(acknowledgement)),
             null,
-            null);
+            null,
+            false);
     }
 
     /// <summary>Creates an acknowledgement-only result.</summary>
@@ -53,13 +59,15 @@ public sealed class MessageReceiveResult<TProviderPayload> {
             MessageReceiveFailureKind.None,
             acknowledgement ?? throw new ArgumentNullException(nameof(acknowledgement)),
             null,
-            null);
+            null,
+            false);
 
     /// <summary>Creates a verified event ready for persistence or enqueueing.</summary>
     public static MessageReceiveResult<TProviderPayload> Dispatch(
         MessageRoute route,
         MessageEventEnvelope<TProviderPayload> envelope,
-        MessageAcknowledgement acknowledgement) {
+        MessageAcknowledgement acknowledgement,
+        bool requiresSynchronousDispatch = false) {
         if (route is null) {
             throw new ArgumentNullException(nameof(route));
         }
@@ -76,6 +84,7 @@ public sealed class MessageReceiveResult<TProviderPayload> {
             MessageReceiveFailureKind.None,
             acknowledgement ?? throw new ArgumentNullException(nameof(acknowledgement)),
             route,
-            envelope);
+            envelope,
+            requiresSynchronousDispatch);
     }
 }
