@@ -26,7 +26,10 @@ public sealed class DiscordBotMessageSenderTests {
         Assert.Equal("623456789012345678", result.Reference?.MessageId);
         Assert.Equal("223456789012345678", result.Reference?.ScopeId);
         Assert.Null(result.Reference?.ThreadId);
-        Assert.Equal(MessageCapabilities.Reply, result.Reference?.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Reply | MessageCapabilities.Update |
+            MessageCapabilities.Delete | MessageCapabilities.React | MessageCapabilities.Read,
+            result.Reference?.Capabilities);
     }
 
     [Fact]

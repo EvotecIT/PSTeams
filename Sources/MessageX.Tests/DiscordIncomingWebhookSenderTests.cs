@@ -27,7 +27,9 @@ public sealed class DiscordIncomingWebhookSenderTests {
         Assert.Equal("623456789012345678", result.Reference?.MessageId);
         Assert.Equal("123456789012345679", result.Reference?.ConversationId);
         Assert.Equal("123456789012345679", result.Reference?.ThreadId);
-        Assert.Equal(MessageCapabilities.None, result.Reference?.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Read | MessageCapabilities.Update | MessageCapabilities.Delete,
+            result.Reference?.Capabilities);
         Assert.DoesNotContain("abcdefghijklmnopqrstuvwxyz", result.Target, StringComparison.Ordinal);
     }
 

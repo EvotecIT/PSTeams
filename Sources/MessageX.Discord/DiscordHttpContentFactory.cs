@@ -24,6 +24,11 @@ internal static class DiscordHttpContentFactory {
         return EnsureWithinRequestLimit(multipart);
     }
 
+    public static HttpContent CreateUpdate(DiscordMessageRequest message, DiscordMessageTarget target) {
+        var json = DiscordMessageRenderer.RenderUpdate(message, target);
+        return EnsureWithinRequestLimit(new StringContent(json, Encoding.UTF8, "application/json"));
+    }
+
     private static T EnsureWithinRequestLimit<T>(T content) where T : HttpContent {
         var contentLength = content.Headers.ContentLength;
         if (contentLength is null) {

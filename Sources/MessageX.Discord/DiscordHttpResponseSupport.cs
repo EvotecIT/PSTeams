@@ -39,8 +39,8 @@ internal static class DiscordHttpResponseSupport {
                 Timestamp = parsed.Timestamp,
                 CorrelationId = result.CorrelationId,
                 Capabilities = deliveryMethod == DiscordDeliveryMethod.IncomingWebhook
-                    ? MessageCapabilities.None
-                    : MessageCapabilities.Reply
+                    ? WebhookMessageCapabilities
+                    : BotMessageCapabilities
             };
             return result;
         }
@@ -53,6 +53,73 @@ internal static class DiscordHttpResponseSupport {
                 ? "Discord returned an invalid message response."
                 : $"Discord returned HTTP status {statusCode}."
             : $"Discord rejected the message with '{result.ProviderCode}'.";
+        return result;
+    }
+
+    public static DiscordDeliveryResult CreateStatusResult(
+        HttpResponseMessage response,
+        string responseBody,
+        DiscordMessageTarget target,
+        DiscordDeliveryMethod deliveryMethod,
+        MessageReference reference,
+        MessageCapabilities successCapabilities) {
+        var statusCode = (int)response.StatusCode;
+        var parsed = Parse(responseBody);
+        var result = new DiscordDeliveryResult {
+            DeliveryMethod = deliveryMethod,
+            Target = target.SafeLabel(),
+            IsSuccess = response.IsSuccessStatusCode,
+            StatusCode = statusCode,
+            ResponseBody = responseBody,
+            ProviderCode = response.IsSuccessStatusCode ? null : parsed.Code,
+            CorrelationId = ReadHeader(response, "cf-ray"),
+            RetryAfter = ReadRetryAfter(response, parsed.RetryAfterSeconds),
+            RateLimitBucket = NormalizeDiagnosticToken(ReadHeader(response, "x-ratelimit-bucket")),
+            RateLimitScope = NormalizeDiagnosticToken(ReadHeader(response, "x-ratelimit-scope")),
+            IsGlobalRateLimit = parsed.Global || ReadBooleanHeader(response, "x-ratelimit-global")
+        };
+        if (result.IsSuccess) {
+            result.Reference = CloneReference(reference, successCapabilities, result.CorrelationId);
+            return result;
+        }
+        result.ErrorKind = Classify(statusCode, result.IsGlobalRateLimit);
+        result.ProviderCode ??= "http_" + statusCode.ToString(CultureInfo.InvariantCulture);
+        result.ErrorMessage = $"Discord rejected the operation with '{result.ProviderCode}'.";
+        return result;
+    }
+
+    public static MessageReference CloneReference(
+        MessageReference source,
+        MessageCapabilities capabilities,
+        string? correlationId) {
+        return new MessageReference(MessageProviders.Discord, source.MessageId) {
+            InstallationId = source.InstallationId,
+            ScopeId = source.ScopeId,
+            ConversationId = source.ConversationId,
+            ThreadId = source.ThreadId,
+            Timestamp = source.Timestamp,
+            CorrelationId = correlationId ?? source.CorrelationId,
+            Capabilities = capabilities
+        };
+    }
+
+    public static DiscordDeliveryResult RequireMatchingCoordinates(
+        DiscordDeliveryResult result,
+        MessageReference source) {
+        if (!result.IsSuccess || result.Reference is null) {
+            return result;
+        }
+        if (string.Equals(result.Reference.MessageId, source.MessageId, StringComparison.Ordinal) &&
+            string.Equals(result.Reference.ConversationId, source.ConversationId, StringComparison.Ordinal)) {
+            result.Reference.InstallationId = source.InstallationId;
+            return result;
+        }
+
+        result.IsSuccess = false;
+        result.Reference = null;
+        result.ProviderCode = "invalid_response";
+        result.ErrorKind = MessageErrorKind.Transient;
+        result.ErrorMessage = "Discord returned mismatched message coordinates.";
         return result;
     }
 
@@ -192,4 +259,11 @@ internal static class DiscordHttpResponseSupport {
         public bool Global { get; set; }
         public DateTimeOffset? Timestamp { get; set; }
     }
+
+    internal const MessageCapabilities WebhookMessageCapabilities =
+        MessageCapabilities.Read | MessageCapabilities.Update | MessageCapabilities.Delete;
+
+    internal const MessageCapabilities BotMessageCapabilities =
+        MessageCapabilities.Reply | MessageCapabilities.Update |
+        MessageCapabilities.Delete | MessageCapabilities.React | MessageCapabilities.Read;
 }
