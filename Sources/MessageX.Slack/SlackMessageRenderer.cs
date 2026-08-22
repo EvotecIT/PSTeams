@@ -45,6 +45,11 @@ internal static class SlackMessageRenderer {
                 "Slack message updates use the persisted message reference and cannot change thread placement.",
                 nameof(message));
         }
+        if (message.UnfurlLinks is not null || message.UnfurlMedia is not null) {
+            throw new ArgumentException(
+                "Slack message updates do not accept send-only unfurl options.",
+                nameof(message));
+        }
 
         var payload = CreateMessagePayload(message);
         payload["channel"] = conversationId;

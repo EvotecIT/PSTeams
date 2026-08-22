@@ -88,6 +88,24 @@ public sealed class SlackWebApiLifecycleClientTests {
     }
 
     [Fact]
+    public async Task UpdateRejectsSendOnlyPlacementAndUnfurlOptions() {
+        using var client = CreateClient(new RecordingHandler(HttpStatusCode.OK, "{\"ok\":true}"));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateAsync(
+            new SlackMessageRequest { Text = "Updated", ThreadTimestamp = "1712345678.000001" },
+            CreateReference(),
+            TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateAsync(
+            new SlackMessageRequest { Text = "Updated", UnfurlLinks = false },
+            CreateReference(),
+            TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateAsync(
+            new SlackMessageRequest { Text = "Updated", UnfurlMedia = true },
+            CreateReference(),
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task InvalidUpdateSuccessEnvelopeIsTransientAndHasNoReference() {
         using var handler = new RecordingHandler(HttpStatusCode.OK, "{\"ok\":true}");
         using var client = CreateClient(handler);
