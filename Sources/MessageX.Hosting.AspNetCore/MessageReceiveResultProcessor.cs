@@ -5,25 +5,22 @@ namespace MessageX.Hosting.AspNetCore;
 
 /// <summary>Completes verified HTTP receives through bounded dispatch and exact acknowledgement.</summary>
 public sealed class MessageReceiveResultProcessor {
-    private readonly IMessageIngressQueue _queue;
+    private readonly IMessageIngressAcceptance _acceptance;
     private readonly MessageAcknowledgementWriter _writer;
-    private readonly MessageReplayGuard _replayGuard;
     private readonly MessageRouter _router;
-    private readonly TimeProvider _timeProvider;
+    private readonly MessageReplayGuard _replayGuard;
     private readonly MessageSynchronousDispatchGate _synchronousDispatchGate;
 
     /// <summary>Creates a receive-result processor.</summary>
     public MessageReceiveResultProcessor(
-        IMessageIngressQueue queue,
+        IMessageIngressAcceptance acceptance,
         MessageAcknowledgementWriter writer,
         MessageReplayGuard replayGuard,
-        MessageRouter router,
-        TimeProvider timeProvider) : this(
-            queue,
+        MessageRouter router) : this(
+            acceptance,
             writer,
             replayGuard,
             router,
-            timeProvider,
             new MessageSynchronousDispatchGate(
                 MessageXHostingAspNetCoreOptions.DefaultSynchronousDispatchCapacity)) {
     }
@@ -31,17 +28,15 @@ public sealed class MessageReceiveResultProcessor {
     /// <summary>Creates a receive-result processor with an explicit host-wide synchronous dispatch gate.</summary>
     [ActivatorUtilitiesConstructor]
     public MessageReceiveResultProcessor(
-        IMessageIngressQueue queue,
+        IMessageIngressAcceptance acceptance,
         MessageAcknowledgementWriter writer,
         MessageReplayGuard replayGuard,
         MessageRouter router,
-        TimeProvider timeProvider,
         MessageSynchronousDispatchGate synchronousDispatchGate) {
-        _queue = queue ?? throw new ArgumentNullException(nameof(queue));
+        _acceptance = acceptance ?? throw new ArgumentNullException(nameof(acceptance));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _router = router ?? throw new ArgumentNullException(nameof(router));
-        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _synchronousDispatchGate = synchronousDispatchGate ??
             throw new ArgumentNullException(nameof(synchronousDispatchGate));
     }
@@ -53,24 +48,18 @@ public sealed class MessageReceiveResultProcessor {
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(result);
-
         if (result.Status == MessageReceiveStatus.DispatchReady) {
-            var acceptance = _replayGuard.TryAccept(
-                result,
-                _timeProvider.GetUtcNow(),
-                result.RequiresSynchronousDispatch
-                    ? static () => MessageIngressEnqueueStatus.Accepted
-                    : () => _queue.TryEnqueue(result));
-            if (acceptance == MessageReplayAcceptance.Duplicate) {
-                await _writer.WriteAsync(response, result.Acknowledgement, cancellationToken).ConfigureAwait(false);
-                return;
-            }
-            if (acceptance != MessageReplayAcceptance.Accepted) {
+            var acceptance = await _acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
+            if (acceptance is not (MessageIngressEnqueueStatus.Accepted or MessageIngressEnqueueStatus.Duplicate)) {
                 response.Headers.RetryAfter = "1";
                 await _writer.WriteAsync(
                     response,
                     MessageAcknowledgement.Empty(StatusCodes.Status503ServiceUnavailable),
                     cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            if (acceptance == MessageIngressEnqueueStatus.Duplicate) {
+                await _writer.WriteAsync(response, result.Acknowledgement, cancellationToken).ConfigureAwait(false);
                 return;
             }
             if (result.RequiresSynchronousDispatch) {
@@ -99,12 +88,12 @@ public sealed class MessageReceiveResultProcessor {
             throw new InvalidOperationException("Synchronous dispatch requires a verified route and envelope.");
         }
         try {
-            var dispatch = await _router.DispatchAsync(
-                result.Route,
-                result.Envelope,
+            var dispatch = await _router.DispatchAsync(result.Route, result.Envelope, cancellationToken)
+                .ConfigureAwait(false);
+            await _writer.WriteAsync(
+                response,
+                dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement,
                 cancellationToken).ConfigureAwait(false);
-            var acknowledgement = dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement;
-            await _writer.WriteAsync(response, acknowledgement, cancellationToken).ConfigureAwait(false);
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             throw;
         } catch {

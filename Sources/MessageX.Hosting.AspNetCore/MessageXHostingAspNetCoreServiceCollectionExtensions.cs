@@ -11,7 +11,6 @@ public static class MessageXHostingAspNetCoreServiceCollectionExtensions {
         this IServiceCollection services,
         Action<MessageXHostingAspNetCoreOptions>? configure = null) {
         ArgumentNullException.ThrowIfNull(services);
-
         var options = services.AddOptions<MessageXHostingAspNetCoreOptions>();
         if (configure is not null) {
             options.Configure(configure);
@@ -32,10 +31,11 @@ public static class MessageXHostingAspNetCoreServiceCollectionExtensions {
             var value = provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value;
             return new MessageSynchronousDispatchGate(value.SynchronousDispatchCapacity);
         });
-        services.TryAddSingleton<MessageReceiveResultProcessor>();
         services.TryAddSingleton<MessageIngressQueue>();
         services.TryAddSingleton<IMessageIngressQueue>(provider =>
             provider.GetRequiredService<MessageIngressQueue>());
+        services.TryAddSingleton<IMessageIngressAcceptance, QueuedMessageIngressAcceptance>();
+        services.TryAddSingleton<MessageReceiveResultProcessor>();
         services.AddHostedService<MessageIngressWorker>();
         return services;
     }

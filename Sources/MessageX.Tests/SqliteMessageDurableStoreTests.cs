@@ -162,6 +162,51 @@ public sealed class SqliteMessageDurableStoreTests {
     }
 
     [Fact]
+    public async Task InboxRenewalRequiresCurrentTokenAndCannotResurrectExpiredLease() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-1"));
+        var lease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+
+        Assert.Null(await store.RenewInboxLeaseAsync(
+            lease.RecordId, "wrong-token", TimeSpan.FromMinutes(2), BaseTime.AddSeconds(30)));
+        Assert.NotNull(await store.RenewInboxLeaseAsync(
+            lease.RecordId, lease.LeaseToken, TimeSpan.FromMinutes(2), BaseTime.AddSeconds(30)));
+        Assert.Empty(await store.ClaimInboxAsync(
+            "worker-b", 1, TimeSpan.FromMinutes(1), BaseTime.AddMinutes(1)));
+        Assert.Null(await store.RenewInboxLeaseAsync(
+            lease.RecordId, lease.LeaseToken, TimeSpan.FromMinutes(1), BaseTime.AddMinutes(2).AddSeconds(30)));
+        var recovered = Assert.Single(await store.ClaimInboxAsync(
+            "worker-b", 1, TimeSpan.FromMinutes(1), BaseTime.AddMinutes(2).AddSeconds(30)));
+        Assert.NotEqual(lease.LeaseToken, recovered.LeaseToken);
+    }
+
+    [Fact]
+    public async Task ExpiredInboxLeaseCannotCompleteOrFailBeforeAnotherWorkerReclaimsIt() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-1"));
+        var lease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+        var expiredAt = BaseTime.AddMinutes(1);
+
+        Assert.False(await store.CompleteInboxAsync(
+            lease.RecordId, lease.LeaseToken, expiredAt));
+        Assert.Equal(MessageDurableFailureStatus.LeaseLost, (await store.FailInboxAsync(
+            lease.RecordId,
+            lease.LeaseToken,
+            MessageDurableFailureKind.Handler,
+            expiredAt,
+            TimeSpan.Zero,
+            3)).Status);
+        Assert.Single(await store.ClaimInboxAsync(
+            "worker-b", 1, TimeSpan.FromMinutes(1), expiredAt));
+    }
+
+    [Fact]
     public async Task InboxCompletionCommitsOutboxAndOutboxLifecycle() {
         using var database = new TemporaryDatabase();
         using var store = new TestStore(database.Path);
