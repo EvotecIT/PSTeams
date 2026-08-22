@@ -319,9 +319,10 @@ PowerShell should expose simple synchronous command behavior to users while the 
 - [x] Implement bot-token calls needed to send to public channels, private channels, direct messages, and multiparty conversations when scopes and membership allow them.
 - [x] Support thread replies using `thread_ts` and optional reply broadcast.
 - [x] Return channel and timestamp identifiers required for update, delete, reply, and reaction operations.
-- [ ] Support opening or resolving direct-message conversations without encouraging bulk unsolicited DMs.
-- [ ] Implement update and delete for application-owned messages.
-- [ ] Add reactions and current file-upload workflows after the message lifecycle is stable.
+- [x] Support opening or resolving direct-message conversations for one to eight explicit user identifiers without accepting display names or bulk discovery.
+- [x] Implement update and delete for application-owned messages.
+- [x] Add and remove reactions through authenticated Web API connections.
+- [ ] Add current Slack file-upload workflows after the message lifecycle is stable.
 - [ ] Handle pagination and workspace/enterprise identifiers without assuming one installation per process.
 
 ### Rich content
@@ -355,22 +356,22 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Notification delivery
 
-- [ ] Support incoming webhooks for channels and thread targets.
-- [ ] Request and return the created message when lifecycle operations require its identifier.
-- [ ] Support webhook-authored message retrieval, update, and deletion where the token permits it.
+- [x] Support incoming webhooks for channels and thread targets.
+- [x] Request and return the created message when lifecycle operations require its identifier.
+- [x] Support webhook-authored message retrieval, update, and deletion where the token permits it.
 
 ### Bot REST messaging
 
-- [ ] Send to guild text channels, direct-message channels, and thread channels.
-- [ ] Open a one-to-one DM when appropriate and document Discord's guidance against unsolicited bulk DMs.
-- [ ] Do not treat legacy group-DM creation as a supported bot feature.
-- [ ] Keep reply references and thread channels as distinct concepts.
-- [ ] Support update, delete, reactions, allowed mentions, attachments, and safe nonce/idempotency behavior.
-- [ ] Parse rate-limit buckets and `Retry-After`; never hard-code current provider limits.
+- [x] Send to guild text channels, direct-message channels, and thread channels.
+- [x] Open a one-to-one DM from one explicit user identifier without adding bulk-recipient discovery.
+- [x] Do not treat legacy group-DM creation as a supported bot feature.
+- [x] Keep reply references and thread channels as distinct concepts.
+- [x] Support retrieval, update, delete, reactions, allowed mentions, attachments, and safe nonce/idempotency behavior for the implemented bot REST surface.
+- [x] Parse rate-limit buckets and `Retry-After`; never hard-code current provider limits.
 
 ### Rich content
 
-- [ ] Preserve and modernize useful PSDiscord builder names such as `New-DiscordAuthor`, `New-DiscordFact`, `New-DiscordImage`, and `New-DiscordSection` where they map to current API concepts.
+- [x] Preserve and modernize useful PSDiscord builder names such as `New-DiscordAuthor`, `New-DiscordFact`, `New-DiscordImage`, and `New-DiscordSection` where they map to current API concepts.
 - [ ] Add typed embeds, components, buttons, select menus, application commands, and modals.
 - [ ] Validate content, embed, component, attachment, and mention limits before sending.
 - [ ] Provide provider-native JSON import/export for forward compatibility.
@@ -378,7 +379,7 @@ PowerShell should expose simple synchronous command behavior to users while the 
 ### HTTP interactions
 
 - [ ] Verify `X-Signature-Ed25519` and `X-Signature-Timestamp` against the raw request body before parsing.
-- [ ] Keep Bouncy Castle types internal to MessageX.Discord.
+- [x] Keep Bouncy Castle types internal to MessageX.Discord.
 - [ ] Respond to endpoint validation pings.
 - [ ] Support commands, message/user commands, components, autocomplete, and modal submissions.
 - [ ] Send or defer the initial response within the provider deadline and manage the limited follow-up token lifetime explicitly.
@@ -430,32 +431,32 @@ Do not require `Send-MessageXMessage -Provider Teams`. A generic send command ma
 
 ### Parameter-set rules
 
-- [ ] Give simple webhook/Workflow delivery a small dedicated parameter set.
-- [ ] Give authenticated app/bot delivery a parameter set based on a typed connection and typed target.
-- [ ] Accept text, native rich content, and pipeline input without ambiguous binding.
-- [ ] Avoid parameter sets that expose every provider option at once.
-- [ ] Reject conflicting destination, authentication, and content combinations during binding or early validation.
-- [ ] Use provider identifiers rather than display names where names are ambiguous.
-- [ ] Support cancellation and user interruption.
-- [ ] Use `ShouldProcess` for sends, updates, deletes, reactions, and other externally visible mutations.
-- [ ] Keep tokens, webhook URLs, signatures, and secret headers out of verbose output, errors, history-friendly examples, and returned objects.
-- [ ] Return an owned typed delivery result by default so scripts can reply, update, persist, and diagnose.
+- [x] Give simple webhook/Workflow delivery a small dedicated parameter set.
+- [x] Give authenticated app/bot delivery a parameter set based on a typed connection and typed target.
+- [x] Accept text, native rich content, and pipeline input without ambiguous binding.
+- [x] Avoid parameter sets that expose every provider option at once.
+- [x] Reject conflicting destination, authentication, and content combinations during binding or early validation.
+- [x] Use provider identifiers rather than display names where names are ambiguous.
+- [x] Support cancellation and user interruption.
+- [x] Use `ShouldProcess` for sends, updates, deletes, reactions, and other externally visible mutations.
+- [x] Keep tokens, webhook URLs, signatures, and secret headers out of verbose output, errors, history-friendly examples, and returned objects.
+- [x] Return typed references from lookup commands and make typed mutation results available through `-PassThru`.
 
 ### Builders and type exposure
 
-- [ ] Builders return owned C# types accepted directly by send cmdlets.
+- [x] Builders return owned C# types accepted directly by send cmdlets.
 - [ ] Curate PowerShell type accelerators for public models and enums used in parameters, output, or examples.
 - [ ] Do not expose every internal or dependency type.
-- [ ] Generate command help from compiled cmdlet XML documentation and source metadata.
-- [ ] Keep one function or cmdlet per source file and split builders by provider responsibility.
+- [x] Generate command help from compiled cmdlet XML documentation and source metadata.
+- [x] Keep one function or cmdlet per source file and split builders by provider responsibility.
 
 ### Runtime compatibility
 
-- [ ] Import the built module in Windows PowerShell 5.1 using `net472` assets.
-- [ ] Import the built module in supported PowerShell 7 versions using the correct modern assets.
-- [ ] Run the same command-contract smoke tests in `powershell.exe` and `pwsh.exe`.
-- [ ] Keep parameter names, output properties, error categories, and observable behavior aligned across hosts.
-- [ ] Isolate unavoidable runtime-specific loading or API behavior at one packaging/host boundary.
+- [x] Import the built module in Windows PowerShell 5.1 using `net472` assets.
+- [x] Import the built module in supported PowerShell 7 versions using the correct modern assets.
+- [x] Run the same command-contract smoke tests in `powershell.exe` and `pwsh.exe`.
+- [x] Keep parameter names, output properties, error categories, and observable behavior aligned across hosts.
+- [x] Isolate unavoidable runtime-specific loading or API behavior at one packaging/host boundary.
 - [ ] Validate Windows, Linux, and macOS PowerShell 7 for provider-neutral network operations.
 
 ### User-success examples
@@ -908,8 +909,14 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 4 - Message lifecycle and conversation addressing
 
-- [ ] Add reply, update, delete, reaction, file, and conversation-directory capabilities in the order supported by real provider use cases.
-- [ ] Add typed provider targets and durable message/conversation references.
+- [x] Add focused reply, read, update, delete, reaction, and conversation-directory capabilities in the order supported by real provider use cases.
+- [x] Add typed provider targets and durable message/conversation references that never persist access tokens or webhook secrets.
+- [x] Expose provider-specific PowerShell lifecycle commands with explicit bot/webhook parameter sets, `ShouldProcess`, cancellation, proxy, timeout, and typed output behavior.
+- [x] Validate the exact PowerForge-packed module on PowerShell 7 and Windows PowerShell 5.1 with the correct runtime payload selected on each host.
+- [ ] Add Slack file-upload lifecycle behavior after its current provider workflow and retention contracts are modeled.
+- [ ] Complete authorized live Slack and Discord lifecycle round trips during the final provider-validation phase.
+
+Current Phase 4 source and packed-artifact contracts are complete. Live provider mutation remains deliberately deferred until the final authorized validation phase.
 - [ ] Define capability discovery and unsupported-operation behavior.
 - [ ] Complete provider-native rich-content validation and JSON interoperability.
 - [ ] Expand PowerShell parameter sets without creating generic provider switches.
