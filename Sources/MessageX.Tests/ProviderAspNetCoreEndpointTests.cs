@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using MessageX.Discord;
 using MessageX.Discord.Hosting.AspNetCore;
+using MessageX.Hosting;
 using MessageX.Hosting.AspNetCore;
 using MessageX.Slack.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
@@ -93,6 +95,75 @@ public sealed class ProviderAspNetCoreEndpointTests {
         using var body = JsonDocument.Parse(ResponseBody(context));
         Assert.Equal(1, body.RootElement.GetProperty("type").GetInt32());
         Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task AcceptedProviderRetriesAreAcknowledgedWithoutRedispatch() {
+        using var provider = SlackServices(capacity: 2).BuildServiceProvider();
+        var handler = provider.GetRequiredService<SlackHttpEndpointHandler>();
+        var first = SlackContext(SlackEvent("EvDuplicate"));
+        var duplicate = SlackContext(SlackEvent("EvDuplicate"));
+
+        await handler.HandleEventsAsync(
+            first,
+            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            TestContext.Current.CancellationToken);
+        await handler.HandleEventsAsync(
+            duplicate,
+            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
+        Assert.Equal(1, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task DiscordAutocompleteHandlerProducesTheInitialChoicesInline() {
+        using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
+        provider.GetRequiredService<MessageRouter>().OnAutocomplete<DiscordInboundInteraction>(
+            "search",
+            (_, _) => Task.FromResult(MessageHandlerResult.Respond(
+                DiscordInteractionAcknowledgement.Autocomplete(new[] {
+                    DiscordAutocompleteChoice.FromString("Alpha", "alpha")
+                }))));
+        const string json = """
+            {"id":"100000000000000001","application_id":"100000000000000002","type":4,"token":"token","user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
+            """;
+        var context = DiscordContext(json);
+
+        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            context,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        using var body = JsonDocument.Parse(ResponseBody(context));
+        Assert.Equal(8, body.RootElement.GetProperty("type").GetInt32());
+        Assert.Equal("alpha", body.RootElement.GetProperty("data").GetProperty("choices")[0].GetProperty("value").GetString());
+        Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task ProviderEndpointsRejectOversizedContentTypeMetadata() {
+        using var slackProvider = SlackServices(capacity: 1).BuildServiceProvider();
+        using var discordProvider = DiscordServices(capacity: 1).BuildServiceProvider();
+        var slack = SlackContext(SlackEvent("Ev1"));
+        var discord = DiscordContext("{\"type\":1}");
+        slack.Request.ContentType = "application/json;" + new string('a', 300);
+        discord.Request.ContentType = "application/json;" + new string('a', 300);
+
+        await slackProvider.GetRequiredService<SlackHttpEndpointHandler>().HandleEventsAsync(
+            slack,
+            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            TestContext.Current.CancellationToken);
+        await discordProvider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            discord,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status415UnsupportedMediaType, slack.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status415UnsupportedMediaType, discord.Response.StatusCode);
     }
 
     [Fact]

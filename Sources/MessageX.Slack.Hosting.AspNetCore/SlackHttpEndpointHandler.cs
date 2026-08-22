@@ -73,6 +73,10 @@ public sealed class SlackHttpEndpointHandler {
         } catch (MessageInboundBodyTooLargeException) {
             context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
             context.Response.ContentLength = 0;
+        } catch (ArgumentException exception) when (
+            string.Equals(exception.ParamName, "contentType", StringComparison.Ordinal)) {
+            context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+            context.Response.ContentLength = 0;
         }
     }
 
