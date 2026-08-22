@@ -155,15 +155,27 @@ public sealed class SlackWebApiLifecycleClient :
 
     private static string ValidateReaction(string reaction) {
         var normalized = reaction?.Trim();
-        if (string.IsNullOrWhiteSpace(normalized) || normalized!.Length > 100 ||
-            normalized.Any(character => !(
+        if (string.IsNullOrWhiteSpace(normalized) || normalized!.Length > 100) {
+            throw InvalidReaction(nameof(reaction));
+        }
+
+        var modifierIndex = normalized.IndexOf("::skin-tone-", StringComparison.Ordinal);
+        var baseName = modifierIndex < 0 ? normalized : normalized.Substring(0, modifierIndex);
+        var hasValidModifier = modifierIndex < 0 ||
+            modifierIndex == normalized.LastIndexOf("::skin-tone-", StringComparison.Ordinal) &&
+            modifierIndex + "::skin-tone-".Length + 1 == normalized.Length &&
+            normalized[normalized.Length - 1] is >= '2' and <= '6';
+        if (!hasValidModifier || baseName.Length == 0 ||
+            baseName.Any(character => !(
                 character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_' or '-' or '+'))) {
-            throw new ArgumentException(
-                "Slack reaction names must contain 1 to 100 letters, digits, underscores, hyphens, or plus signs without colons.",
-                nameof(reaction));
+            throw InvalidReaction(nameof(reaction));
         }
         return normalized;
     }
+
+    private static ArgumentException InvalidReaction(string parameterName) => new(
+        "Slack reaction names must use a provider emoji name, optionally followed by ::skin-tone-2 through ::skin-tone-6.",
+        parameterName);
 
     private static MessageReference CloneReference(
         MessageReference source,

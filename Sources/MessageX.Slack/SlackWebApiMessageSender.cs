@@ -106,9 +106,7 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
                 ScopeId = _connection.WorkspaceId,
                 ConversationId = normalizedChannel,
                 ConversationKind = message.ThreadTimestamp is null
-                    ? normalizedChannel![0] == 'D'
-                        ? MessageConversationKind.DirectMessage
-                        : MessageConversationKind.Channel
+                    ? GetConversationKind(normalizedChannel!)
                     : MessageConversationKind.Thread,
                 ThreadId = message.ThreadTimestamp,
                 Timestamp = parsedTimestamp,
@@ -140,5 +138,12 @@ public sealed class SlackWebApiMessageSender : ISlackMessageSender, IDisposable 
             _httpClient.Dispose();
         }
     }
+
+    private static MessageConversationKind GetConversationKind(string conversationId) =>
+        conversationId[0] switch {
+            'C' => MessageConversationKind.Channel,
+            'D' => MessageConversationKind.DirectMessage,
+            _ => MessageConversationKind.Unknown
+        };
 
 }

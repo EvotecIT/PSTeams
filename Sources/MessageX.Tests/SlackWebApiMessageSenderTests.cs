@@ -101,6 +101,31 @@ public sealed class SlackWebApiMessageSenderTests {
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Xprovider-evolved-α", result.Reference?.ConversationId);
+        Assert.Equal(MessageConversationKind.Unknown, result.Reference?.ConversationKind);
+    }
+
+    [Theory]
+    [InlineData("C0123456789", MessageConversationKind.Channel)]
+    [InlineData("D0123456789", MessageConversationKind.DirectMessage)]
+    [InlineData("G0123456789", MessageConversationKind.Unknown)]
+    public async Task SuccessfulSendPersistsOnlyConversationShapesKnownFromCoordinates(
+        string conversationId,
+        MessageConversationKind expectedKind) {
+        using var handler = new RecordingHandler(
+            HttpStatusCode.OK,
+            $"{{\"ok\":true,\"channel\":\"{conversationId}\",\"ts\":\"1712345678.123456\"}}");
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+
+        var result = await sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation(conversationId),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expectedKind, result.Reference?.ConversationKind);
     }
 
     [Fact]

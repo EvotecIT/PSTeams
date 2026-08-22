@@ -86,6 +86,23 @@ public sealed class SlackWebApiLifecycleClientTests {
         Assert.Equal("1712345678.123456", payload.RootElement.GetProperty("timestamp").GetString());
     }
 
+    [Theory]
+    [InlineData("thumbsup::skin-tone-2")]
+    [InlineData("wave::skin-tone-6")]
+    public async Task ReactionOperationsAcceptSlackSkinToneIdentifiers(string reaction) {
+        using var handler = new RecordingHandler(HttpStatusCode.OK, "{\"ok\":true}");
+        using var client = CreateClient(handler);
+
+        var result = await client.AddReactionAsync(
+            CreateReference(),
+            reaction,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        using var payload = JsonDocument.Parse(handler.RequestBody!);
+        Assert.Equal(reaction, payload.RootElement.GetProperty("name").GetString());
+    }
+
     [Fact]
     public async Task ReactionOperationsPreserveSourceCapabilities() {
         using var handler = new RecordingHandler(HttpStatusCode.OK, "{\"ok\":true}");
@@ -124,6 +141,17 @@ public sealed class SlackWebApiLifecycleClientTests {
             CreateReference(),
             ":eyes:",
             TestContext.Current.CancellationToken));
+        foreach (var reaction in new[] {
+            "eyes::skin-tone-1",
+            "eyes::skin-tone-7",
+            "eyes::skin-tone-3:extra",
+            "eyes::skin-tone-3::skin-tone-4"
+        }) {
+            await Assert.ThrowsAsync<ArgumentException>(() => client.AddReactionAsync(
+                CreateReference(),
+                reaction,
+                TestContext.Current.CancellationToken));
+        }
 
         var wrongWorkspace = CreateReference();
         wrongWorkspace.ScopeId = "T9999";
