@@ -37,7 +37,7 @@ public sealed class DiscordBotMessageSenderTests {
         using var sender = CreateSender(handler);
         var message = new DiscordMessageRequest {
             Content = "Reply",
-            ReplyToMessageId = "723456789012345678",
+            ReplyToMessageId = " 723456789012345678 ",
             FailIfReplyMissing = false
         };
 

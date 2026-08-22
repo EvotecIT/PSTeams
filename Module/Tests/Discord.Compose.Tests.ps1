@@ -25,6 +25,19 @@ Describe 'MessageX Discord PowerShell surface' {
         (Get-Command New-DiscordThumbnail).CommandType | Should -Be 'Alias'
     }
 
+    It 'keeps spoiler filenames and attachment URLs aligned' {
+        $attachment = New-DiscordAttachment -Bytes ([byte[]](1, 2, 3)) -FileName 'report.png' -Spoiler
+        $message = New-DiscordMessage -Attachments $attachment -Embeds @(
+            New-DiscordSection -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
+        )
+        $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
+        $payload = $message | ConvertTo-DiscordJson -Target $target | ConvertFrom-Json
+
+        $payload.attachments[0].filename | Should -Be 'SPOILER_report.png'
+        $payload.attachments[0].PSObject.Properties.Name | Should -Not -Contain 'is_spoiler'
+        $payload.embeds[0].image.url | Should -Be 'attachment://SPOILER_report.png'
+    }
+
     It 'creates webhook, channel, thread, and direct-message targets without exposing secrets' {
         $webhook = New-DiscordWebhookTarget -Uri 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456' -ThreadId '223456789012345678'
         $channel = New-DiscordChannelTarget -ChannelId '323456789012345678'

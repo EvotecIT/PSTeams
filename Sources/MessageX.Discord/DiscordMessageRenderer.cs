@@ -25,11 +25,11 @@ internal static class DiscordMessageRenderer {
         }
         payload["allowed_mentions"] = RenderAllowedMentions(message.AllowedMentions);
         if (message.Embeds.Count > 0) {
-            payload["embeds"] = message.Embeds.Select(RenderEmbed).ToArray();
+            payload["embeds"] = message.Embeds.Select(embed => RenderEmbed(embed, message.Attachments)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(message.ReplyToMessageId)) {
             payload["message_reference"] = new Dictionary<string, object?> {
-                ["message_id"] = message.ReplyToMessageId,
+                ["message_id"] = DiscordSnowflake.Normalize(message.ReplyToMessageId, nameof(message.ReplyToMessageId)),
                 ["fail_if_not_exists"] = message.FailIfReplyMissing
             };
         }
@@ -40,9 +40,6 @@ internal static class DiscordMessageRenderer {
                     ["filename"] = attachment.FileName
                 };
                 AddOptional(item, "description", attachment.Description);
-                if (attachment.IsSpoiler) {
-                    item["is_spoiler"] = true;
-                }
                 return item;
             }).ToArray();
         }
@@ -77,7 +74,9 @@ internal static class DiscordMessageRenderer {
         return payload;
     }
 
-    private static Dictionary<string, object?> RenderEmbed(DiscordEmbed embed) {
+    private static Dictionary<string, object?> RenderEmbed(
+        DiscordEmbed embed,
+        IEnumerable<DiscordAttachment> attachments) {
         var payload = new Dictionary<string, object?>();
         AddOptional(payload, "title", embed.Title);
         AddOptional(payload, "description", embed.Description);
@@ -87,19 +86,19 @@ internal static class DiscordMessageRenderer {
         if (embed.Author is not null) {
             var author = new Dictionary<string, object?> { ["name"] = embed.Author.Name };
             AddOptional(author, "url", embed.Author.Url?.AbsoluteUri);
-            AddOptional(author, "icon_url", RenderMediaUri(embed.Author.IconUrl));
+            AddOptional(author, "icon_url", RenderMediaUri(embed.Author.IconUrl, attachments));
             payload["author"] = author;
         }
         if (embed.Footer is not null) {
             var footer = new Dictionary<string, object?> { ["text"] = embed.Footer.Text };
-            AddOptional(footer, "icon_url", RenderMediaUri(embed.Footer.IconUrl));
+            AddOptional(footer, "icon_url", RenderMediaUri(embed.Footer.IconUrl, attachments));
             payload["footer"] = footer;
         }
         if (embed.Image is not null) {
-            payload["image"] = new Dictionary<string, object?> { ["url"] = RenderMediaUri(embed.Image.Url) };
+            payload["image"] = new Dictionary<string, object?> { ["url"] = RenderMediaUri(embed.Image.Url, attachments) };
         }
         if (embed.Thumbnail is not null) {
-            payload["thumbnail"] = new Dictionary<string, object?> { ["url"] = RenderMediaUri(embed.Thumbnail.Url) };
+            payload["thumbnail"] = new Dictionary<string, object?> { ["url"] = RenderMediaUri(embed.Thumbnail.Url, attachments) };
         }
         if (embed.Fields.Count > 0) {
             payload["fields"] = embed.Fields.Select(field => new Dictionary<string, object?> {
@@ -111,13 +110,22 @@ internal static class DiscordMessageRenderer {
         return payload;
     }
 
-    private static string? RenderMediaUri(Uri? uri) {
+    private static string? RenderMediaUri(Uri? uri, IEnumerable<DiscordAttachment> attachments) {
         if (uri is null) {
             return null;
         }
-        return string.Equals(uri.Scheme, "attachment", StringComparison.OrdinalIgnoreCase)
-            ? uri.OriginalString
-            : uri.AbsoluteUri;
+        if (!string.Equals(uri.Scheme, "attachment", StringComparison.OrdinalIgnoreCase)) {
+            return uri.AbsoluteUri;
+        }
+
+        var reference = uri.OriginalString;
+        foreach (var attachment in attachments) {
+            if (string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal) ||
+                string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal)) {
+                return "attachment://" + attachment.FileName;
+            }
+        }
+        return reference;
     }
 
     private static void AddOptional(Dictionary<string, object?> payload, string name, object? value) {

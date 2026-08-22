@@ -59,7 +59,7 @@ public sealed class DiscordModelTests {
             Content = "Build <@123456789012345678> completed",
             Nonce = "build-42",
             EnforceNonce = true,
-            ReplyToMessageId = "623456789012345678"
+            ReplyToMessageId = " 623456789012345678 "
         };
         var embed = new DiscordEmbed {
             Title = "Release",
@@ -140,11 +140,43 @@ public sealed class DiscordModelTests {
         using var document = JsonDocument.Parse(json);
         var attachment = document.RootElement.GetProperty("attachments")[0];
 
-        Assert.Contains("report.txt", json, StringComparison.Ordinal);
-        Assert.Equal("report.txt", attachment.GetProperty("filename").GetString());
-        Assert.True(attachment.GetProperty("is_spoiler").GetBoolean());
-        Assert.Equal("attachment://report.txt", document.RootElement.GetProperty("embeds")[0]
+        Assert.Contains("SPOILER_report.txt", json, StringComparison.Ordinal);
+        Assert.Equal("SPOILER_report.txt", attachment.GetProperty("filename").GetString());
+        Assert.False(attachment.TryGetProperty("is_spoiler", out _));
+        Assert.Equal("attachment://SPOILER_report.txt", document.RootElement.GetProperty("embeds")[0]
             .GetProperty("image").GetProperty("url").GetString());
         Assert.DoesNotContain("highly-sensitive-content", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AttachmentFilesAreRejectedBeforeOversizedContentIsRead() {
+        var path = Path.GetTempFileName();
+        try {
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.None)) {
+                stream.SetLength(DiscordMessageValidator.MaximumAttachmentBytes + 1L);
+            }
+
+            Assert.Throws<ArgumentException>(() => DiscordAttachment.FromFile(path));
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void RendererRejectsAmbiguousOrMissingAttachmentReferences() {
+        var duplicate = new DiscordMessageRequest { Content = "report" };
+        duplicate.Attachments.Add(DiscordAttachment.FromBytes("report.txt", new byte[] { 1 }, isSpoiler: true));
+        duplicate.Attachments.Add(DiscordAttachment.FromBytes("SPOILER_report.txt", new byte[] { 2 }));
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            duplicate,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+
+        var missing = new DiscordMessageRequest { Content = "report" };
+        missing.Embeds.Add(new DiscordEmbed {
+            Image = new DiscordEmbedMedia { Url = new Uri("attachment://missing.png") }
+        });
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            missing,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
     }
 }

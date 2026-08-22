@@ -21,7 +21,18 @@ internal static class DiscordMessageValidator {
         if (message.Attachments.Count > 10) {
             throw new ArgumentException("Discord messages cannot contain more than 10 attachments.", nameof(message));
         }
-        if (message.Attachments.Sum(attachment => (long)attachment.Length) > MaximumAttachmentBytes) {
+        var attachmentBytes = 0L;
+        var attachmentFileNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var attachment in message.Attachments) {
+            if (attachment is null) {
+                throw new ArgumentException("Discord attachment collections cannot contain null values.", nameof(message));
+            }
+            if (!attachmentFileNames.Add(attachment.FileName)) {
+                throw new ArgumentException("Discord attachment file names must be unique after spoiler normalization.", nameof(message));
+            }
+            attachmentBytes += attachment.Length;
+        }
+        if (attachmentBytes > MaximumAttachmentBytes) {
             throw new ArgumentException("Discord attachment content leaves insufficient room within the 25 MiB request limit.", nameof(message));
         }
         if (message.Nonce?.Length > 25) {
@@ -56,8 +67,30 @@ internal static class DiscordMessageValidator {
         foreach (var embed in message.Embeds) {
             totalEmbedCharacters += ValidateEmbed(embed);
         }
+        ValidateAttachmentReferences(message);
         if (totalEmbedCharacters > 6000) {
             throw new ArgumentException("Discord embed text cannot exceed 6000 characters per message.", nameof(message));
+        }
+    }
+
+    private static void ValidateAttachmentReferences(DiscordMessageRequest message) {
+        foreach (var embed in message.Embeds) {
+            foreach (var uri in new[] {
+                embed.Author?.IconUrl,
+                embed.Footer?.IconUrl,
+                embed.Image?.Url,
+                embed.Thumbnail?.Url
+            }) {
+                if (uri is null || !string.Equals(uri.Scheme, "attachment", StringComparison.OrdinalIgnoreCase)) {
+                    continue;
+                }
+                var reference = uri.OriginalString;
+                if (!message.Attachments.Any(attachment =>
+                    string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal) ||
+                    string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal))) {
+                    throw new ArgumentException("Discord attachment URLs must reference a file in the same message.", nameof(message));
+                }
+            }
         }
     }
 

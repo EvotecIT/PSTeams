@@ -51,9 +51,9 @@ public sealed class DiscordIncomingWebhookSenderTests {
         Assert.Equal("multipart/form-data", handler.ContentType);
         Assert.Contains("name=payload_json", handler.Body, StringComparison.Ordinal);
         Assert.Contains("name=\"files[0]\"", handler.Body, StringComparison.Ordinal);
-        Assert.Contains("filename=report.txt", handler.Body, StringComparison.Ordinal);
-        Assert.DoesNotContain("SPOILER_report.txt", handler.Body, StringComparison.Ordinal);
-        Assert.Contains("\"is_spoiler\":true", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("filename=SPOILER_report.txt", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"filename\":\"SPOILER_report.txt\"", handler.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("is_spoiler", handler.Body, StringComparison.Ordinal);
         Assert.Contains("hello", handler.Body, StringComparison.Ordinal);
     }
 

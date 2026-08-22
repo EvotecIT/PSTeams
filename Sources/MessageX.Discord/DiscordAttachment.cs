@@ -5,11 +5,13 @@ public sealed class DiscordAttachment {
     private readonly byte[] _content;
 
     private DiscordAttachment(
+        string originalFileName,
         string fileName,
         byte[] content,
         string? description,
         string? contentType,
         bool isSpoiler) {
+        OriginalFileName = originalFileName;
         FileName = fileName;
         _content = content;
         Description = description;
@@ -19,6 +21,8 @@ public sealed class DiscordAttachment {
 
     /// <summary>File name sent to Discord.</summary>
     public string FileName { get; }
+
+    internal string OriginalFileName { get; }
 
     /// <summary>Optional accessible attachment description.</summary>
     public string? Description { get; }
@@ -58,12 +62,22 @@ public sealed class DiscordAttachment {
             throw new ArgumentException("Attachment content type must be a MIME media type.", nameof(contentType));
         }
 
+        var originalFileName = fileName.Trim();
+        var effectiveSpoiler = isSpoiler || originalFileName.StartsWith("SPOILER_", StringComparison.Ordinal);
+        var uploadFileName = effectiveSpoiler && !originalFileName.StartsWith("SPOILER_", StringComparison.Ordinal)
+            ? "SPOILER_" + originalFileName
+            : originalFileName;
+        if (uploadFileName.Length > 255) {
+            throw new ArgumentException("A spoiler attachment file name cannot exceed 247 characters before its prefix.", nameof(fileName));
+        }
+
         return new DiscordAttachment(
-            fileName.Trim(),
+            originalFileName,
+            uploadFileName,
             (byte[])content.Clone(),
             string.IsNullOrWhiteSpace(description) ? null : description,
             string.IsNullOrWhiteSpace(contentType) ? null : contentType!.Trim(),
-            isSpoiler);
+            effectiveSpoiler);
     }
 
     /// <summary>Creates an attachment from a local file.</summary>
@@ -76,6 +90,32 @@ public sealed class DiscordAttachment {
             throw new ArgumentException("An attachment path is required.", nameof(path));
         }
         var fullPath = Path.GetFullPath(path);
-        return FromBytes(Path.GetFileName(fullPath), File.ReadAllBytes(fullPath), description, contentType, isSpoiler);
+        return FromBytes(Path.GetFileName(fullPath), ReadBoundedFile(fullPath), description, contentType, isSpoiler);
+    }
+
+    private static byte[] ReadBoundedFile(string fullPath) {
+        using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (stream.Length > DiscordMessageValidator.MaximumAttachmentBytes) {
+            throw new ArgumentException(
+                $"Discord attachments cannot exceed {DiscordMessageValidator.MaximumAttachmentBytes} bytes.",
+                nameof(fullPath));
+        }
+
+        var content = new byte[(int)stream.Length];
+        var offset = 0;
+        while (offset < content.Length) {
+            var read = stream.Read(content, offset, content.Length - offset);
+            if (read == 0) {
+                Array.Resize(ref content, offset);
+                return content;
+            }
+            offset += read;
+        }
+        if (stream.ReadByte() != -1) {
+            throw new ArgumentException(
+                $"Discord attachments cannot exceed {DiscordMessageValidator.MaximumAttachmentBytes} bytes.",
+                nameof(fullPath));
+        }
+        return content;
     }
 }
