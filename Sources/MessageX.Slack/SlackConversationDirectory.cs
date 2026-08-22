@@ -12,7 +12,7 @@ public sealed class SlackConversationDirectory : IDisposable {
 
     /// <summary>Creates a directory with default MessageX transport behavior.</summary>
     public SlackConversationDirectory(SlackConnection connection)
-        : this(connection, MessageHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(connection, SlackHttpClientPool.Shared) {
     }
 
     /// <summary>Creates a directory with configured MessageX transport behavior.</summary>

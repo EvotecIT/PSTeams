@@ -4,7 +4,6 @@ namespace MessageX.Slack;
 
 /// <summary>Routes typed Slack messages to incoming-webhook or Web API senders.</summary>
 public sealed class SlackClient : IDisposable {
-    private static readonly HttpClient SharedHttpClient = MessageHttpClientFactory.CreateClient();
     private readonly IReadOnlyList<ISlackMessageSender> _senders;
     private readonly IReadOnlyList<IDisposable> _ownedDisposables;
 
@@ -37,7 +36,7 @@ public sealed class SlackClient : IDisposable {
         var disposables = new List<IDisposable>();
 
         var webhook = useSharedTransport
-            ? new SlackIncomingWebhookSender(SharedHttpClient)
+            ? new SlackIncomingWebhookSender(SlackHttpClientPool.Shared)
             : new SlackIncomingWebhookSender(options ?? throw new ArgumentNullException(nameof(options)));
         senders.Add(webhook);
         if (!useSharedTransport) {
@@ -45,7 +44,7 @@ public sealed class SlackClient : IDisposable {
         }
         if (connection is not null) {
             var webApi = useSharedTransport
-                ? new SlackWebApiMessageSender(connection, SharedHttpClient)
+                ? new SlackWebApiMessageSender(connection, SlackHttpClientPool.Shared)
                 : new SlackWebApiMessageSender(connection, options!);
             senders.Add(webApi);
             if (!useSharedTransport) {
