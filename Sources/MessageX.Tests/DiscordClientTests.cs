@@ -8,7 +8,33 @@ public sealed class DiscordClientTests {
         using var first = new DiscordClient();
         using var second = new DiscordClient();
 
-        Assert.Same(ReadWebhookHttpClient(first), ReadWebhookHttpClient(second));
+        var httpClient = ReadWebhookHttpClient(first);
+        Assert.Same(httpClient, ReadWebhookHttpClient(second));
+        Assert.Equal(DiscordHttpClientFactory.DefaultUserAgent, httpClient.DefaultRequestHeaders.UserAgent.ToString());
+    }
+
+    [Fact]
+    public void ConfiguredClientUsesProviderDefaultOrExplicitUserAgent() {
+        using var defaulted = new DiscordClient(new MessageHttpTransportOptions { Timeout = TimeSpan.FromSeconds(30) });
+        using var explicitAgent = new DiscordClient(new MessageHttpTransportOptions {
+            UserAgent = "MessageX.Tests/1.0"
+        });
+
+        Assert.Equal(
+            DiscordHttpClientFactory.DefaultUserAgent,
+            ReadWebhookHttpClient(defaulted).DefaultRequestHeaders.UserAgent.ToString());
+        Assert.Equal("MessageX.Tests/1.0", ReadWebhookHttpClient(explicitAgent).DefaultRequestHeaders.UserAgent.ToString());
+    }
+
+    [Fact]
+    public void DefaultBotSenderUsesProviderUserAgent() {
+        using var sender = new DiscordBotMessageSender(DiscordConnection.ForBotToken("discord-super-secret-token-value"));
+        var httpClient = Assert.IsType<HttpClient>(
+            typeof(DiscordBotMessageSender)
+                .GetField("_httpClient", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(sender));
+
+        Assert.Equal(DiscordHttpClientFactory.DefaultUserAgent, httpClient.DefaultRequestHeaders.UserAgent.ToString());
     }
 
     [Fact]

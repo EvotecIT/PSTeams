@@ -118,18 +118,10 @@ internal static class DiscordMessageRenderer {
             return uri.AbsoluteUri;
         }
 
-        var reference = uri.OriginalString;
-        foreach (var attachment in attachments) {
-            if (string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal)) {
-                return reference;
-            }
+        if (DiscordAttachmentReferenceResolver.TryResolve(uri, attachments, out var attachment)) {
+            return "attachment://" + attachment!.FileName;
         }
-        foreach (var attachment in attachments) {
-            if (string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal)) {
-                return "attachment://" + attachment.FileName;
-            }
-        }
-        return reference;
+        return uri.OriginalString;
     }
 
     private static void AddOptional(Dictionary<string, object?> payload, string name, object? value) {

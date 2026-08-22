@@ -8,7 +8,7 @@ internal static class DiscordHttpContentFactory {
     public static HttpContent Create(DiscordMessageRequest message, DiscordMessageTarget target) {
         var json = DiscordMessageRenderer.Render(message, target);
         if (message.Attachments.Count == 0) {
-            return new StringContent(json, Encoding.UTF8, "application/json");
+            return EnsureWithinRequestLimit(new StringContent(json, Encoding.UTF8, "application/json"));
         }
 
         var multipart = new MultipartFormDataContent();
@@ -21,6 +21,21 @@ internal static class DiscordHttpContentFactory {
             }
             multipart.Add(content, $"files[{index}]", attachment.FileName);
         }
-        return multipart;
+        return EnsureWithinRequestLimit(multipart);
+    }
+
+    private static T EnsureWithinRequestLimit<T>(T content) where T : HttpContent {
+        var contentLength = content.Headers.ContentLength;
+        if (contentLength is null) {
+            content.Dispose();
+            throw new InvalidOperationException("Discord request content must have a deterministic encoded length.");
+        }
+        if (contentLength > DiscordMessageValidator.MaximumRequestBytes) {
+            content.Dispose();
+            throw new ArgumentException(
+                $"Discord message requests cannot exceed {DiscordMessageValidator.MaximumRequestBytes} encoded bytes.",
+                nameof(content));
+        }
+        return content;
     }
 }

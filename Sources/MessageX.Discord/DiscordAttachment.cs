@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+
 namespace MessageX.Discord;
 
 /// <summary>An in-memory file attached to a Discord message.</summary>
@@ -58,10 +60,7 @@ public sealed class DiscordAttachment {
         if (description?.Length > 1024) {
             throw new ArgumentException("Discord attachment descriptions cannot exceed 1024 characters.", nameof(description));
         }
-        if (!string.IsNullOrWhiteSpace(contentType) &&
-            (!contentType!.Contains('/') || contentType.Any(char.IsWhiteSpace))) {
-            throw new ArgumentException("Attachment content type must be a MIME media type.", nameof(contentType));
-        }
+        var normalizedContentType = NormalizeContentType(contentType);
 
         var originalFileName = fileName.Trim();
         var effectiveSpoiler = isSpoiler || originalFileName.StartsWith("SPOILER_", StringComparison.Ordinal);
@@ -77,7 +76,7 @@ public sealed class DiscordAttachment {
             uploadFileName,
             (byte[])content.Clone(),
             string.IsNullOrWhiteSpace(description) ? null : description,
-            string.IsNullOrWhiteSpace(contentType) ? null : contentType!.Trim(),
+            normalizedContentType,
             effectiveSpoiler);
     }
 
@@ -118,5 +117,23 @@ public sealed class DiscordAttachment {
                 nameof(fullPath));
         }
         return content;
+    }
+
+    private static string? NormalizeContentType(string? contentType) {
+        if (string.IsNullOrWhiteSpace(contentType)) {
+            return null;
+        }
+        try {
+            var parsed = MediaTypeHeaderValue.Parse(contentType!.Trim()) ??
+                throw new FormatException("A MIME media type is required.");
+            if (parsed.Parameters.Any(parameter =>
+                string.IsNullOrWhiteSpace(parameter.Name) || string.IsNullOrWhiteSpace(parameter.Value))) {
+                throw new FormatException("MIME parameters require both a name and value.");
+            }
+            return parsed.ToString();
+        }
+        catch (FormatException exception) {
+            throw new ArgumentException("Attachment content type must be a valid MIME media type.", nameof(contentType), exception);
+        }
     }
 }

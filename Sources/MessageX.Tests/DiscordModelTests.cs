@@ -127,23 +127,23 @@ public sealed class DiscordModelTests {
     public void AttachmentJsonContainsMetadataButNeverFileBytes() {
         var message = new DiscordMessageRequest { Content = "report" };
         message.Attachments.Add(DiscordAttachment.FromBytes(
-            "report.txt",
+            "report.png",
             System.Text.Encoding.UTF8.GetBytes("highly-sensitive-content"),
             "Build report",
-            "text/plain",
+            "image/png",
             isSpoiler: true));
         message.Embeds.Add(new DiscordEmbed {
-            Image = new DiscordEmbedMedia { Url = new Uri("attachment://report.txt") }
+            Image = new DiscordEmbedMedia { Url = new Uri("attachment://report.png") }
         });
 
         var json = DiscordJsonSerializer.Serialize(message, DiscordMessageTarget.ForChannel("123456789012345678"));
         using var document = JsonDocument.Parse(json);
         var attachment = document.RootElement.GetProperty("attachments")[0];
 
-        Assert.Contains("SPOILER_report.txt", json, StringComparison.Ordinal);
-        Assert.Equal("SPOILER_report.txt", attachment.GetProperty("filename").GetString());
+        Assert.Contains("SPOILER_report.png", json, StringComparison.Ordinal);
+        Assert.Equal("SPOILER_report.png", attachment.GetProperty("filename").GetString());
         Assert.False(attachment.TryGetProperty("is_spoiler", out _));
-        Assert.Equal("attachment://SPOILER_report.txt", document.RootElement.GetProperty("embeds")[0]
+        Assert.Equal("attachment://SPOILER_report.png", document.RootElement.GetProperty("embeds")[0]
             .GetProperty("image").GetProperty("url").GetString());
         Assert.DoesNotContain("highly-sensitive-content", json, StringComparison.Ordinal);
     }
@@ -176,6 +176,104 @@ public sealed class DiscordModelTests {
     [InlineData("report\tfinal.txt")]
     public void AttachmentFileNamesRejectControlCharacters(string fileName) {
         Assert.Throws<ArgumentException>(() => DiscordAttachment.FromBytes(fileName, new byte[] { 1 }));
+    }
+
+    [Fact]
+    public void AttachmentMimeTypesAcceptParametersAndRejectMalformedValuesEarly() {
+        var attachment = DiscordAttachment.FromBytes(
+            "report.txt",
+            new byte[] { 1 },
+            contentType: "text/plain; charset=utf-8");
+
+        Assert.Equal("text/plain; charset=utf-8", attachment.ContentType);
+        Assert.Throws<ArgumentException>(() => DiscordAttachment.FromBytes(
+            "report.txt",
+            new byte[] { 1 },
+            contentType: "text/plain; charset"));
+    }
+
+    [Fact]
+    public void EmbedAttachmentReferencesRequirePortableSafeFileNames() {
+        var referenced = new DiscordMessageRequest { Content = "report" };
+        referenced.Attachments.Add(DiscordAttachment.FromBytes("release@notes.png", new byte[] { 1 }));
+        referenced.Embeds.Add(new DiscordEmbed {
+            Image = new DiscordEmbedMedia { Url = new Uri("attachment://release@notes.png") }
+        });
+
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            referenced,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+
+        var unreferenced = new DiscordMessageRequest { Content = "report" };
+        unreferenced.Attachments.Add(DiscordAttachment.FromBytes("release notes.txt", new byte[] { 1 }));
+        Assert.NotEmpty(DiscordJsonSerializer.Serialize(
+            unreferenced,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
+    public void AttachmentLimitAppliesPerFileRatherThanToCombinedMessageContent() {
+        var message = new DiscordMessageRequest { Content = "reports" };
+        message.Attachments.Add(DiscordAttachment.FromBytes(
+            "first.bin",
+            new byte[(DiscordMessageValidator.MaximumAttachmentBytes / 2) + 1]));
+        message.Attachments.Add(DiscordAttachment.FromBytes(
+            "second.bin",
+            new byte[(DiscordMessageValidator.MaximumAttachmentBytes / 2) + 1]));
+
+        using var content = DiscordHttpContentFactory.Create(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678"));
+        Assert.True(content.Headers.ContentLength <= DiscordMessageValidator.MaximumRequestBytes);
+
+        var oversized = new DiscordMessageRequest { Content = "report" };
+        oversized.Attachments.Add(DiscordAttachment.FromBytes(
+            "too-large.bin",
+            new byte[DiscordMessageValidator.MaximumAttachmentBytes + 1]));
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            oversized,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
+    public void CompleteMultipartRequestCannotExceedDiscordMessageLimit() {
+        var message = new DiscordMessageRequest { Content = "reports" };
+        message.Attachments.Add(DiscordAttachment.FromBytes("first.bin", new byte[9 * 1024 * 1024]));
+        message.Attachments.Add(DiscordAttachment.FromBytes("second.bin", new byte[9 * 1024 * 1024]));
+        message.Attachments.Add(DiscordAttachment.FromBytes("third.bin", new byte[8 * 1024 * 1024]));
+
+        Assert.Throws<ArgumentException>(() => DiscordHttpContentFactory.Create(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
+    public void EmbedAttachmentReferencesRequireSupportedImageExtensions() {
+        var message = new DiscordMessageRequest { Content = "report" };
+        message.Attachments.Add(DiscordAttachment.FromBytes("report.txt", new byte[] { 1 }));
+        message.Embeds.Add(new DiscordEmbed {
+            Image = new DiscordEmbedMedia { Url = new Uri("attachment://report.txt") }
+        });
+
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
+    public void AttachmentReferenceSchemeIsCaseInsensitiveWithoutChangingFileNameCase() {
+        var message = new DiscordMessageRequest { Content = "report" };
+        message.Attachments.Add(DiscordAttachment.FromBytes("Report.PNG", new byte[] { 1 }));
+        message.Embeds.Add(new DiscordEmbed {
+            Image = new DiscordEmbedMedia { Url = new Uri("ATTACHMENT://Report.PNG") }
+        });
+
+        var json = DiscordJsonSerializer.Serialize(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678"));
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal("attachment://Report.PNG", document.RootElement.GetProperty("embeds")[0]
+            .GetProperty("image").GetProperty("url").GetString());
     }
 
     [Fact]

@@ -4,7 +4,7 @@ namespace MessageX.Discord;
 
 /// <summary>Routes typed Discord messages to incoming-webhook or bot REST senders.</summary>
 public sealed class DiscordClient : IDisposable {
-    private static readonly HttpClient SharedHttpClient = MessageHttpClientFactory.CreateClient();
+    private static readonly HttpClient SharedHttpClient = DiscordHttpClientFactory.CreateClient();
     private readonly IReadOnlyList<IDiscordMessageSender> _senders;
     private readonly IReadOnlyList<IDisposable> _ownedDisposables;
 

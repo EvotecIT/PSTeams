@@ -10,12 +10,12 @@ public sealed class DiscordIncomingWebhookSender : IDiscordMessageSender, IDispo
 
     /// <summary>Creates a sender with default MessageX transport behavior.</summary>
     public DiscordIncomingWebhookSender()
-        : this(MessageHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(DiscordHttpClientFactory.CreateClient(), disposeHttpClient: true) {
     }
 
     /// <summary>Creates a sender with configured MessageX transport behavior.</summary>
     public DiscordIncomingWebhookSender(MessageHttpTransportOptions options)
-        : this(MessageHttpClientFactory.CreateClient(options), disposeHttpClient: true) {
+        : this(DiscordHttpClientFactory.CreateClient(options), disposeHttpClient: true) {
     }
 
     /// <summary>Creates a sender over a caller-supplied HTTP client.</summary>

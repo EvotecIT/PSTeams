@@ -58,6 +58,14 @@ Describe 'MessageX Discord PowerShell surface' {
         { New-DiscordAttachment -Bytes ([byte[]](1)) -FileName "report`tfinal.txt" } | Should -Throw
     }
 
+    It 'accepts parameterized attachment MIME types and rejects malformed values early' {
+        $attachment = New-DiscordAttachment -Bytes ([byte[]](1)) -FileName 'report.txt' -ContentType 'text/plain; charset=utf-8'
+
+        $attachment.ContentType | Should -Be 'text/plain; charset=utf-8'
+        { New-DiscordAttachment -Bytes ([byte[]](1)) -FileName 'report.txt' -ContentType 'text/plain; charset' } |
+            Should -Throw
+    }
+
     It 'creates webhook, channel, thread, and direct-message targets without exposing secrets' {
         $webhook = New-DiscordWebhookTarget -Uri 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456' -ThreadId '223456789012345678'
         $channel = New-DiscordChannelTarget -ChannelId '323456789012345678'

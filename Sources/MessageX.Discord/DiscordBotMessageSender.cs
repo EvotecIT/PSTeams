@@ -14,12 +14,12 @@ public sealed class DiscordBotMessageSender : IDiscordMessageSender, IDisposable
 
     /// <summary>Creates a sender with default MessageX transport behavior.</summary>
     public DiscordBotMessageSender(DiscordConnection connection)
-        : this(connection, MessageHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(connection, DiscordHttpClientFactory.CreateClient(), disposeHttpClient: true) {
     }
 
     /// <summary>Creates a sender with configured MessageX transport behavior.</summary>
     public DiscordBotMessageSender(DiscordConnection connection, MessageHttpTransportOptions options)
-        : this(connection, MessageHttpClientFactory.CreateClient(options), disposeHttpClient: true) {
+        : this(connection, DiscordHttpClientFactory.CreateClient(options), disposeHttpClient: true) {
     }
 
     /// <summary>Creates a sender over a caller-supplied HTTP client.</summary>

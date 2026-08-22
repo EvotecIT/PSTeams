@@ -2,7 +2,7 @@ namespace MessageX.Discord;
 
 internal static class DiscordMessageValidator {
     public const int MaximumRequestBytes = 25 * 1024 * 1024;
-    public const int MaximumAttachmentBytes = MaximumRequestBytes - (128 * 1024);
+    public const int MaximumAttachmentBytes = 10 * 1024 * 1024;
 
     public static void Validate(DiscordMessageRequest message, DiscordMessageTarget target) {
         if (message is null) {
@@ -21,7 +21,6 @@ internal static class DiscordMessageValidator {
         if (message.Attachments.Count > 10) {
             throw new ArgumentException("Discord messages cannot contain more than 10 attachments.", nameof(message));
         }
-        var attachmentBytes = 0L;
         var attachmentFileNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var attachment in message.Attachments) {
             if (attachment is null) {
@@ -30,10 +29,11 @@ internal static class DiscordMessageValidator {
             if (!attachmentFileNames.Add(attachment.FileName)) {
                 throw new ArgumentException("Discord attachment file names must be unique after spoiler normalization.", nameof(message));
             }
-            attachmentBytes += attachment.Length;
-        }
-        if (attachmentBytes > MaximumAttachmentBytes) {
-            throw new ArgumentException("Discord attachment content leaves insufficient room within the 25 MiB request limit.", nameof(message));
+            if (attachment.Length > MaximumAttachmentBytes) {
+                throw new ArgumentException(
+                    $"Discord attachments cannot exceed the default {MaximumAttachmentBytes} byte per-file limit.",
+                    nameof(message));
+            }
         }
         if (message.Nonce?.Length > 25) {
             throw new ArgumentException("Discord nonces cannot exceed 25 characters.", nameof(message));
@@ -84,11 +84,18 @@ internal static class DiscordMessageValidator {
                 if (uri is null || !string.Equals(uri.Scheme, "attachment", StringComparison.OrdinalIgnoreCase)) {
                     continue;
                 }
-                var reference = uri.OriginalString;
-                if (!message.Attachments.Any(attachment =>
-                    string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal) ||
-                    string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal))) {
+                if (!DiscordAttachmentReferenceResolver.TryResolve(uri, message.Attachments, out var attachment)) {
                     throw new ArgumentException("Discord attachment URLs must reference a file in the same message.", nameof(message));
+                }
+                if (!DiscordAttachmentReferenceResolver.IsSafeEmbedFileName(attachment!.FileName)) {
+                    throw new ArgumentException(
+                        "Discord attachment URLs require ASCII alphanumeric file names using only underscores, hyphens, and periods.",
+                        nameof(message));
+                }
+                if (!DiscordAttachmentReferenceResolver.IsSupportedEmbedFileName(attachment.FileName)) {
+                    throw new ArgumentException(
+                        "Discord embed attachments require a JPG, JPEG, PNG, WebP, or GIF file name.",
+                        nameof(message));
                 }
             }
         }
