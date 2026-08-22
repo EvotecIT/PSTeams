@@ -46,15 +46,16 @@ public class TeamsMessageTargetTests {
     }
 
     [Fact]
-    public void WebhookCredentialIsNotAVisibleTargetPropertyOrString() {
-        var target = TeamsMessageTarget.ForWorkflowWebhook(
-            new Uri("https://example.test/workflows/secret-token"));
+    public void WebhookCredentialRequiresExplicitAccessAndIsNotRendered() {
+        var uri = new Uri("https://example.test/workflows/secret-token");
+        var target = TeamsMessageTarget.ForWorkflowWebhook(uri);
         var publicProperties = typeof(TeamsMessageTarget).GetProperties()
             .Where(property => property.GetMethod?.IsPublic == true)
             .Select(property => property.Name)
             .ToArray();
 
         Assert.DoesNotContain("TargetUri", publicProperties);
+        Assert.Equal(uri, target.GetWebhookUri());
         Assert.DoesNotContain("secret-token", target.ToString(), StringComparison.Ordinal);
     }
 }

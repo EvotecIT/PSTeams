@@ -124,6 +124,24 @@ public sealed class WebhookTeamsMessageSenderTests {
     }
 
     [Fact]
+    public async Task ResponseBodyIoFailureReturnsSanitizedTransientFailure() {
+        using var sender = new WebhookTeamsMessageSender(
+            new HttpClient(new ThrowingResponseStreamHandler()),
+            disposeHttpClient: true);
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"));
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => sender.SendAsync(
+            new TeamsMessageRequest { Text = "Build completed" },
+            target,
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.Ordinal);
+        Assert.Null(exception.InnerException);
+    }
+
+    [Fact]
     public async Task TransportTimeoutReturnsSanitizedTransientFailure() {
         using var handler = new DelayingHandler();
         using var httpClient = new HttpClient(handler) {

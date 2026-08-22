@@ -34,6 +34,14 @@ public sealed class TeamsMessageTarget : IProviderCapabilities {
         };
     }
 
+    /// <summary>
+    /// Returns the webhook endpoint for a sender implementation. The URI contains a credential and
+    /// must not be written to logs, diagnostic output, or delivery results.
+    /// </summary>
+    public Uri GetWebhookUri() {
+        return TargetUri;
+    }
+
     internal static void ValidateUri(Uri uri) {
         if (uri is null) {
             throw new ArgumentNullException(nameof(uri));

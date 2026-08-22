@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Http;
 using System.Text;
 
@@ -74,7 +75,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             throw new MessageDeliveryException(
                 "Teams webhook request timed out.",
                 MessageErrorKind.Transient);
-        } catch (HttpRequestException) {
+        } catch (Exception exception) when (exception is HttpRequestException or IOException) {
             throw new MessageDeliveryException(
                 "Teams webhook request failed.",
                 MessageErrorKind.Transient);

@@ -57,6 +57,21 @@ public class TeamsClientTests {
         Assert.Contains("incoming and workflow webhooks", exception.Message);
     }
 
+    [Fact]
+    public async Task CustomSenderCanReadWebhookEndpointThroughExplicitAccessor() {
+        var uri = new Uri("https://example.test/workflows/secret-token");
+        var target = TeamsMessageTarget.ForWorkflowWebhook(uri);
+        var sender = new EndpointReadingSender();
+        var client = new TeamsClient(new[] { sender });
+
+        _ = await client.SendAsync(
+            new TeamsMessageRequest { Text = "Build completed" },
+            target,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(uri, sender.Endpoint);
+    }
+
     private sealed class TypedOnlyWebhookSender : ITeamsMessageSender {
         public bool CanSend(TeamsDeliveryMethod deliveryMethod) {
             return deliveryMethod is TeamsDeliveryMethod.IncomingWebhook;
@@ -96,6 +111,27 @@ public class TeamsClientTests {
                 IsSuccessStatusCode = true,
                 StatusCode = 200,
                 ResponseBody = jsonBody
+            });
+        }
+    }
+
+    private sealed class EndpointReadingSender : ITeamsMessageSender {
+        public Uri? Endpoint { get; private set; }
+
+        public bool CanSend(TeamsDeliveryMethod deliveryMethod) {
+            return deliveryMethod is TeamsDeliveryMethod.WorkflowWebhook;
+        }
+
+        public Task<TeamsDeliveryResult> SendAsync(
+            TeamsMessageRequest message,
+            TeamsMessageTarget target,
+            CancellationToken cancellationToken = default) {
+            Endpoint = target.GetWebhookUri();
+            return Task.FromResult(new TeamsDeliveryResult {
+                DeliveryMethod = target.DeliveryMethod,
+                Target = "custom sender",
+                IsSuccessStatusCode = true,
+                StatusCode = 200
             });
         }
     }
