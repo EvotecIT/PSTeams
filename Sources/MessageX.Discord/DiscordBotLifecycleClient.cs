@@ -53,21 +53,31 @@ public sealed class DiscordBotLifecycleClient :
         CancellationToken cancellationToken = default) {
         var coordinates = DiscordLifecycleReference.Validate(reference, MessageCapabilities.Delete);
         var target = CreateTarget(reference, coordinates.ConversationId);
-        await DiscordBotMessageOwnership.VerifyAsync(
+        using var operationCancellation = MessageHttpClientFactory.CreateOperationCancellation(
             _httpClient,
-            _connection,
-            coordinates,
-            cancellationToken).ConfigureAwait(false);
-        var request = CreateAuthorizedRequest(
-            HttpMethod.Delete,
-            $"channels/{coordinates.ConversationId}/messages/{coordinates.MessageId}");
-        return await ExecuteStatusAsync(
-            request,
-            target,
-            reference,
-            MessageCapabilities.None,
-            "bot message deletion",
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
+        try {
+            await DiscordBotMessageOwnership.VerifyAsync(
+                _httpClient,
+                _connection,
+                coordinates,
+                operationCancellation.Token).ConfigureAwait(false);
+            var request = CreateAuthorizedRequest(
+                HttpMethod.Delete,
+                $"channels/{coordinates.ConversationId}/messages/{coordinates.MessageId}");
+            return await ExecuteStatusAsync(
+                request,
+                target,
+                reference,
+                MessageCapabilities.None,
+                "bot message deletion",
+                operationCancellation.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
+            throw new MessageDeliveryException(
+                "Discord bot message deletion request timed out.",
+                MessageErrorKind.Transient);
+        }
     }
 
     /// <inheritdoc />

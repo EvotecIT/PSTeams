@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -210,6 +211,24 @@ public sealed class DiscordLifecycleClientTests {
     }
 
     [Fact]
+    public async Task BotDeleteAppliesOneTimeoutAcrossOwnershipAndDeletion() {
+        using var handler = new StagedOwnershipTimeoutHandler();
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(600) };
+        using var client = new DiscordBotLifecycleClient(
+            DiscordConnection.ForBotToken("discord-super-secret-token-value"),
+            httpClient);
+
+        var exception = await Assert.ThrowsAsync<MessageDeliveryException>(() => client.DeleteAsync(
+            BotReference(),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(MessageErrorKind.Transient, exception.Kind);
+        Assert.Contains("timed out", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, handler.RequestCount);
+        Assert.True(handler.SecondRequestDuration < TimeSpan.FromMilliseconds(500));
+    }
+
+    [Fact]
     public async Task BotRetrievesExactReferencedMessage() {
         using var handler = new QueueHandler(Response(
             HttpStatusCode.OK,
@@ -415,6 +434,31 @@ public sealed class DiscordLifecycleClientTests {
                 request.Headers.Authorization?.Parameter,
                 request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken)));
             return _responses.Dequeue();
+        }
+    }
+
+    private sealed class StagedOwnershipTimeoutHandler : HttpMessageHandler {
+        public int RequestCount { get; private set; }
+
+        public TimeSpan SecondRequestDuration { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) {
+            RequestCount++;
+            if (RequestCount == 1) {
+                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                return Response(HttpStatusCode.OK, "{\"id\":\"423456789012345678\"}");
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            try {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                throw new InvalidOperationException("The ownership request should have timed out.");
+            }
+            finally {
+                SecondRequestDuration = stopwatch.Elapsed;
+            }
         }
     }
 
