@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Teams.Apps" />
     <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
+    <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />
   </ItemGroup>
 

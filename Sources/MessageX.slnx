@@ -1,12 +1,14 @@
 <Solution>
   <Project Path="MessageX.Core/MessageX.Core.csproj" />
   <Project Path="MessageX.Discord/MessageX.Discord.csproj" />
+  <Project Path="MessageX.Discord.Hosting/MessageX.Discord.Hosting.csproj" />
   <Project Path="MessageX.Discord.Hosting.AspNetCore/MessageX.Discord.Hosting.AspNetCore.csproj" />
   <Project Path="MessageX.Hosting/MessageX.Hosting.csproj" />
   <Project Path="MessageX.Hosting.AspNetCore/MessageX.Hosting.AspNetCore.csproj" />
   <Project Path="MessageX.Persistence.DbaClientX/MessageX.Persistence.DbaClientX.csproj" />
   <Project Path="MessageX.PowerShell/MessageX.PowerShell.csproj" />
   <Project Path="MessageX.Slack/MessageX.Slack.csproj" />
+  <Project Path="MessageX.Slack.Hosting/MessageX.Slack.Hosting.csproj" />
   <Project Path="MessageX.Slack.Hosting.AspNetCore/MessageX.Slack.Hosting.AspNetCore.csproj" />
   <Project Path="MessageX.Teams/MessageX.Teams.csproj" />
   <Project Path="MessageX.Teams.Hosting.AspNetCore/MessageX.Teams.Hosting.AspNetCore.csproj" />

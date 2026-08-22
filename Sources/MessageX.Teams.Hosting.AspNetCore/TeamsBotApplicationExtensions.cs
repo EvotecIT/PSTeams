@@ -1,4 +1,5 @@
 using MessageX.Hosting;
+using MessageX.Hosting.AspNetCore;
 using Microsoft.Teams.Apps;
 using System.Text;
 using System.Text.Json;
@@ -11,57 +12,60 @@ public static class TeamsBotApplicationExtensions {
     /// Adapts verified Microsoft Teams SDK activities into MessageX handlers.
     /// </summary>
     /// <param name="application">Microsoft Teams SDK application that owns HTTP authentication and parsing.</param>
-    /// <param name="router">MessageX handler registry.</param>
-    /// <param name="installationId">Trusted non-secret installation selected by host configuration.</param>
+    /// <param name="acceptance">Configured volatile or durable MessageX ingress acceptance boundary.</param>
+    /// <param name="installationResolver">Host-owned mapping from verified Teams coordinates to installation identity.</param>
     /// <returns>The supplied Microsoft Teams application.</returns>
     public static TeamsBotApplication UseMessageXHosting(
         this TeamsBotApplication application,
+        IMessageIngressAcceptance acceptance,
         MessageRouter router,
-        string installationId) {
+        ITeamsInstallationResolver installationResolver) {
         ArgumentNullException.ThrowIfNull(application);
+        ArgumentNullException.ThrowIfNull(acceptance);
         ArgumentNullException.ThrowIfNull(router);
-        _ = TeamsActivityMapper.MapInstallationId(installationId);
+        ArgumentNullException.ThrowIfNull(installationResolver);
         TeamsHostingRegistrationGuard.Register(application);
 
         application.OnMessage((context, cancellationToken) => DispatchAsync(
             TeamsActivityMapper.MapMessage(
                 context.Activity,
-                installationId,
+                ResolveInstallation(context.Activity, installationResolver),
                 DateTimeOffset.UtcNow,
                 TeamsVerifiedActivityScope.Current),
-            router,
+            acceptance,
             cancellationToken));
         application.OnMessageUpdate((context, cancellationToken) => DispatchAsync(
             TeamsActivityMapper.MapMessageUpdate(
                 context.Activity,
-                installationId,
+                ResolveInstallation(context.Activity, installationResolver),
                 DateTimeOffset.UtcNow,
                 TeamsVerifiedActivityScope.Current),
-            router,
+            acceptance,
             cancellationToken));
         application.OnMessageDelete((context, cancellationToken) => DispatchAsync(
             TeamsActivityMapper.MapMessageDelete(
                 context.Activity,
-                installationId,
+                ResolveInstallation(context.Activity, installationResolver),
                 DateTimeOffset.UtcNow,
                 TeamsVerifiedActivityScope.Current),
-            router,
+            acceptance,
             cancellationToken));
         application.OnMessageReaction((context, cancellationToken) => DispatchAsync(
             TeamsActivityMapper.MapReaction(
                 context.Activity,
-                installationId,
+                ResolveInstallation(context.Activity, installationResolver),
                 DateTimeOffset.UtcNow,
                 TeamsVerifiedActivityScope.Current),
-            router,
+            acceptance,
             cancellationToken));
         application.OnAdaptiveCardAction(async (context, cancellationToken) => {
             var result = await DispatchAsync(
                 TeamsActivityMapper.MapAdaptiveCardAction(
                     context.Activity,
-                    installationId,
+                    ResolveInstallation(context.Activity, installationResolver),
                     DateTimeOffset.UtcNow,
                     TeamsVerifiedActivityScope.Current),
+                acceptance,
                 router,
                 cancellationToken).ConfigureAwait(false);
             return CreateInvokeResponse(result.HandlerResult?.Acknowledgement);
@@ -78,14 +82,50 @@ public static class TeamsBotApplicationExtensions {
         return application;
     }
 
+    internal static async Task DispatchAsync(
+        TeamsInboundDispatch dispatch,
+        IMessageIngressAcceptance acceptance,
+        CancellationToken cancellationToken) {
+        var result = MessageReceiveResult<TeamsInboundActivity>.Dispatch(
+            dispatch.Route,
+            dispatch.Envelope,
+            MessageAcknowledgement.Empty(200));
+        var accepted = await acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
+        if (accepted is not (MessageIngressEnqueueStatus.Accepted or MessageIngressEnqueueStatus.Duplicate)) {
+            throw new InvalidOperationException("The MessageX Teams ingress boundary is unavailable.");
+        }
+    }
+
     private static async Task<MessageDispatchResult> DispatchAsync(
         TeamsInboundDispatch dispatch,
+        IMessageIngressAcceptance acceptance,
         MessageRouter router,
         CancellationToken cancellationToken) {
+        var result = MessageReceiveResult<TeamsInboundActivity>.Dispatch(
+            dispatch.Route,
+            dispatch.Envelope,
+            MessageAcknowledgement.Empty(200),
+            requiresSynchronousDispatch: true);
+        var accepted = await acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
+        if (accepted == MessageIngressEnqueueStatus.Duplicate) {
+            return MessageDispatchResult.NotMatched();
+        }
+        if (accepted != MessageIngressEnqueueStatus.Accepted) {
+            throw new InvalidOperationException("The MessageX Teams ingress boundary is unavailable.");
+        }
         return await router.DispatchAsync(
             dispatch.Route,
             dispatch.Envelope,
             cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static string ResolveInstallation(
+        Microsoft.Teams.Apps.Schema.TeamsActivity activity,
+        ITeamsInstallationResolver resolver) {
+        var context = TeamsActivityMapper.MapInstallationContext(
+            activity,
+            TeamsVerifiedActivityScope.Current);
+        return TeamsActivityMapper.MapInstallationId(resolver.ResolveInstallationId(context));
     }
 
     internal static InvokeResponse CreateInvokeResponse(MessageAcknowledgement? acknowledgement) {

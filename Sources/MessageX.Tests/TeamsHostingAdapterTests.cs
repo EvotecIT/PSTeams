@@ -1,9 +1,12 @@
 using System.Text.Json;
 using MessageX.Core;
 using MessageX.Hosting;
+using MessageX.Hosting.AspNetCore;
+using MessageX.Persistence.DbaClientX;
 using MessageX.Teams.Hosting.AspNetCore;
 using Microsoft.Teams.Apps;
 using Microsoft.Teams.Core.Schema;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MessageX.Tests;
 
@@ -147,6 +150,36 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public async Task TeamsAdapterCommitsThroughDurableAcceptanceAndRestoresSafePayload() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<IMessageDurableStore>(store);
+        services.AddMessageXTeamsHosting();
+        services.AddMessageXDurableIngress();
+        using var provider = services.BuildServiceProvider();
+        var dispatch = TeamsActivityMapper.MapMessage(
+            Message("personal"),
+            "tenant-installation",
+            ReceivedAt);
+
+        await TeamsBotApplicationExtensions.DispatchAsync(
+            dispatch,
+            provider.GetRequiredService<IMessageIngressAcceptance>(),
+            TestContext.Current.CancellationToken);
+
+        var codec = provider.GetRequiredService<IMessageDurableCodec<TeamsInboundActivity>>();
+        var record = codec.Encode(dispatch.Route, dispatch.Envelope);
+        var duplicate = await store.AcceptInboxAsync(record, TestContext.Current.CancellationToken);
+        var restored = codec.Decode(record);
+        Assert.Equal(MessageDurableAcceptanceStatus.AlreadyPending, duplicate.Status);
+        Assert.Equal("hello", restored.Payload.Text);
+        Assert.Null(restored.Payload.Activity);
+        Assert.Equal(dispatch.Envelope.Conversation?.ConversationId, restored.Conversation?.ConversationId);
+    }
+
+    [Fact]
     public void InstallationScopesDeduplicationWithoutTrustingActivityCoordinates() {
         var first = TeamsActivityMapper.MapMessage(Message("personal"), "install-a", ReceivedAt);
         var second = TeamsActivityMapper.MapMessage(Message("personal"), "install-b", ReceivedAt);
@@ -287,6 +320,20 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Null(TeamsVerifiedActivityScope.Current);
     }
 
+    [Fact]
+    public void InstallationResolverReceivesVerifiedCoordinatesPerActivity() {
+        var resolver = new TestInstallationResolver();
+
+        var installationId = TeamsBotApplicationExtensions.ResolveInstallation(
+            Message("channel"),
+            resolver);
+
+        Assert.Equal("tenant-1/team-1/conversation-1", installationId);
+        Assert.Equal("tenant-1", resolver.Last?.TenantId);
+        Assert.Equal("team-1", resolver.Last?.TeamId);
+        Assert.Equal("conversation-1", resolver.Last?.ConversationId);
+    }
+
     private static MessageActivity Message(
         string conversationType,
         string? replyToId = null,
@@ -334,5 +381,30 @@ public sealed class TeamsHostingAdapterTests {
               "serviceUrl": "https://smba.trafficmanager.net/emea/"
             }
             """);
+    }
+
+    private sealed class TestInstallationResolver : ITeamsInstallationResolver {
+        public TeamsInstallationContext? Last { get; private set; }
+
+        public string ResolveInstallationId(TeamsInstallationContext context) {
+            Last = context;
+            return $"{context.TenantId}/{context.TeamId}/{context.ConversationId}";
+        }
+    }
+
+    private sealed class TemporaryDatabase : IDisposable {
+        public TemporaryDatabase() => Path = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            $"messagex-teams-{Guid.NewGuid():N}.db");
+
+        public string Path { get; }
+
+        public void Dispose() {
+            foreach (var path in new[] { Path, Path + "-wal", Path + "-shm" }) {
+                if (File.Exists(path)) {
+                    File.Delete(path);
+                }
+            }
+        }
     }
 }

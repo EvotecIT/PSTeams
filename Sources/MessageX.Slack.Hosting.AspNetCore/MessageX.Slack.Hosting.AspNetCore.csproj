@@ -12,7 +12,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
-    <ProjectReference Include="..\MessageX.Slack\MessageX.Slack.csproj" />
+    <ProjectReference Include="..\MessageX.Slack.Hosting\MessageX.Slack.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,8 +8,17 @@ public sealed class DiscordEndpointConfiguration {
     public DiscordEndpointConfiguration(
         string installationId,
         string publicKeyHex,
+        string applicationId,
+        string installationOwnerId,
         TimeSpan? replayWindow = null) {
         InstallationId = NormalizeInstallation(installationId);
+        var normalizedApplicationId = NormalizeSnowflake(applicationId, nameof(applicationId));
+        var normalizedOwnerId = NormalizeSnowflake(
+            installationOwnerId,
+            nameof(installationOwnerId),
+            allowZero: true);
+        ApplicationId = normalizedApplicationId;
+        InstallationOwnerId = normalizedOwnerId;
         if (string.IsNullOrWhiteSpace(publicKeyHex) ||
             publicKeyHex.Length != 64 ||
             publicKeyHex.Any(value => !Uri.IsHexDigit(value))) {
@@ -24,6 +33,12 @@ public sealed class DiscordEndpointConfiguration {
 
     /// <summary>Non-secret installation identifier selected by the endpoint route.</summary>
     public string InstallationId { get; }
+
+    /// <summary>Expected Discord application identifier.</summary>
+    public string ApplicationId { get; }
+
+    /// <summary>Expected guild or user installation owner identifier.</summary>
+    public string InstallationOwnerId { get; }
 
     /// <summary>Maximum accepted difference between the signed timestamp and host receive time.</summary>
     public TimeSpan ReplayWindow { get; }
@@ -41,5 +56,18 @@ public sealed class DiscordEndpointConfiguration {
         return normalized.Length == 0
             ? throw new ArgumentException("A bounded installation identifier is required.", nameof(value))
             : normalized;
+    }
+
+    private static string NormalizeSnowflake(
+        string? value,
+        string parameterName,
+        bool allowZero = false) {
+        if (allowZero && string.Equals(value, "0", StringComparison.Ordinal)) {
+            return "0";
+        }
+        if (value is null || value.Length is < 17 or > 20 || value.Any(character => character is < '0' or > '9')) {
+            throw new ArgumentException("A Discord snowflake identifier is required.", parameterName);
+        }
+        return value;
     }
 }

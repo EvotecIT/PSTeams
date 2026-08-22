@@ -7,7 +7,7 @@ namespace MessageX.Teams.Hosting.AspNetCore;
 public sealed class TeamsInboundActivity {
     internal TeamsInboundActivity(
         TeamsInboundActivityKind kind,
-        TeamsActivity activity,
+        TeamsActivity? activity,
         string? text,
         string? actionName,
         string? tenantId,
@@ -56,8 +56,8 @@ public sealed class TeamsInboundActivity {
     public IReadOnlyList<string> ReactionsRemoved { get; }
 
     /// <summary>
-    /// Verified Microsoft SDK activity for synchronous handler use. It is intentionally excluded from default persistence.
+    /// Verified Microsoft SDK activity for synchronous handler use. It is null after durable restoration and intentionally excluded from persistence.
     /// </summary>
     [JsonIgnore]
-    public TeamsActivity Activity { get; }
+    public TeamsActivity? Activity { get; }
 }

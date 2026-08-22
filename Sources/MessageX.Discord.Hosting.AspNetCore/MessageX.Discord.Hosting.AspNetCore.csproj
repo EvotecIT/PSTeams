@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <ProjectReference Include="..\MessageX.Discord\MessageX.Discord.csproj" />
+    <ProjectReference Include="..\MessageX.Discord.Hosting\MessageX.Discord.Hosting.csproj" />
     <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
   </ItemGroup>
 

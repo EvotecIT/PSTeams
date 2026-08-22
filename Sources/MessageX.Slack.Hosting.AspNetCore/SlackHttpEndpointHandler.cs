@@ -59,7 +59,8 @@ public sealed class SlackHttpEndpointHandler {
                     timestamp,
                     retryNumber,
                     retryReason,
-                    configuration.ReplayWindow);
+                    configuration.ReplayWindow,
+                    configuration.Identity);
                 await _processor.ProcessAsync(context.Response, result, operationToken).ConfigureAwait(false);
             } else {
                 var result = SlackInteractionReceiver.Receive(
@@ -67,7 +68,8 @@ public sealed class SlackHttpEndpointHandler {
                     configuration.SigningSecret,
                     signature,
                     timestamp,
-                    configuration.ReplayWindow);
+                    configuration.ReplayWindow,
+                    configuration.Identity);
                 await _processor.ProcessAsync(context.Response, result, operationToken).ConfigureAwait(false);
             }
         } catch (MessageInboundBodyTooLargeException) {

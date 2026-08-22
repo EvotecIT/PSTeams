@@ -8,8 +8,12 @@ public sealed class SlackEndpointConfiguration {
     public SlackEndpointConfiguration(
         string installationId,
         string signingSecret,
+        string applicationId,
+        string workspaceId,
+        string? enterpriseId = null,
         TimeSpan? replayWindow = null) {
         InstallationId = NormalizeInstallation(installationId);
+        Identity = new SlackInstallationIdentity(applicationId, workspaceId, enterpriseId);
         if (string.IsNullOrWhiteSpace(signingSecret) ||
             signingSecret.Length > 4096 ||
             signingSecret.Any(char.IsControl)) {
@@ -24,6 +28,9 @@ public sealed class SlackEndpointConfiguration {
 
     /// <summary>Non-secret installation identifier selected by the endpoint route.</summary>
     public string InstallationId { get; }
+
+    /// <summary>Exact non-secret provider coordinates expected on this route.</summary>
+    public SlackInstallationIdentity Identity { get; }
 
     /// <summary>Maximum accepted difference between the signed timestamp and host receive time.</summary>
     public TimeSpan ReplayWindow { get; }

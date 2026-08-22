@@ -18,7 +18,8 @@ public static class SlackInteractionReceiver {
         string signingSecret,
         string signature,
         string timestamp,
-        TimeSpan? replayWindow = null) {
+        TimeSpan? replayWindow = null,
+        SlackInstallationIdentity? expectedIdentity = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -46,16 +47,18 @@ public static class SlackInteractionReceiver {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
         return fields.TryGetValue("payload", out var payload)
-            ? ReceiveInteractive(request, signature, fields, payload)
-            : ReceiveCommand(request, signature, fields);
+            ? ReceiveInteractive(request, signature, fields, payload, expectedIdentity)
+            : ReceiveCommand(request, signature, fields, expectedIdentity);
     }
 
     private static MessageReceiveResult<SlackInteractionEvent> ReceiveCommand(
         MessageInboundRequest request,
         string signature,
-        IReadOnlyDictionary<string, string> fields) {
+        IReadOnlyDictionary<string, string> fields,
+        SlackInstallationIdentity? expectedIdentity) {
         if (!TryRequired(fields, "command", 129, out var command) ||
             command[0] != '/' ||
+            !TryOptional(fields, "api_app_id", MaximumCoordinateLength, out var applicationId) ||
             !TryRequired(fields, "user_id", MaximumCoordinateLength, out var userId) ||
             !TryOptional(fields, "team_id", MaximumCoordinateLength, out var teamId) ||
             !TryOptional(fields, "enterprise_id", MaximumCoordinateLength, out var enterpriseId) ||
@@ -64,6 +67,10 @@ public static class SlackInteractionReceiver {
             !TryOptional(fields, "response_url", MaximumTransientUrlLength, out var responseUrl) ||
             !TryOptionalText(fields, "text", 40000, out var text)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
+        }
+        if (expectedIdentity is not null &&
+            !expectedIdentity.Matches(applicationId, teamId, enterpriseId)) {
+            return Reject(403, MessageReceiveFailureKind.Unauthorized);
         }
         var commandName = command.Substring(1);
         if (!IsRouteName(commandName)) {
@@ -91,7 +98,8 @@ public static class SlackInteractionReceiver {
         MessageInboundRequest request,
         string signature,
         IReadOnlyDictionary<string, string> fields,
-        string payload) {
+        string payload,
+        SlackInstallationIdentity? expectedIdentity) {
         if (fields.Count != 1 || payload.Length is <= 0 or > 512 * 1024) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
@@ -104,6 +112,7 @@ public static class SlackInteractionReceiver {
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object ||
                 !TryRequired(root, "type", 64, out var type) ||
+                !TryOptional(root, "api_app_id", MaximumCoordinateLength, out var applicationId) ||
                 !TryNestedOptional(root, "team", "id", MaximumCoordinateLength, out var teamId) ||
                 !TryNestedOptional(root, "enterprise", "id", MaximumCoordinateLength, out var enterpriseId) ||
                 !TryNestedRequired(root, "user", "id", MaximumCoordinateLength, out var userId) ||
@@ -111,6 +120,10 @@ public static class SlackInteractionReceiver {
                 !TryOptional(root, "trigger_id", MaximumCoordinateLength, out var triggerId) ||
                 !TryOptional(root, "response_url", MaximumTransientUrlLength, out var responseUrl)) {
                 return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+            if (expectedIdentity is not null &&
+                !expectedIdentity.Matches(applicationId, teamId, enterpriseId)) {
+                return Reject(403, MessageReceiveFailureKind.Unauthorized);
             }
 
             SlackInteractionKind kind;

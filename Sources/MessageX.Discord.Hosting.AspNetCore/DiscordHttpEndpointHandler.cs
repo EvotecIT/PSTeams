@@ -37,7 +37,9 @@ public sealed class DiscordHttpEndpointHandler {
                 configuration.PublicKeyHex,
                 context.Request.Headers["X-Signature-Ed25519"].ToString(),
                 context.Request.Headers["X-Signature-Timestamp"].ToString(),
-                configuration.ReplayWindow);
+                configuration.ReplayWindow,
+                configuration.ApplicationId,
+                configuration.InstallationOwnerId);
             await _processor.ProcessAsync(context.Response, result, operationToken).ConfigureAwait(false);
         } catch (MessageInboundBodyTooLargeException) {
             context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;

@@ -18,7 +18,9 @@ public static class DiscordInteractionReceiver {
         string publicKeyHex,
         string signatureHex,
         string timestamp,
-        TimeSpan? replayWindow = null) {
+        TimeSpan? replayWindow = null,
+        string? expectedApplicationId = null,
+        string? expectedInstallationOwnerId = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -68,7 +70,14 @@ public static class DiscordInteractionReceiver {
                 return MessageReceiveResult<DiscordInboundInteraction>.Acknowledge(
                     DiscordInteractionAcknowledgement.Pong());
             }
-            return ReceiveDispatchable(request, signatureHex, signedAt, root, kind);
+            return ReceiveDispatchable(
+                request,
+                signatureHex,
+                signedAt,
+                root,
+                kind,
+                expectedApplicationId,
+                expectedInstallationOwnerId);
         }
         catch (JsonException) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -80,7 +89,9 @@ public static class DiscordInteractionReceiver {
         string signatureHex,
         DateTimeOffset signedAt,
         JsonElement root,
-        DiscordInteractionKind kind) {
+        DiscordInteractionKind kind,
+        string? expectedApplicationId,
+        string? expectedInstallationOwnerId) {
         if (!TryRequiredSnowflake(root, "id", out var interactionId) ||
             !TryRequiredSnowflake(root, "application_id", out var applicationId) ||
             !TryRequired(root, "token", MaximumTokenLength, out var token) ||
@@ -96,6 +107,12 @@ public static class DiscordInteractionReceiver {
             !TryInstallationOwner(root, out var installationOwnerId) ||
             !TryNestedOptionalSnowflake(root, "message", "id", out var messageId)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
+        }
+        if ((expectedApplicationId is not null &&
+             !string.Equals(expectedApplicationId, applicationId, StringComparison.Ordinal)) ||
+            (expectedInstallationOwnerId is not null &&
+             !string.Equals(expectedInstallationOwnerId, installationOwnerId, StringComparison.Ordinal))) {
+            return Reject(403, MessageReceiveFailureKind.Unauthorized);
         }
 
         string name;
@@ -249,7 +266,7 @@ public static class DiscordInteractionReceiver {
             !TryOptionalOwner(owners, "1", allowZero: false, out var userOwner)) {
             return false;
         }
-        ownerId = guildOwner is not null and not "0" ? guildOwner : userOwner;
+        ownerId = guildOwner is not null and not "0" ? guildOwner : userOwner ?? guildOwner;
         return true;
     }
 

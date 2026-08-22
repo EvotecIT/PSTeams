@@ -32,7 +32,7 @@ public sealed class ProviderDurableEndpointTests {
         using var database = new TemporaryDatabase();
         var acceptanceGate = new AcceptanceGate();
         const string payload = """
-            {"type":"block_actions","team":{"id":"T1"},"user":{"id":"U1"},"channel":{"id":"C1"},
+            {"type":"block_actions","api_app_id":"A1","team":{"id":"T1"},"user":{"id":"U1"},"channel":{"id":"C1"},
              "trigger_id":"trigger-secret","response_url":"https://hooks.slack.com/actions/secret",
              "actions":[{"type":"button","action_id":"approve","value":"yes"}]}
             """;
@@ -45,7 +45,7 @@ public sealed class ProviderDurableEndpointTests {
             first.Response.StatusCode = StatusCodes.Status418ImATeapot;
             var acceptingFirst = handler.HandleInteractionsAsync(
                 first,
-                new SlackEndpointConfiguration("workspace-a", SlackSecret),
+                new SlackEndpointConfiguration("workspace-a", SlackSecret, "A1", "T1"),
                 TestContext.Current.CancellationToken);
             await acceptanceGate.Entered.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             Assert.Equal(StatusCodes.Status418ImATeapot, first.Response.StatusCode);
@@ -54,7 +54,7 @@ public sealed class ProviderDurableEndpointTests {
             await acceptingFirst.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             await handler.HandleInteractionsAsync(
                 duplicate,
-                new SlackEndpointConfiguration("workspace-a", SlackSecret),
+                new SlackEndpointConfiguration("workspace-a", SlackSecret, "A1", "T1"),
                 TestContext.Current.CancellationToken);
 
             Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
@@ -91,6 +91,7 @@ public sealed class ProviderDurableEndpointTests {
         const string json = """
             {"id":"100000000000000001","application_id":"100000000000000002","type":2,
              "token":"interaction-secret","guild_id":"100000000000000003","channel_id":"100000000000000004",
+             "authorizing_integration_owners":{"0":"100000000000000003"},
              "member":{"user":{"id":"100000000000000005"}},
              "data":{"name":"status","type":1,"options":[{"name":"target","value":"server-1"}]}}
             """;
@@ -100,7 +101,8 @@ public sealed class ProviderDurableEndpointTests {
             context.Response.StatusCode = StatusCodes.Status418ImATeapot;
             var acceptingRequest = accepting.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
                 context,
-                new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+                new DiscordEndpointConfiguration("application-a", DiscordPublicKey,
+                    "100000000000000002", "100000000000000003"),
                 TestContext.Current.CancellationToken);
             await acceptanceGate.Entered.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             Assert.Equal(StatusCodes.Status418ImATeapot, context.Response.StatusCode);

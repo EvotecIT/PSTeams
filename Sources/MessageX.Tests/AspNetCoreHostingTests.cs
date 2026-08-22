@@ -98,6 +98,21 @@ public sealed class AspNetCoreHostingTests {
     }
 
     [Fact]
+    public async Task VolatileAcceptanceSuppressesAcceptedReplaysAndFailsClosedAtCapacity() {
+        using var provider = Services(capacity: 4, replayCapacity: 1).BuildServiceProvider();
+        var acceptance = provider.GetRequiredService<IMessageIngressAcceptance>();
+        var queue = provider.GetRequiredService<IMessageIngressQueue>();
+
+        Assert.Equal(MessageIngressEnqueueStatus.Accepted,
+            await acceptance.AcceptAsync(Dispatch("first"), TestContext.Current.CancellationToken));
+        Assert.Equal(MessageIngressEnqueueStatus.Accepted,
+            await acceptance.AcceptAsync(Dispatch("first"), TestContext.Current.CancellationToken));
+        Assert.Equal(MessageIngressEnqueueStatus.Unavailable,
+            await acceptance.AcceptAsync(Dispatch("second"), TestContext.Current.CancellationToken));
+        Assert.Equal(1, queue.GetHealthSnapshot().Queued);
+    }
+
+    [Fact]
     public async Task WorkerIsolatesHandlerFailuresAndContinuesDispatching() {
         using var provider = Services(capacity: 4).BuildServiceProvider();
         var router = provider.GetRequiredService<MessageRouter>();
@@ -283,10 +298,15 @@ public sealed class AspNetCoreHostingTests {
         }),
         new FixedTimeProvider(FixedNow));
 
-    private static ServiceCollection Services(int capacity) {
+    private static ServiceCollection Services(int capacity, int? replayCapacity = null) {
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FixedTimeProvider(FixedNow));
-        services.AddMessageXHostingAspNetCore(options => options.QueueCapacity = capacity);
+        services.AddMessageXHostingAspNetCore(options => {
+            options.QueueCapacity = capacity;
+            if (replayCapacity.HasValue) {
+                options.ReplayCacheCapacity = replayCapacity.Value;
+            }
+        });
         return services;
     }
 

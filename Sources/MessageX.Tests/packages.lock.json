@@ -672,14 +672,20 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.discord.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Discord": "[0.1.0, )",
           "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.discord.hosting.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Discord": "[0.1.0, )",
+          "MessageX.Discord.Hosting": "[0.1.0, )",
           "MessageX.Hosting.AspNetCore": "[0.1.0, )"
         }
       },
@@ -705,15 +711,21 @@
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Core": "[0.1.0, )",
-          "MessageX.Hosting": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Slack": "[0.1.0, )"
         }
       },
       "messagex.slack.hosting.aspnetcore": {
         "type": "Project",
         "dependencies": {
           "MessageX.Hosting.AspNetCore": "[0.1.0, )",
-          "MessageX.Slack": "[0.1.0, )"
+          "MessageX.Slack.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {
@@ -726,6 +738,7 @@
         "type": "Project",
         "dependencies": {
           "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Hosting.AspNetCore": "[0.1.0, )",
           "MessageX.Teams": "[0.1.0, )",
           "Microsoft.Teams.Apps": "[2.1.0, )"
         }
@@ -1468,14 +1481,20 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "MessageX.Core": "[0.1.0, )",
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.discord.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Discord": "[0.1.0, )",
           "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.discord.hosting.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Discord": "[0.1.0, )",
+          "MessageX.Discord.Hosting": "[0.1.0, )",
           "MessageX.Hosting.AspNetCore": "[0.1.0, )"
         }
       },
@@ -1501,15 +1520,21 @@
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
-          "MessageX.Core": "[0.1.0, )",
-          "MessageX.Hosting": "[0.1.0, )"
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Slack": "[0.1.0, )"
         }
       },
       "messagex.slack.hosting.aspnetcore": {
         "type": "Project",
         "dependencies": {
           "MessageX.Hosting.AspNetCore": "[0.1.0, )",
-          "MessageX.Slack": "[0.1.0, )"
+          "MessageX.Slack.Hosting": "[0.1.0, )"
         }
       },
       "messagex.teams": {
@@ -1522,6 +1547,7 @@
         "type": "Project",
         "dependencies": {
           "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Hosting.AspNetCore": "[0.1.0, )",
           "MessageX.Teams": "[0.1.0, )",
           "Microsoft.Teams.Apps": "[2.1.0, )"
         }

@@ -16,6 +16,20 @@ internal static class TeamsActivityMapper {
     public static string MapInstallationId(string installationId) =>
         NormalizeRequired(installationId, nameof(installationId));
 
+    public static TeamsInstallationContext MapInstallationContext(
+        TeamsActivity activity,
+        CoreActivity? verifiedSource = null) {
+        ArgumentNullException.ThrowIfNull(activity);
+        return new TeamsInstallationContext(
+            NormalizeOptional(
+                activity.Conversation?.TenantId ?? activity.ChannelData?.Tenant?.Id,
+                "tenantId"),
+            NormalizeOptional(
+                activity.ChannelData?.Team?.Id ?? activity.ChannelData?.TeamsTeamId,
+                "teamId"),
+            NormalizeRequired(activity.Conversation?.Id, "activity.Conversation.Id"));
+    }
+
     public static TeamsInboundDispatch MapMessage(
         MessageActivity activity,
         string installationId,
