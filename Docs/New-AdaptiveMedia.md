@@ -1,170 +1,172 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveMedia
-
 ## SYNOPSIS
-Displays a media player for audio or video content.
+Creates a legacy-named adaptive media element backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveMedia [-Sources] <ScriptBlock> [[-PosterUrl] <String>] [[-AlternateText] <String>]
- [[-Spacing] <String>] [-Separator] [[-HorizontalAlignment] <String>] [[-Height] <String>] [[-Id] <String>]
- [-Hidden] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveMedia [-Sources] <scriptblock> [-PosterUrl <string>] [-AlternateText <string>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Id <string>] [-Hidden] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Displays a media player for audio or video content.
+Creates a legacy-named adaptive media element backed by the TeamsX model.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
-New-AdaptiveMedia -PosterUrl 'https://adaptivecards.io/content/poster-video.png' {
+```powershell
+New-AdaptiveMedia -AlternateText 'Value'
 ```
 
-New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
-    New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
-}
 
 ## PARAMETERS
 
-### -Sources
-One or more sources of media to attempt to play.
-
-```yaml
-Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -PosterUrl
-URL of an image to display before playing
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -AlternateText
-Alternate text describing the audio or video.
+Specifies a value for alternate text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Spacing
-Controls the amount of spacing between this element and the preceding element.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Separator
-Draw a separating line at the top of the element.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -HorizontalAlignment
-Controls the horizontal text alignment.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 5
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Height
-Specifies the height of the element.
+Specifies a value for height.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Stretch, Automatic
 
 Required: False
-Position: 6
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Id
-A unique identifier associated with the item.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Hidden
-If used this item will be removed from the visual tree.
+Specifies the hidden switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
-Default value: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HorizontalAlignment
+Specifies a value for horizontal alignment.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Left, Center, Right
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Id
+Specifies a value for id.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PosterUrl
+Specifies a value for poster url.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Separator
+Specifies the separator switch.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Sources
+Specifies a value for sources.
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: True
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Spacing
+Specifies a value for spacing.
+
+```yaml
+Type: String
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+
+Required: False
+Position: named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -174,11 +176,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+- `None`
+
 ## OUTPUTS
 
-## NOTES
-Media playback is currently not supported in Adaptive Cards in Teams.
-Adding it for sake of having.
-May need to improve how it's handled.
+- `TeamsX.TeamsAdaptiveMedia`
 
 ## RELATED LINKS
+
+- None

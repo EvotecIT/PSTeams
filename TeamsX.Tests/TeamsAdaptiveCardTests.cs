@@ -61,11 +61,8 @@ public class TeamsAdaptiveCardTests {
         card.Actions.Add(new TeamsAdaptiveSubmitAction { Title = "Approve" });
         card.Actions.Add(new TeamsAdaptiveShowCardAction {
             Title = "Details",
-            Card = new Dictionary<string, object?> {
-                ["$schema"] = "http://adaptivecards.io/schemas/adaptive-card.json",
-                ["type"] = "AdaptiveCard",
-                ["version"] = "1.2",
-                ["body"] = new object[] {
+            Card = new TeamsAdaptiveCard {
+                Body = {
                     new TeamsAdaptiveTextBlock { Text = "Nested details" }
                 }
             }
@@ -73,6 +70,29 @@ public class TeamsAdaptiveCardTests {
 
         Assert.Equal(2, card.Actions.Count);
         Assert.IsType<TeamsAdaptiveSubmitAction>(card.Actions[0]);
-        Assert.IsType<TeamsAdaptiveShowCardAction>(card.Actions[1]);
+        var showCard = Assert.IsType<TeamsAdaptiveShowCardAction>(card.Actions[1]);
+        Assert.IsType<TeamsAdaptiveTextBlock>(Assert.Single(showCard.Card!.Body));
+    }
+
+    [Fact]
+    public void NestedShowCardImageUsesAdaptiveCardAltTextProperty() {
+        var showCard = new TeamsAdaptiveShowCardAction {
+            Card = new TeamsAdaptiveCard {
+                Body = {
+                    new TeamsAdaptiveImage {
+                        Url = "https://example.test/status.png",
+                        AltText = "Build status"
+                    }
+                }
+            }
+        };
+
+        var normalized = Assert.IsType<Dictionary<string, object?>>(TeamsLegacyAdaptiveNormalizer.Normalize(showCard));
+        var card = Assert.IsType<Dictionary<string, object?>>(normalized["card"]);
+        var body = Assert.IsType<List<object?>>(card["body"]);
+        var image = Assert.IsType<Dictionary<string, object?>>(Assert.Single(body));
+
+        Assert.Equal("Build status", image["altText"]);
+        Assert.False(image.ContainsKey("alt"));
     }
 }

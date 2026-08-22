@@ -1,68 +1,59 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveMediaSource
-
 ## SYNOPSIS
-Defines a source for a Media element
+Creates a legacy-named adaptive media source backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveMediaSource [[-Type] <String>] [[-Url] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveMediaSource [[-Type] <string>] [[-Url] <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Defines a source for a Media element
+Creates a legacy-named adaptive media source backed by the TeamsX model.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
-New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
-```
-
-### EXAMPLE 2
-```
-New-AdaptiveMedia -PosterUrl 'https://adaptivecards.io/content/poster-video.png' {
+```powershell
+New-AdaptiveMediaSource -Type 'Value'
 ```
 
-New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
-    New-AdaptiveMediaSource -Type "video/mp4" -Url "https://adaptivecardsblob.blob.core.windows.net/assets/AdaptiveCardsOverviewVideo.mp4"
-}
 
 ## PARAMETERS
 
 ### -Type
-Mime type of associated media (e.g.
-"video/mp4").
+Specifies a value for type.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Url
-URL to media.
+Specifies a value for url.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -73,11 +64,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+- `None`
+
 ## OUTPUTS
 
-## NOTES
-Media playback is currently not supported in Adaptive Cards in Teams.
-Adding it for sake of having.
-May need to improve how it's handled.
+- `TeamsX.TeamsAdaptiveMediaSource`
 
 ## RELATED LINKS
+
+- None

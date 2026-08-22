@@ -1,42 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsButton
-
 ## SYNOPSIS
-{{Fill in the Synopsis}}
+Creates a connector-card button/action.
 
 ## SYNTAX
-
-```
-New-TeamsButton [-Name] <String> [-Link] <String> [[-Type] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsButton [-Name] <string> [-Link] <string> [-Type <TeamsMessageButtonType>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{Fill in the Description}}
+Creates a connector-card button/action.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsButton -Name 'Open build' -Link 'https://ci.example.test/build/42' -Type OpenUri
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Link
-{{Fill Link Description}}
+Target URL or action value used when the button is selected.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: __AllParameterSets
 Aliases: TargetUri, Uri, Url
+Possible values:
 
 Required: True
 Position: 1
@@ -46,12 +44,13 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-{{Fill Name Description}}
+Text displayed on the button.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: __AllParameterSets
 Aliases: ButtonName
+Possible values:
 
 Required: True
 Position: 0
@@ -61,16 +60,16 @@ Accept wildcard characters: False
 ```
 
 ### -Type
-{{ Fill Type Description }}
+Connector-card action type. The default is ViewAction.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
+Type: TeamsMessageButtonType
+Parameter Sets: __AllParameterSets
 Aliases: ButtonType
-Accepted values: ViewAction, TextInput, DateInput, HttpPost, OpenUri
+Possible values: ViewAction, TextInput, DateInput, HttpPost, OpenUri
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -81,11 +80,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageButton`
 
 ## RELATED LINKS
+
+- None

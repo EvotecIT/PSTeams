@@ -1,10 +1,11 @@
 Ignore/*
 .vs/*
 .vscode/*
-Artefacts/Packed/*
-Artefacts/Unpacked/*
+Artefacts/*
 Releases/*
 artifacts/*
 Module/Artefacts/*
+Module/PSTeams/Lib/*
+TestResults/*
 **/bin/*
 **/obj/*

@@ -174,7 +174,7 @@ Describe 'Legacy adaptive leaf migration cmdlets' {
     }
 
     It 'returns adaptive card JSON when Uri and ReturnJson are used together' {
-        $json = New-AdaptiveCard -Uri 'https://example.test/webhook' -ReturnJson -WhatIf -FallBackText 'Fallback text' -MinimumHeight 140 -Speak 'Build failed' -Language 'en' -VerticalContentAlignment center -BackgroundUrl 'https://example.test/background.png' -BackgroundFillMode Cover -BackgroundHorizontalAlignment left -BackgroundVerticalAlignment top -SelectActionUrl 'https://example.test/card' -SelectActionTitle 'Open card' -AllowImageExpand -FullWidth {
+        $json = New-AdaptiveCard -Uri 'https://example.test/webhook' -Proxy 'http://proxy.example.test:8080' -ReturnJson -WhatIf -FallBackText 'Fallback text' -MinimumHeight 140 -Speak 'Build failed' -Language 'en' -VerticalContentAlignment center -BackgroundUrl 'https://example.test/background.png' -BackgroundFillMode Cover -BackgroundHorizontalAlignment left -BackgroundVerticalAlignment top -SelectActionUrl 'https://example.test/card' -SelectActionTitle 'Open card' -AllowImageExpand -FullWidth {
             New-AdaptiveTextBlock -Text 'Build failed'
             New-AdaptiveMention -Text 'Ops Team' -UserPrincipalName 'ops@example.test' -Name 'Ops Team'
         } -Action {
@@ -211,5 +211,52 @@ Describe 'Legacy adaptive leaf migration cmdlets' {
         $dictionaryTable.Count | Should -Be 3
         $dictionaryTable[0].Columns[0].Items[0].Text | Should -Be 'Name'
         $dictionaryTable[1].Columns[1].Items[0].Text | Should -Be 'Failed'
+    }
+
+    It 'rejects dictionary-shaped ShowCard content instead of silently truncating it' {
+        $legacyBody = {
+            [ordered]@{
+                type = 'Image'
+                url = 'https://example.test/status.png'
+                altText = 'Build status'
+            }
+        }
+
+        { New-AdaptiveAction -Title 'Details' -Body $legacyBody } |
+            Should -Throw '*untyped or dictionary-shaped Adaptive Card content*'
+
+        $legacyObjectBody = {
+            [pscustomobject]@{
+                type = 'Image'
+                url = 'https://example.test/status.png'
+                altText = 'Build status'
+            }
+        }
+
+        { New-AdaptiveAction -Title 'Details' -Body $legacyObjectBody } |
+            Should -Throw '*untyped or dictionary-shaped Adaptive Card content*'
+
+        $legacyObjectAction = {
+            [pscustomobject]@{
+                type = 'Action.Submit'
+                title = 'Approve'
+            }
+        }
+
+        { New-AdaptiveAction -Title 'Details' -Actions $legacyObjectAction } |
+            Should -Throw '*untyped or dictionary-shaped Adaptive Card content*'
+
+        $legacyShowCard = [ordered]@{
+            type = 'Action.ShowCard'
+            title = 'Details'
+            card = [ordered]@{
+                type = 'AdaptiveCard'
+                version = '1.5'
+                body = @([ordered]@{ type = 'TextBlock'; text = 'Nested details' })
+            }
+        }
+
+        { New-AdaptiveActionSet { $legacyShowCard } } |
+            Should -Throw '*dictionary-shaped Action.ShowCard card*'
     }
 }

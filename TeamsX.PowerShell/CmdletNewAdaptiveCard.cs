@@ -8,7 +8,7 @@ namespace TeamsX.PowerShell;
 /// </summary>
 [Cmdlet(VerbsCommon.New, "AdaptiveCard", SupportsShouldProcess = true)]
 [OutputType(typeof(string))]
-public sealed class CmdletNewAdaptiveCard : PSCmdlet {
+public sealed class CmdletNewAdaptiveCard : AsyncPSCmdlet {
     [Parameter(Mandatory = false, Position = 0)]
     public ScriptBlock? Body { get; set; }
 
@@ -18,6 +18,12 @@ public sealed class CmdletNewAdaptiveCard : PSCmdlet {
     [Alias("TeamsID", "Url")]
     [Parameter(Mandatory = false)]
     public Uri? Uri { get; set; }
+
+    /// <summary>
+    /// Gets or sets the HTTP proxy used when the card is sent.
+    /// </summary>
+    [Parameter(Mandatory = false)]
+    public Uri? Proxy { get; set; }
 
     [Parameter(Mandatory = false)]
     public string? FallBackText { get; set; }
@@ -75,14 +81,18 @@ public sealed class CmdletNewAdaptiveCard : PSCmdlet {
     [Parameter(Mandatory = false)]
     public SwitchParameter ReturnJson { get; set; }
 
-    protected override void ProcessRecord() {
+    protected override async Task ProcessRecordAsync() {
         var card = new TeamsAdaptiveCard {
             FallbackText = FallBackText,
             MinimumHeight = MinimumHeight > 0 ? $"{MinimumHeight}px" : null,
             Speak = Speak,
             Language = Language,
             VerticalContentAlignment = VerticalContentAlignment,
-            BackgroundImage = BuildBackgroundImage(),
+            BackgroundImage = TeamsAdaptiveBackgroundImageSupport.Create(
+                BackgroundUrl,
+                BackgroundFillMode,
+                BackgroundHorizontalAlignment,
+                BackgroundVerticalAlignment),
             SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
                 SelectAction,
                 SelectActionId,
@@ -134,42 +144,17 @@ public sealed class CmdletNewAdaptiveCard : PSCmdlet {
             return;
         }
 
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(null);
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(Uri);
-        var result = clientLease.Client.SendJsonAsync(jsonBody, target).GetAwaiter().GetResult();
+        var result = await clientLease.Client.SendJsonAsync(jsonBody, target, CancelToken);
 
-        TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "New-AdaptiveCard");
+        if (!result.IsSuccessStatusCode) {
+            WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "New-AdaptiveCard"));
+        }
 
         if (ReturnJson.IsPresent) {
             WriteObject(jsonBody);
         }
     }
 
-    private Dictionary<string, object?>? BuildBackgroundImage() {
-        if (string.IsNullOrWhiteSpace(BackgroundUrl) &&
-            string.IsNullOrWhiteSpace(BackgroundFillMode) &&
-            string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment) &&
-            string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
-            return null;
-        }
-
-        var backgroundImage = new Dictionary<string, object?>();
-        if (!string.IsNullOrWhiteSpace(BackgroundFillMode)) {
-            backgroundImage["fillMode"] = BackgroundFillMode;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment)) {
-            backgroundImage["horizontalAlignment"] = BackgroundHorizontalAlignment;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
-            backgroundImage["verticalAlignment"] = BackgroundVerticalAlignment;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundUrl)) {
-            backgroundImage["url"] = BackgroundUrl;
-        }
-
-        return backgroundImage;
-    }
 }

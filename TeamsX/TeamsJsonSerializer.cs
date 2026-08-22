@@ -1,33 +1,18 @@
 using System.Collections;
-
-#if NET472
-using System.Web.Script.Serialization;
-#else
 using System.Text.Json;
 using System.Text.Json.Serialization;
-#endif
 
 namespace TeamsX;
 
 internal static class TeamsJsonSerializer {
-#if NET472
-    public static string Serialize(object? value) {
-        var serializer = new JavaScriptSerializer {
-            MaxJsonLength = int.MaxValue
-        };
-
-        return serializer.Serialize(PruneNulls(value));
-    }
-#else
     private static readonly JsonSerializerOptions SerializerOptions = new() {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = false
     };
 
     public static string Serialize(object? value) {
-        return JsonSerializer.Serialize(value, SerializerOptions);
+        return JsonSerializer.Serialize(PruneNulls(value), SerializerOptions);
     }
-#endif
 
     private static object? PruneNulls(object? value) {
         if (value is null) {

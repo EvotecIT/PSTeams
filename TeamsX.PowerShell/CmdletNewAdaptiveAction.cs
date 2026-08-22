@@ -56,27 +56,33 @@ public sealed class CmdletNewAdaptiveAction : PSCmdlet {
         });
     }
 
-    private Dictionary<string, object?>? BuildNestedCard() {
+    private TeamsAdaptiveCard? BuildNestedCard() {
         if (Body is null && Actions is null) {
             return null;
         }
 
-        var card = new Dictionary<string, object?> {
-            ["type"] = "AdaptiveCard"
-        };
+        var card = new TeamsAdaptiveCard();
 
         if (Body is not null) {
-            card["body"] = Body.Invoke()
-                .Select(Unwrap)
-                .Where(static value => value is not null)
-                .ToArray();
+            foreach (var value in Body.Invoke().Select(Unwrap)) {
+                if (value is TeamsAdaptiveCardElement element) {
+                    card.Body.Add(element);
+                } else if (value is TeamsAdaptiveMention mention) {
+                    card.Mentions.Add(mention);
+                } else if (value is not null) {
+                    throw CreateLegacyInputMigrationException("Body", value);
+                }
+            }
         }
 
         if (Actions is not null) {
-            card["actions"] = Actions.Invoke()
-                .Select(Unwrap)
-                .Where(static value => value is not null)
-                .ToArray();
+            foreach (var value in Actions.Invoke().Select(Unwrap)) {
+                if (value is TeamsAdaptiveAction action) {
+                    card.Actions.Add(action);
+                } else if (value is not null) {
+                    throw CreateLegacyInputMigrationException("Actions", value);
+                }
+            }
         }
 
         return card;
@@ -84,5 +90,11 @@ public sealed class CmdletNewAdaptiveAction : PSCmdlet {
 
     private static object? Unwrap(object? value) {
         return value is PSObject psObject ? psObject.BaseObject : value;
+    }
+
+    private static InvalidOperationException CreateLegacyInputMigrationException(string parameterName, object value) {
+        return new InvalidOperationException(
+            $"New-AdaptiveAction -{parameterName} no longer accepts untyped or dictionary-shaped Adaptive Card content ({value.GetType().Name}) because silently dropping nested fields is unsafe. " +
+            "Build typed content with New-AdaptiveTextBlock, New-AdaptiveImage, New-AdaptiveAction, and the other New-Adaptive* commands.");
     }
 }

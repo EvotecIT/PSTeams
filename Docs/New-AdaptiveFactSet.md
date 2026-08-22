@@ -1,43 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-AdaptiveFactSet
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a legacy-named adaptive fact set backed by the TeamsX model.
 
 ## SYNTAX
-
-```
-New-AdaptiveFactSet [[-Facts] <ScriptBlock>] [[-Spacing] <String>] [[-Height] <String>] [-Separator]
- [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-AdaptiveFactSet [[-Facts] <scriptblock>] [-Spacing <string>] [-Height <string>] [-Separator] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a legacy-named adaptive fact set backed by the TeamsX model.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-AdaptiveFactSet -Facts { }
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Facts
-{{ Fill Facts Description }}
+Specifies a value for facts.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
 Position: 0
@@ -47,47 +44,48 @@ Accept wildcard characters: False
 ```
 
 ### -Height
-{{ Fill Height Description }}
+Specifies a value for height.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: Stretch, Automatic
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: Stretch, Automatic
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Separator
-{{ Fill Separator Description }}
+Specifies the separator switch.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: Named
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Spacing
-{{ Fill Spacing Description }}
+Specifies a value for spacing.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
-Accepted values: None, Small, Default, Medium, Large, ExtraLarge, Padding
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values: None, Small, Default, Medium, Large, ExtraLarge, Padding
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -98,11 +96,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsAdaptiveFactSet`
 
 ## RELATED LINKS
+
+- None

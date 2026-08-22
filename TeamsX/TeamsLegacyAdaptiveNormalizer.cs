@@ -53,6 +53,15 @@ public static class TeamsLegacyAdaptiveNormalizer {
             };
         }
 
+        if (value is TeamsAdaptiveBackgroundImage backgroundImage) {
+            var payload = new Dictionary<string, object?>();
+            AddNonEmpty(payload, "fillMode", backgroundImage.FillMode);
+            AddNonEmpty(payload, "horizontalAlignment", backgroundImage.HorizontalAlignment);
+            AddNonEmpty(payload, "verticalAlignment", backgroundImage.VerticalAlignment);
+            AddNonEmpty(payload, "url", backgroundImage.Url);
+            return payload;
+        }
+
         if (value is TeamsAdaptiveTextBlock textBlock) {
             return new Dictionary<string, object?> {
                 ["type"] = textBlock.Type,
@@ -82,7 +91,7 @@ public static class TeamsLegacyAdaptiveNormalizer {
                 ["id"] = EmptyToNull(image.Id),
                 ["url"] = image.Url,
                 ["size"] = EmptyToNull(image.Size),
-                ["alt"] = EmptyToNull(image.AltText),
+                ["altText"] = EmptyToNull(image.AltText),
                 ["style"] = EmptyToNull(image.Style),
                 ["horizontalAlignment"] = EmptyToNull(image.HorizontalAlignment),
                 ["height"] = EmptyToNull(image.Height),
@@ -301,5 +310,11 @@ public static class TeamsLegacyAdaptiveNormalizer {
 
     private static string? EmptyToNull(string? value) {
         return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private static void AddNonEmpty(IDictionary<string, object?> dictionary, string key, string? value) {
+        if (!string.IsNullOrWhiteSpace(value)) {
+            dictionary[key] = value;
+        }
     }
 }

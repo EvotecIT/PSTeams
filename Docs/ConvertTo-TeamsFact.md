@@ -1,49 +1,43 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # ConvertTo-TeamsFact
-
 ## SYNOPSIS
-Convert a PSCustomObject or a Hashtable to Teams facts.
+Converts dictionaries and PowerShell objects into Teams facts.
 
 ## SYNTAX
-
-```
+### __AllParameterSets
+```powershell
 ConvertTo-TeamsFact [-InputObject] <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Teams facts are name-value pairs.
-This function helps convert a PSObject or a Hashtable to Teams facts (only one level deep).
+Converts dictionaries and PowerShell objects into Teams facts.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
-Get-ChildItem | Select-Object -First 1 | ConvertTo-TeamsFact
+```powershell
+ConvertTo-TeamsFact -InputObject 'Value'
 ```
 
-### EXAMPLE 2
-```
-@{ Product = 'Microsoft Teams'; Developer = 'Microsoft Corporation'; ReleaseYear = '2018' } | ConvertTo-TeamsFact
-```
 
 ## PARAMETERS
 
 ### -InputObject
-The Hashtable or PSObject that is output by another cmdlet.
+Specifies a value for input object.
 
 ```yaml
 Type: Object
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: True
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
@@ -54,9 +48,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+- `System.Object`
+
 ## OUTPUTS
 
-## NOTES
-Ram Iyer (https://ramiyer.me)
+- `TeamsX.TeamsMessageFact`
 
 ## RELATED LINKS
+
+- None

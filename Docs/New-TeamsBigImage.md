@@ -1,57 +1,56 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-TeamsBigImage
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates a hero-style markdown image entry for section text.
 
 ## SYNTAX
-
-```
-New-TeamsBigImage [[-Link] <Object>] [[-AlternativeText] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-TeamsBigImage [[-Link] <string>] [-AlternativeText <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates a hero-style markdown image entry for section text.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-TeamsBigImage -AlternativeText 'Value'
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -AlternativeText
-{{ Fill AlternativeText Description }}
+Specifies a value for alternative text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Link
-{{ Fill Link Description }}
+Specifies a value for link.
 
 ```yaml
-Type: Object
-Parameter Sets: (All)
+Type: String
+Parameter Sets: __AllParameterSets
 Aliases: Url, Uri
+Possible values:
 
 Required: False
 Position: 0
@@ -65,11 +64,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `TeamsX.TeamsMessageImage`
 
 ## RELATED LINKS
+
+- None

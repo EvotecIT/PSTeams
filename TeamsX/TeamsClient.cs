@@ -1,12 +1,12 @@
 namespace TeamsX;
 
 public sealed class TeamsClient {
-    public static TeamsClient Default { get; } = new(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared, GraphTeamsMessageSender.Shared });
+    public static TeamsClient Default { get; } = new(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared });
 
     private readonly IReadOnlyList<ITeamsMessageSender> _senders;
 
     public TeamsClient()
-        : this(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared, GraphTeamsMessageSender.Shared }) {
+        : this(new ITeamsMessageSender[] { WebhookTeamsMessageSender.Shared }) {
     }
 
     public TeamsClient(IEnumerable<ITeamsMessageSender> senders) {

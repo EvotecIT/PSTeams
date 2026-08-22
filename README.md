@@ -40,7 +40,7 @@ PSTeams uses a cleaner architecture:
 - Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
 - Compose Hero, Thumbnail, and List cards with typed cmdlets.
 - Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
-- Use a starter Microsoft Graph delivery path for Teams chats and channels without adding a large Graph SDK dependency.
+- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in TeamsX.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
 ## Installing and Updating
@@ -106,7 +106,7 @@ $message | ConvertTo-TeamsJson
 
 - PowerShell 7.x uses the .NET 8.0 binary build by default during development.
 - Windows PowerShell 5.1 uses the .NET Framework 4.7.2 binary build during development.
-- Packaged module builds are produced by `Module\PSTeams\Build\Build-Module.ps1`, following the same module-build approach used by other Evotec modules such as DnsClientX.
+- Packaged module builds are produced by `Build\Build-Module.ps1` through PowerForge/PSPublishModule. Development builds are unsigned by default; signing is an explicit release-gate choice.
 
 ## Legacy Branch
 
@@ -557,28 +557,11 @@ $json = $heroCard | ConvertTo-TeamsJson
 $wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
 ```
 
-Typed wrapper-card direct sending currently targets incoming and workflow webhooks. Graph delivery remains limited to typed messages and adaptive-card attachments.
+Typed wrapper-card direct sending currently targets incoming and Workflow webhooks.
 
-## Microsoft Graph Delivery
+## Microsoft Graph Boundary
 
-PSTeams includes a starter Microsoft Graph delivery path in `TeamsX`, exposed through `New-TeamsGraphTarget`. This lets the typed `Send-TeamsMessage -Message ... -Target ...` path post to Teams chats and channels without introducing large SDK dependencies.
-
-For Graph chat or channel delivery, the starter flow looks like this:
-
-```powershell
-$message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42 stopped in the release stage.'
-$target = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVariableName 'TEAMSX_GRAPH_TOKEN'
-
-Send-TeamsMessage -Message $message -Target $target
-```
-
-Current Graph scope:
-
-- plain typed messages render to Graph HTML message bodies
-- adaptive cards render as Graph attachments
-- adaptive-card actions should currently be limited to `Action.OpenUrl`
-- Graph targets can use a plain token, a secure string, or an environment-variable-backed token provider
-- normal chat/channel posting should use delegated Microsoft Graph tokens; application permissions on these endpoints are documented as migration-only
+Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. TeamsX intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
 
 ## Documentation for Message Cards (for development)
 

@@ -31,7 +31,6 @@
 - `New-AdaptiveTable`
 - `New-AdaptiveTextBlock`
 - `ConvertTo-TeamsJson`
-- `New-TeamsGraphTarget`
 - `New-TeamsHeroCard`
 - `New-TeamsThumbnailCard`
 - `New-TeamsListCard`
@@ -63,7 +62,7 @@
 - The whole `New-Adaptive*` surface is binary-backed on `main`.
 - `Module\PSTeams\PSTeams.psm1` now follows the `DnsClientX`-style development loader and prefers `net8.0` for PowerShell 7.x, with `net10.0` only as a fallback development build when present.
 - Remaining work is now quality and parity polish: warnings cleanup, docs/examples refresh, and feature expansion on the typed cmdlet surface.
-- `TeamsX` now includes a Graph sender starter for channel and chat posts, exposed through `New-TeamsGraphTarget`.
+- Authenticated Graph lifecycle and governed Teams chat/channel delivery belong to GraphEssentialsX; TeamsX keeps webhook composition and delivery independent of a Graph SDK.
 
 ## Design Rules
 
@@ -73,8 +72,7 @@
 - Keep the existing `PSTeams` public names available, but prefer implementing them as cmdlets or aliases.
 - Delete PowerShell implementations only after the matching C# cmdlet path is in place and tested.
 - Keep new delivery backends dependency-light; prefer direct HTTP clients over large SDK dependencies unless the SDK adds clear value.
-- Use `Build\Build-Project.ps1` for project/library release flow.
-- Use `Module\Build\Build-Module.ps1` for PowerShell module packaging flow.
+- Use `Build\Build-Module.ps1` for the PowerForge project, module, documentation, and package flow.
 
 ## Short Example
 
@@ -109,22 +107,6 @@ $json = $heroCard | ConvertTo-TeamsJson
 $wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
 ```
 
-## Graph Starter
+## Microsoft Graph Boundary
 
-`main` now includes a starter Graph target cmdlet for chat and channel posts:
-
-```powershell
-$message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42 stopped.'
-$target = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVariableName 'TEAMSX_GRAPH_TOKEN'
-
-Send-TeamsMessage -Message $message -Target $target
-```
-
-Current scope:
-
-- plain typed messages are rendered as Graph HTML message bodies
-- adaptive cards are sent as Graph attachments
-- adaptive cards should currently stick to `Action.OpenUrl`
-- typed wrapper-card direct sending currently targets incoming and workflow webhooks only
-- Graph targets can use a plain token, a secure string, or an environment-variable-backed token provider
-- normal Graph chat/channel posting should use delegated tokens; application permissions are documented as migration-only for these endpoints
+TeamsX does not ship a second authenticated Graph client. GraphEssentialsX owns authentication, discovery, paging, throttling, lifecycle operations, and governed Teams chat/channel writes. A later MessageX adapter can compose TeamsX messages and delegate delivery to that owner after GraphEssentialsX is available as a consumable package.

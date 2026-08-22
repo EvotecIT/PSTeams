@@ -80,7 +80,7 @@ public static class WebhookMessageRenderer {
             ["speak"] = EmptyToNull(card.Speak),
             ["lang"] = EmptyToNull(card.Language),
             ["verticalContentAlignment"] = EmptyToNull(card.VerticalContentAlignment),
-            ["backgroundImage"] = card.BackgroundImage,
+            ["backgroundImage"] = TeamsLegacyAdaptiveNormalizer.Normalize(card.BackgroundImage),
             ["selectAction"] = card.SelectAction is null ? null : RenderAdaptiveAction(card.SelectAction),
             ["body"] = card.Body.Select(RenderAdaptiveElement).ToArray(),
             ["actions"] = card.Actions.Count == 0 ? null : card.Actions.Select(RenderAdaptiveAction).ToArray(),
@@ -327,7 +327,7 @@ public static class WebhookMessageRenderer {
                 ["minHeight"] = EmptyToNull(container.MinimumHeight),
                 ["separator"] = container.Separator,
                 ["isVisible"] = container.IsVisible,
-                ["backgroundImage"] = container.BackgroundImage,
+                ["backgroundImage"] = TeamsLegacyAdaptiveNormalizer.Normalize(container.BackgroundImage),
                 ["selectAction"] = container.SelectAction is null ? null : RenderAdaptiveAction(container.SelectAction),
                 ["items"] = container.Items.Select(RenderAdaptiveElement).ToArray()
             };

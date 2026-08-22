@@ -1,43 +1,40 @@
 ---
 external help file: PSTeams-help.xml
 Module Name: PSTeams
-online version:
+online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
-
 # New-HeroCard
-
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Creates or sends a Teams HeroCard payload.
 
 ## SYNTAX
-
-```
-New-HeroCard [-Content] <ScriptBlock> [[-Title] <String>] [[-SubTitle] <String>] [[-Text] <String>]
- [[-Uri] <String>] [<CommonParameters>]
+### __AllParameterSets
+```powershell
+New-HeroCard [-Content] <scriptblock> [-Title <string>] [-SubTitle <string>] [-Text <string>] [-Uri <uri>] [-Proxy <uri>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Creates or sends a Teams HeroCard payload.
 
 ## EXAMPLES
 
-### Example 1
+### EXAMPLE 1
 ```powershell
-PS C:\> {{ Add example code here }}
+New-HeroCard -Content { }
 ```
 
-{{ Add example description here }}
 
 ## PARAMETERS
 
 ### -Content
-{{ Fill Content Description }}
+Specifies a value for content.
 
 ```yaml
 Type: ScriptBlock
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: True
 Position: 0
@@ -46,61 +43,81 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Proxy
+Gets or sets the HTTP proxy used when the card is sent.
+
+```yaml
+Type: Uri
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -SubTitle
-{{ Fill SubTitle Description }}
+Specifies a value for sub title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 2
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Text
-{{ Fill Text Description }}
+Specifies a value for text.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 3
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Title
-{{ Fill Title Description }}
+Specifies a value for title.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 1
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Uri
-{{ Fill Uri Description }}
+Specifies a value for uri.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
+Type: Uri
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
 
 Required: False
-Position: 4
+Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -111,11 +128,12 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
+- `None`
 
 ## OUTPUTS
 
-### System.Object
-## NOTES
+- `System.String`
 
 ## RELATED LINKS
+
+- None

@@ -1,11 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition=" '$([MSBuild]::IsOsPlatform(`Windows`))' ">
-      netstandard2.0;net472;net8.0;net10.0
-    </TargetFrameworks>
-    <TargetFrameworks Condition=" '$([MSBuild]::IsOsPlatform(`OSX`))' Or '$([MSBuild]::IsOsPlatform(`Linux`))' ">
-      netstandard2.0;net8.0;net10.0
-    </TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net8.0;net10.0</TargetFrameworks>
     <Title>TeamsX</Title>
     <Description>Reusable Microsoft Teams message composition and delivery library.</Description>
     <AssemblyName>TeamsX</AssemblyName>
@@ -13,12 +8,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Text.Json" Version="10.0.11" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
 </Project>

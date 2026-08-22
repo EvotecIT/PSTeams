@@ -110,7 +110,6 @@ Describe 'PSTeams module migration shell' {
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsListItem'
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsButton'
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsFact'
-        $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsGraphTarget'
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsHeroCard'
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsMessage'
         $module.ExportedCmdlets.Keys | Should -Contain 'New-TeamsSection'

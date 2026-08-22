@@ -9,7 +9,7 @@ namespace TeamsX.PowerShell;
 /// </summary>
 [Cmdlet(VerbsCommon.New, "CardList", SupportsShouldProcess = true)]
 [OutputType(typeof(string))]
-public sealed class CmdletNewCardList : PSCmdlet {
+public sealed class CmdletNewCardList : AsyncPSCmdlet {
     [Parameter(Mandatory = true, Position = 0)]
     public ScriptBlock Content { get; set; } = null!;
 
@@ -19,7 +19,13 @@ public sealed class CmdletNewCardList : PSCmdlet {
     [Parameter(Mandatory = false)]
     public Uri? Uri { get; set; }
 
-    protected override void ProcessRecord() {
+    /// <summary>
+    /// Gets or sets the HTTP proxy used when the card is sent.
+    /// </summary>
+    [Parameter(Mandatory = false)]
+    public Uri? Proxy { get; set; }
+
+    protected override async Task ProcessRecordAsync() {
         var card = new TeamsListCard {
             Title = Title
         };
@@ -38,7 +44,7 @@ public sealed class CmdletNewCardList : PSCmdlet {
             return;
         }
 
-        SendAttachmentBody(body, Uri);
+        await SendAttachmentBodyAsync(body, Uri);
     }
 
     private void ApplyItem(TeamsListCard card, object? value) {
@@ -73,13 +79,15 @@ public sealed class CmdletNewCardList : PSCmdlet {
         }
     }
 
-    private void SendAttachmentBody(string attachmentBody, Uri uri) {
-        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(null);
+    private async Task SendAttachmentBodyAsync(string attachmentBody, Uri uri) {
+        using var clientLease = TeamsPowerShellDeliverySupport.CreateClientLease(Proxy);
         var target = TeamsMessageTarget.ForIncomingWebhook(uri);
         var wrappedBody = TeamsWrapperCardRenderer.WrapAsMessage(attachmentBody);
-        var result = clientLease.Client.SendJsonAsync(wrappedBody, target).GetAwaiter().GetResult();
+        var result = await clientLease.Client.SendJsonAsync(wrappedBody, target, CancelToken);
 
-        TeamsPowerShellDeliverySupport.WriteDeliveryIssue(this, result, "New-CardList");
+        if (!result.IsSuccessStatusCode) {
+            WriteError(TeamsPowerShellDeliverySupport.CreateDeliveryFailureError(result, "New-CardList"));
+        }
     }
 
     private static bool TryCreateListItem(IDictionary dictionary, out TeamsListCardItem item) {

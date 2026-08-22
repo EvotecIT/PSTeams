@@ -94,7 +94,11 @@ public sealed class CmdletNewAdaptiveContainer : PSCmdlet {
             VerticalContentAlignment = VerticalContentAlignment,
             Separator = Separator.IsPresent ? true : null,
             IsVisible = Hidden.IsPresent ? false : null,
-            BackgroundImage = BuildBackgroundImage(),
+            BackgroundImage = TeamsAdaptiveBackgroundImageSupport.Create(
+                BackgroundUrl,
+                BackgroundFillMode,
+                BackgroundHorizontalAlignment,
+                BackgroundVerticalAlignment),
             SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
                 SelectAction,
                 SelectActionId,
@@ -115,31 +119,4 @@ public sealed class CmdletNewAdaptiveContainer : PSCmdlet {
         }
     }
 
-    private Dictionary<string, object?>? BuildBackgroundImage() {
-        if (string.IsNullOrWhiteSpace(BackgroundUrl) &&
-            string.IsNullOrWhiteSpace(BackgroundFillMode) &&
-            string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment) &&
-            string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
-            return null;
-        }
-
-        var backgroundImage = new Dictionary<string, object?>();
-        if (!string.IsNullOrWhiteSpace(BackgroundFillMode)) {
-            backgroundImage["fillMode"] = BackgroundFillMode;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundHorizontalAlignment)) {
-            backgroundImage["horizontalAlignment"] = BackgroundHorizontalAlignment;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundVerticalAlignment)) {
-            backgroundImage["verticalAlignment"] = BackgroundVerticalAlignment;
-        }
-
-        if (!string.IsNullOrWhiteSpace(BackgroundUrl)) {
-            backgroundImage["url"] = BackgroundUrl;
-        }
-
-        return backgroundImage;
-    }
 }

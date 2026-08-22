@@ -4,13 +4,13 @@ using System.Text;
 namespace TeamsX;
 
 public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMessageSender, IDisposable {
-    internal static WebhookTeamsMessageSender Shared { get; } = new(new HttpClient(), disposeHttpClient: false);
+    internal static WebhookTeamsMessageSender Shared { get; } = new(CreateDefaultHttpClient(), disposeHttpClient: false);
 
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
 
     public WebhookTeamsMessageSender()
-        : this(new HttpClient(), disposeHttpClient: true) {
+        : this(CreateDefaultHttpClient(), disposeHttpClient: true) {
     }
 
     public WebhookTeamsMessageSender(HttpClient httpClient, bool disposeHttpClient = false) {
@@ -59,13 +59,15 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             throw new InvalidOperationException($"Webhook sender cannot send using '{target.DeliveryMethod}'.");
         }
 
+        TeamsMessageTarget.ValidateUri(target.TargetUri);
+
         using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
         using var response = await _httpClient.PostAsync(target.TargetUri, content, cancellationToken).ConfigureAwait(false);
         var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         return new TeamsDeliveryResult {
             DeliveryMethod = target.DeliveryMethod,
-            TargetUri = target.TargetUri,
+            Target = string.IsNullOrWhiteSpace(target.DisplayName) ? target.TargetUri.Host : target.DisplayName!,
             IsSuccessStatusCode = response.IsSuccessStatusCode,
             StatusCode = (int)response.StatusCode,
             ResponseBody = responseBody
@@ -76,5 +78,15 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
         if (_disposeHttpClient) {
             _httpClient.Dispose();
         }
+    }
+
+    internal static HttpClient CreateDefaultHttpClient() {
+        return new HttpClient(CreateDefaultHandler());
+    }
+
+    internal static HttpClientHandler CreateDefaultHandler() {
+        return new HttpClientHandler {
+            AllowAutoRedirect = false
+        };
     }
 }

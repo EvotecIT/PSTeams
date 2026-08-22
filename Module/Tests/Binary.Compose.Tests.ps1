@@ -82,37 +82,6 @@ Describe 'TeamsX binary cmdlets through PSTeams' {
         $workflow.DeliveryMethod.ToString() | Should -Be 'WorkflowWebhook'
     }
 
-    It 'creates graph channel and chat targets' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
-
-        $channel = New-TeamsGraphTarget -TeamId 'team-42' -ChannelId 'channel-99' -AccessToken 'token-1' -DisplayName 'Release channel' -GraphBaseUri 'https://graph.example.test/'
-        $chat = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessToken 'token-2' -DisplayName 'Ops chat' -GraphBaseUri 'https://graph.example.test/'
-
-        $channel.DeliveryMethod.ToString() | Should -Be 'GraphChannelMessage'
-        $channel.TargetUri.AbsoluteUri | Should -Be 'https://graph.example.test/v1.0/teams/team-42/channels/channel-99/messages'
-        $chat.DeliveryMethod.ToString() | Should -Be 'GraphChatMessage'
-        $chat.TargetUri.AbsoluteUri | Should -Be 'https://graph.example.test/v1.0/chats/19%3Atestchat%40thread.v2/messages'
-    }
-
-    It 'creates graph targets backed by environment variables and secure strings' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
-
-        $env:TEAMSX_GRAPH_TOKEN = 'token-from-env'
-        try {
-            $secureToken = ConvertTo-SecureString 'token-from-secure-string' -AsPlainText -Force
-
-            $fromEnv = New-TeamsGraphTarget -ChatId '19:testchat@thread.v2' -AccessTokenVariableName 'TEAMSX_GRAPH_TOKEN'
-            $fromSecure = New-TeamsGraphTarget -TeamId 'team-42' -ChannelId 'channel-99' -SecureAccessToken $secureToken
-
-            $fromEnv.HasDynamicAccessToken | Should -BeTrue
-            $fromEnv.AccessToken | Should -BeNullOrEmpty
-            $fromSecure.HasDynamicAccessToken | Should -BeTrue
-            $fromSecure.AccessToken | Should -BeNullOrEmpty
-        } finally {
-            Remove-Item Env:\TEAMSX_GRAPH_TOKEN -ErrorAction SilentlyContinue
-        }
-    }
-
     It 'renders connector-card JSON from typed Teams message cmdlets' {
         Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
 
