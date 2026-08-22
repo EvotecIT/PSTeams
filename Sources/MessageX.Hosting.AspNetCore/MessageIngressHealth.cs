@@ -15,6 +15,10 @@ internal sealed class MessageIngressHealth {
         Interlocked.Increment(ref _accepted);
     }
 
+    public void Unaccepted() {
+        Interlocked.Decrement(ref _accepted);
+    }
+
     public void Completed(DateTimeOffset at) {
         Interlocked.Increment(ref _completed);
         Interlocked.Exchange(ref _lastCompletedTicks, at.UtcTicks);

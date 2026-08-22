@@ -28,12 +28,13 @@ internal sealed class MessageIngressQueue : IMessageIngressQueue {
         if (Volatile.Read(ref _stopping) != 0) {
             return MessageIngressEnqueueStatus.Stopping;
         }
+        _health.Accepted();
         if (!_channel.Writer.TryWrite(new MessageIngressWorkItem<TProviderPayload>(result.Route, result.Envelope))) {
+            _health.Unaccepted();
             return Volatile.Read(ref _stopping) != 0
                 ? MessageIngressEnqueueStatus.Stopping
                 : MessageIngressEnqueueStatus.Full;
         }
-        _health.Accepted();
         return MessageIngressEnqueueStatus.Accepted;
     }
 
@@ -51,10 +52,6 @@ internal sealed class MessageIngressQueue : IMessageIngressQueue {
             _health.Stopping();
             _channel.Writer.TryComplete();
         }
-    }
-
-    internal interface IMessageIngressWorkItem {
-        Task<MessageDispatchResult> DispatchAsync(MessageRouter router, CancellationToken cancellationToken);
     }
 
     private sealed class MessageIngressWorkItem<TProviderPayload> : IMessageIngressWorkItem {

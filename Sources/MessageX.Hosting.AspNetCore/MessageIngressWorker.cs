@@ -3,12 +3,12 @@ using Microsoft.Extensions.Hosting;
 namespace MessageX.Hosting.AspNetCore;
 
 internal sealed class MessageIngressWorker : BackgroundService {
-    private readonly MessageIngressQueue _queue;
+    private readonly IMessageIngressQueue _queue;
     private readonly MessageRouter _router;
     private readonly TimeProvider _timeProvider;
 
     public MessageIngressWorker(
-        MessageIngressQueue queue,
+        IMessageIngressQueue queue,
         MessageRouter router,
         TimeProvider timeProvider) {
         _queue = queue;
@@ -34,6 +34,15 @@ internal sealed class MessageIngressWorker : BackgroundService {
 
     public override async Task StopAsync(CancellationToken cancellationToken) {
         _queue.Complete();
-        await base.StopAsync(cancellationToken).ConfigureAwait(false);
+        var execution = ExecuteTask;
+        if (execution is null) {
+            return;
+        }
+        try {
+            await execution.WaitAsync(cancellationToken).ConfigureAwait(false);
+        } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            await base.StopAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
 }

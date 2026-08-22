@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 using MessageX.Hosting;
 using MessageX.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
@@ -69,6 +70,13 @@ public sealed class AspNetCoreHostingTests {
         Assert.Equal("application/json", context.Response.ContentType);
         Assert.Equal(10, context.Response.ContentLength);
         Assert.Equal("{\"type\":1}", Encoding.UTF8.GetString(((MemoryStream)context.Response.Body).ToArray()));
+
+        context.Response.ContentType = "text/plain";
+        await new MessageAcknowledgementWriter().WriteAsync(
+            context.Response,
+            MessageAcknowledgement.Empty(StatusCodes.Status204NoContent),
+            TestContext.Current.CancellationToken);
+        Assert.Null(context.Response.ContentType);
     }
 
     [Fact]
@@ -151,6 +159,62 @@ public sealed class AspNetCoreHostingTests {
     }
 
     [Fact]
+    public async Task WorkerConsumesTheRegisteredQueueAbstraction() {
+        var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(new FixedTimeProvider(FixedNow));
+        services.AddSingleton<IMessageIngressQueue, TestIngressQueue>();
+        services.AddMessageXHostingAspNetCore();
+        using var provider = services.BuildServiceProvider();
+        var queue = Assert.IsType<TestIngressQueue>(provider.GetRequiredService<IMessageIngressQueue>());
+        var router = provider.GetRequiredService<MessageRouter>();
+        var handled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        router.OnCommand<TestPayload>("status", (_, _) => {
+            handled.TrySetResult(true);
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var worker = provider.GetServices<IHostedService>().Single();
+
+        await worker.StartAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(MessageIngressEnqueueStatus.Accepted, queue.TryEnqueue(Dispatch("custom")));
+        await handled.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await worker.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, queue.CompletedCount);
+    }
+
+    [Fact]
+    public async Task GracefulStopDrainsAlreadyAcceptedWorkWithinTheShutdownDeadline() {
+        using var provider = Services(capacity: 4).BuildServiceProvider();
+        var queue = provider.GetRequiredService<IMessageIngressQueue>();
+        var router = provider.GetRequiredService<MessageRouter>();
+        var firstStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirst = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handled = 0;
+        router.OnCommand<TestPayload>("status", async (context, cancellationToken) => {
+            if (context.Envelope.Payload.Text == "first") {
+                firstStarted.TrySetResult(true);
+                await releaseFirst.Task.WaitAsync(cancellationToken);
+            }
+            Interlocked.Increment(ref handled);
+            return MessageHandlerResult.Completed();
+        });
+        var worker = provider.GetServices<IHostedService>().Single();
+        await worker.StartAsync(TestContext.Current.CancellationToken);
+        queue.TryEnqueue(Dispatch("first"));
+        queue.TryEnqueue(Dispatch("second"));
+        await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var stop = worker.StopAsync(deadline.Token);
+        Assert.False(stop.IsCompleted);
+        releaseFirst.TrySetResult(true);
+        await stop;
+
+        Assert.Equal(2, Volatile.Read(ref handled));
+        Assert.Equal(2, queue.GetHealthSnapshot().Completed);
+    }
+
+    [Fact]
     public void DependencyInjectionValidatesBoundsAndDoesNotReplaceExistingRouter() {
         var existingRouter = new MessageRouter();
         var services = new ServiceCollection();
@@ -215,5 +279,66 @@ public sealed class AspNetCoreHostingTests {
         public FixedTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
 
         public override DateTimeOffset GetUtcNow() => _utcNow;
+    }
+
+    private sealed class TestIngressQueue : IMessageIngressQueue {
+        private readonly Channel<IMessageIngressWorkItem> _channel = Channel.CreateUnbounded<IMessageIngressWorkItem>();
+        private long _accepted;
+        private long _completed;
+        private long _failed;
+        private int _stopping;
+
+        public long CompletedCount => Interlocked.Read(ref _completed);
+
+        public MessageIngressEnqueueStatus TryEnqueue<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
+            if (Volatile.Read(ref _stopping) != 0) {
+                return MessageIngressEnqueueStatus.Stopping;
+            }
+            if (result.Route is null || result.Envelope is null) {
+                throw new ArgumentException("A dispatch-ready result is required.", nameof(result));
+            }
+            if (!_channel.Writer.TryWrite(new TestWorkItem<TProviderPayload>(result.Route, result.Envelope))) {
+                return MessageIngressEnqueueStatus.Full;
+            }
+            Interlocked.Increment(ref _accepted);
+            return MessageIngressEnqueueStatus.Accepted;
+        }
+
+        public IAsyncEnumerable<IMessageIngressWorkItem> ReadAllAsync(CancellationToken cancellationToken) =>
+            _channel.Reader.ReadAllAsync(cancellationToken);
+
+        public void Completed(DateTimeOffset at) => Interlocked.Increment(ref _completed);
+
+        public void Failed(DateTimeOffset at) => Interlocked.Increment(ref _failed);
+
+        public void Complete() {
+            Interlocked.Exchange(ref _stopping, 1);
+            _channel.Writer.TryComplete();
+        }
+
+        public MessageIngressHealthSnapshot GetHealthSnapshot() => new(
+            int.MaxValue,
+            _channel.Reader.Count,
+            Interlocked.Read(ref _accepted),
+            Interlocked.Read(ref _completed),
+            Interlocked.Read(ref _failed),
+            Volatile.Read(ref _stopping) != 0,
+            null,
+            null);
+
+        private sealed class TestWorkItem<TProviderPayload> : IMessageIngressWorkItem {
+            private readonly MessageRoute _route;
+            private readonly MessageEventEnvelope<TProviderPayload> _envelope;
+
+            public TestWorkItem(MessageRoute route, MessageEventEnvelope<TProviderPayload> envelope) {
+                _route = route;
+                _envelope = envelope;
+            }
+
+            public Task<MessageDispatchResult> DispatchAsync(
+                MessageRouter router,
+                CancellationToken cancellationToken) =>
+                router.DispatchAsync(_route, _envelope, cancellationToken);
+        }
     }
 }
