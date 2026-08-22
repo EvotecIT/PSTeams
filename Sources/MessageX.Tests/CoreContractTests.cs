@@ -12,12 +12,14 @@ public sealed class CoreContractTests {
             InstallationId = "installation-1",
             ScopeId = "tenant-1",
             ConversationId = "conversation-1",
+            ConversationKind = MessageConversationKind.DirectMessage,
             ThreadId = "thread-1",
             CorrelationId = "correlation-1",
             Capabilities = MessageCapabilities.Reply | MessageCapabilities.Update | MessageCapabilities.Delete
         };
 
         Assert.Equal("activity-42", reference.MessageId);
+        Assert.Equal(MessageConversationKind.DirectMessage, reference.ConversationKind);
         Assert.True(reference.Capabilities.HasFlag(MessageCapabilities.Reply));
         Assert.False(reference.Capabilities.HasFlag(MessageCapabilities.React));
     }
