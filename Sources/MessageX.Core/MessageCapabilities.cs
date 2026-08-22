@@ -24,5 +24,9 @@ public enum MessageCapabilities : long {
     /// <summary>Receive interactive actions or commands.</summary>
     ReceiveInteractions = 1L << 7,
     /// <summary>Maintain a provider realtime connection.</summary>
-    Realtime = 1L << 8
+    Realtime = 1L << 8,
+    /// <summary>Retrieve an existing message by its durable reference.</summary>
+    Read = 1L << 9,
+    /// <summary>Resolve a provider address to a durable conversation reference.</summary>
+    ResolveConversation = 1L << 10
 }

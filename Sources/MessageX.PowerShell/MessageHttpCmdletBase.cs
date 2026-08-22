@@ -11,6 +11,7 @@ public abstract class MessageHttpCmdletBase : AsyncPSCmdlet {
     /// <summary>HTTP request timeout in seconds.</summary>
     [Parameter(Mandatory = false)]
     [ValidateRange(1, 3600)]
+    [PSDefaultValue(Value = 100, Help = "100 (valid range: 1-3600)")]
     public int TimeoutSeconds { get; set; } = 100;
 
     /// <summary>Optional product user-agent sent with provider requests.</summary>
@@ -24,5 +25,12 @@ public abstract class MessageHttpCmdletBase : AsyncPSCmdlet {
             Timeout = TimeSpan.FromSeconds(TimeoutSeconds),
             UserAgent = UserAgent
         };
+    }
+
+    /// <summary>Whether provider clients may use their shared default HTTP transport.</summary>
+    protected static bool UsesDefaultTransport(MessageHttpTransportOptions options) {
+        return options.ProxyUri is null &&
+            options.Timeout == MessageHttpTransportOptions.DefaultTimeout &&
+            string.IsNullOrWhiteSpace(options.UserAgent);
     }
 }

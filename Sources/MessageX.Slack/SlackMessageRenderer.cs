@@ -12,15 +12,9 @@ internal static class SlackMessageRenderer {
         SlackMessageValidator.Validate(message);
         ValidateTarget(target);
 
-        var payload = new Dictionary<string, object?>();
+        var payload = CreateMessagePayload(message);
         if (target.DeliveryMethod == SlackDeliveryMethod.WebApi) {
             payload["channel"] = target.ConversationId;
-        }
-        if (!string.IsNullOrWhiteSpace(message.Text)) {
-            payload["text"] = message.Text;
-        }
-        if (message.Blocks.Count > 0) {
-            payload["blocks"] = message.Blocks.Select(RenderBlock).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(message.ThreadTimestamp)) {
             payload["thread_ts"] = message.ThreadTimestamp;
@@ -36,6 +30,50 @@ internal static class SlackMessageRenderer {
         }
 
         return JsonSerializer.Serialize(payload, Options);
+    }
+
+    public static string RenderUpdate(SlackMessageRequest message, string conversationId, string timestamp) {
+        SlackMessageValidator.Validate(message);
+        SlackMessageTarget.ValidateConversationId(conversationId);
+        if (SlackMessageValidator.ParseTimestamp(timestamp) is null) {
+            throw new ArgumentException(
+                "Slack message updates require a valid message timestamp.",
+                nameof(timestamp));
+        }
+        if (!string.IsNullOrWhiteSpace(message.ThreadTimestamp) || message.ReplyBroadcast) {
+            throw new ArgumentException(
+                "Slack message updates use the persisted message reference and cannot change thread placement.",
+                nameof(message));
+        }
+        if (message.UnfurlLinks is not null || message.UnfurlMedia is not null) {
+            throw new ArgumentException(
+                "Slack message updates do not accept send-only unfurl options.",
+                nameof(message));
+        }
+
+        var payload = CreateMessagePayload(message);
+        // Slack retains omitted fields during chat.update. Emit both mutable
+        // fields so the request represents a replacement rather than a merge.
+        if (!payload.ContainsKey("text")) {
+            payload["text"] = string.Empty;
+        }
+        if (!payload.ContainsKey("blocks")) {
+            payload["blocks"] = Array.Empty<object>();
+        }
+        payload["channel"] = conversationId;
+        payload["ts"] = timestamp;
+        return JsonSerializer.Serialize(payload, Options);
+    }
+
+    private static Dictionary<string, object?> CreateMessagePayload(SlackMessageRequest message) {
+        var payload = new Dictionary<string, object?>();
+        if (!string.IsNullOrWhiteSpace(message.Text)) {
+            payload["text"] = message.Text;
+        }
+        if (message.Blocks.Count > 0) {
+            payload["blocks"] = message.Blocks.Select(RenderBlock).ToArray();
+        }
+        return payload;
     }
 
     private static void ValidateTarget(SlackMessageTarget target) {

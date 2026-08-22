@@ -4,7 +4,6 @@ namespace MessageX.Discord;
 
 /// <summary>Routes typed Discord messages to incoming-webhook or bot REST senders.</summary>
 public sealed class DiscordClient : IDisposable {
-    private static readonly HttpClient SharedHttpClient = DiscordHttpClientFactory.CreateClient();
     private readonly IReadOnlyList<IDiscordMessageSender> _senders;
     private readonly IReadOnlyList<IDisposable> _ownedDisposables;
 
@@ -36,7 +35,7 @@ public sealed class DiscordClient : IDisposable {
         var senders = new List<IDiscordMessageSender>();
         var disposables = new List<IDisposable>();
         var webhook = useSharedTransport
-            ? new DiscordIncomingWebhookSender(SharedHttpClient)
+            ? new DiscordIncomingWebhookSender(DiscordHttpClientPool.Shared)
             : new DiscordIncomingWebhookSender(options ?? throw new ArgumentNullException(nameof(options)));
         senders.Add(webhook);
         if (!useSharedTransport) {
@@ -44,7 +43,7 @@ public sealed class DiscordClient : IDisposable {
         }
         if (connection is not null) {
             var bot = useSharedTransport
-                ? new DiscordBotMessageSender(connection, SharedHttpClient)
+                ? new DiscordBotMessageSender(connection, DiscordHttpClientPool.Shared)
                 : new DiscordBotMessageSender(connection, options!);
             senders.Add(bot);
             if (!useSharedTransport) {

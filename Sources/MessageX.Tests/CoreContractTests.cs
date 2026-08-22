@@ -12,12 +12,14 @@ public sealed class CoreContractTests {
             InstallationId = "installation-1",
             ScopeId = "tenant-1",
             ConversationId = "conversation-1",
+            ConversationKind = MessageConversationKind.DirectMessage,
             ThreadId = "thread-1",
             CorrelationId = "correlation-1",
             Capabilities = MessageCapabilities.Reply | MessageCapabilities.Update | MessageCapabilities.Delete
         };
 
         Assert.Equal("activity-42", reference.MessageId);
+        Assert.Equal(MessageConversationKind.DirectMessage, reference.ConversationKind);
         Assert.True(reference.Capabilities.HasFlag(MessageCapabilities.Reply));
         Assert.False(reference.Capabilities.HasFlag(MessageCapabilities.React));
     }
@@ -29,6 +31,22 @@ public sealed class CoreContractTests {
         };
 
         Assert.Equal(MessageCapabilities.Reply | MessageCapabilities.Update, capabilities.Capabilities);
+    }
+
+    [Fact]
+    public void LifecycleCapabilitiesRemainIndependentlyDiscoverable() {
+        var capabilities = MessageCapabilities.Read |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React |
+            MessageCapabilities.ResolveConversation;
+
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Read));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Update));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.Delete));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.React));
+        Assert.True(capabilities.HasFlag(MessageCapabilities.ResolveConversation));
+        Assert.False(capabilities.HasFlag(MessageCapabilities.Send));
     }
 
     [Fact]

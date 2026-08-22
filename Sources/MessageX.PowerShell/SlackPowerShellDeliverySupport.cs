@@ -6,7 +6,7 @@ internal static class SlackPowerShellDeliverySupport {
     public static ErrorRecord CreateDeliveryFailureError(SlackDeliveryResult result, string commandName) {
         var statusCode = result.StatusCode?.ToString() ?? "unknown";
         var message = string.IsNullOrWhiteSpace(result.ErrorMessage)
-            ? $"{commandName} could not send the message. HTTP status: {statusCode}."
+            ? $"{commandName} could not complete the Slack operation. HTTP status: {statusCode}."
             : result.ErrorMessage!;
         var details = $"{message} Error kind: {result.ErrorKind}.";
         if (!string.IsNullOrWhiteSpace(result.CorrelationId)) {

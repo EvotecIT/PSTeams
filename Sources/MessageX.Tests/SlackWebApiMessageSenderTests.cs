@@ -32,8 +32,14 @@ public sealed class SlackWebApiMessageSenderTests {
         Assert.Equal("1712345678.123456", result.Reference?.MessageId);
         Assert.Equal("C0123456789", result.Reference?.ConversationId);
         Assert.Equal("1712000000.000001", result.Reference?.ThreadId);
+        Assert.Equal(MessageConversationKind.Thread, result.Reference?.ConversationKind);
         Assert.Equal("T0123", result.Reference?.ScopeId);
-        Assert.Equal(MessageCapabilities.Reply, result.Reference?.Capabilities);
+        Assert.Equal(
+            MessageCapabilities.Reply |
+            MessageCapabilities.Update |
+            MessageCapabilities.Delete |
+            MessageCapabilities.React,
+            result.Reference?.Capabilities);
         Assert.Equal(
             DateTimeOffset.FromUnixTimeSeconds(1712345678).AddTicks(1_234_560),
             result.Reference?.Timestamp);
@@ -95,6 +101,31 @@ public sealed class SlackWebApiMessageSenderTests {
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Xprovider-evolved-α", result.Reference?.ConversationId);
+        Assert.Equal(MessageConversationKind.Unknown, result.Reference?.ConversationKind);
+    }
+
+    [Theory]
+    [InlineData("C0123456789", MessageConversationKind.Channel)]
+    [InlineData("D0123456789", MessageConversationKind.DirectMessage)]
+    [InlineData("G0123456789", MessageConversationKind.Unknown)]
+    public async Task SuccessfulSendPersistsOnlyConversationShapesKnownFromCoordinates(
+        string conversationId,
+        MessageConversationKind expectedKind) {
+        using var handler = new RecordingHandler(
+            HttpStatusCode.OK,
+            $"{{\"ok\":true,\"channel\":\"{conversationId}\",\"ts\":\"1712345678.123456\"}}");
+        using var sender = new SlackWebApiMessageSender(
+            SlackConnection.ForBotToken("xoxb-secret-token"),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+
+        var result = await sender.SendAsync(
+            new SlackMessageRequest { Text = "Build completed" },
+            SlackMessageTarget.ForConversation(conversationId),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expectedKind, result.Reference?.ConversationKind);
     }
 
     [Fact]

@@ -7,8 +7,14 @@ public sealed class SlackClientTests {
     public void DefaultClientsReuseSharedHttpTransport() {
         using var first = new SlackClient();
         using var second = new SlackClient();
+        var connection = SlackConnection.ForBotToken("xoxb-secret-token", workspaceId: "T0123");
+        using var lifecycle = new SlackWebApiLifecycleClient(connection);
+        using var directory = new SlackConversationDirectory(connection);
 
-        Assert.Same(ReadWebhookHttpClient(first), ReadWebhookHttpClient(second));
+        var shared = ReadWebhookHttpClient(first);
+        Assert.Same(shared, ReadWebhookHttpClient(second));
+        Assert.Same(shared, ReadOwnedHttpClient(lifecycle));
+        Assert.Same(shared, ReadOwnedHttpClient(directory));
     }
 
     [Fact]
@@ -50,6 +56,13 @@ public sealed class SlackClientTests {
             typeof(SlackIncomingWebhookSender)
                 .GetField("_httpClient", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .GetValue(sender));
+    }
+
+    private static HttpClient ReadOwnedHttpClient(object owner) {
+        return Assert.IsType<HttpClient>(
+            owner.GetType()
+                .GetField("_httpClient", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(owner));
     }
 
     private sealed class RecordingSender : ISlackMessageSender {

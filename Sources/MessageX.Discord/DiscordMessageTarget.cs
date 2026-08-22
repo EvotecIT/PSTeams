@@ -26,9 +26,12 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
     /// <inheritdoc />
     public MessageCapabilities Capabilities => DeliveryMethod switch {
         DiscordDeliveryMethod.IncomingWebhook =>
-            MessageCapabilities.Send | MessageCapabilities.UploadFile,
+            MessageCapabilities.Send | MessageCapabilities.UploadFile |
+            MessageCapabilities.Read | MessageCapabilities.Update | MessageCapabilities.Delete,
         DiscordDeliveryMethod.BotChannel or DiscordDeliveryMethod.BotThread or DiscordDeliveryMethod.BotDirectMessage =>
-            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile,
+            MessageCapabilities.Send | MessageCapabilities.Reply | MessageCapabilities.UploadFile |
+            MessageCapabilities.Update | MessageCapabilities.Delete | MessageCapabilities.React |
+            MessageCapabilities.Read,
         _ => MessageCapabilities.None
     };
 
@@ -89,6 +92,13 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
         };
     }
 
+    internal static DiscordMessageTarget ForDirectMessageChannel(string channelId) {
+        return new DiscordMessageTarget {
+            DeliveryMethod = DiscordDeliveryMethod.BotDirectMessage,
+            ChannelId = DiscordSnowflake.Normalize(channelId, nameof(channelId))
+        };
+    }
+
     internal static void ValidateWebhookUri(Uri? uri) {
         if (uri is null) {
             throw new ArgumentNullException(nameof(uri));
@@ -130,7 +140,9 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
                 : $"Discord webhook thread {ThreadId}",
             DiscordDeliveryMethod.BotChannel => $"Discord channel {ChannelId}",
             DiscordDeliveryMethod.BotThread => $"Discord thread {ThreadId}",
-            DiscordDeliveryMethod.BotDirectMessage => $"Discord direct message to {UserId}",
+            DiscordDeliveryMethod.BotDirectMessage => UserId is null
+                ? $"Discord direct message channel {ChannelId}"
+                : $"Discord direct message to {UserId}",
             _ => "Discord target"
         };
     }

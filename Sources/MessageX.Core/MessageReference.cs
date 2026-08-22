@@ -30,6 +30,9 @@ public sealed class MessageReference : IProviderCapabilities {
     /// <summary>Chat, channel, direct-message, or equivalent conversation identifier.</summary>
     public string? ConversationId { get; set; }
 
+    /// <summary>Provider-neutral shape of the referenced conversation.</summary>
+    public MessageConversationKind ConversationKind { get; set; }
+
     /// <summary>Thread or reply-chain identifier.</summary>
     public string? ThreadId { get; set; }
 

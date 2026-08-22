@@ -13,9 +13,7 @@ public abstract class SlackMessageCmdletBase : MessageHttpCmdletBase {
     /// <summary>Creates one transport client after parameter binding is complete.</summary>
     protected override Task BeginProcessingAsync() {
         var options = CreateTransportOptions();
-        var useSharedTransport = options.ProxyUri is null &&
-            options.Timeout == MessageHttpTransportOptions.DefaultTimeout &&
-            string.IsNullOrWhiteSpace(options.UserAgent);
+        var useSharedTransport = UsesDefaultTransport(options);
         _client = (Connection, useSharedTransport) switch {
             (null, true) => new SlackClient(),
             (null, false) => new SlackClient(options),

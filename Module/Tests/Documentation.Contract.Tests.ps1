@@ -24,6 +24,13 @@ Describe 'Generated command documentation contract' {
                 Where-Object CommandType -in @('Cmdlet', 'Function') |
                 Select-Object -ExpandProperty Name -Unique
         )
+        $helpPath = Join-Path $PSScriptRoot '..\PSTeams\en-US\PSTeams-help.xml'
+        [xml] $externalHelp = Get-Content -LiteralPath $helpPath -Raw
+        $script:ExternalHelpCommands = @(
+            $externalHelp.SelectNodes(
+                "/*[local-name()='helpItems']/*[local-name()='command']/*[local-name()='details']/*[local-name()='name']") |
+                ForEach-Object InnerText
+        )
     }
 
     It 'contains no unfinished parameter-description placeholders' {
@@ -41,5 +48,13 @@ Describe 'Generated command documentation contract' {
 
         $missingDocs | Should -BeNullOrEmpty
         $staleDocs | Should -BeNullOrEmpty
+    }
+
+    It 'includes external help for every exported command and only existing commands' {
+        $missingHelp = @($script:ExportedCommands | Where-Object { $_ -notin $script:ExternalHelpCommands })
+        $staleHelp = @($script:ExternalHelpCommands | Where-Object { $_ -notin $script:ExportedCommands })
+
+        $missingHelp | Should -BeNullOrEmpty
+        $staleHelp | Should -BeNullOrEmpty
     }
 }

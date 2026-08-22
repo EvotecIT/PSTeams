@@ -21,6 +21,10 @@ public sealed class DiscordConnection : IProviderCapabilities {
     public MessageCapabilities Capabilities =>
         MessageCapabilities.Send |
         MessageCapabilities.Reply |
+        MessageCapabilities.Update |
+        MessageCapabilities.Delete |
+        MessageCapabilities.React |
+        MessageCapabilities.Read |
         MessageCapabilities.UploadFile;
 
     internal string BotToken => _botToken;

@@ -20,7 +20,12 @@ public sealed class SlackConnection : IProviderCapabilities {
     public string? WorkspaceId { get; }
 
     /// <inheritdoc />
-    public MessageCapabilities Capabilities => MessageCapabilities.Send | MessageCapabilities.Reply;
+    public MessageCapabilities Capabilities => MessageCapabilities.Send |
+        MessageCapabilities.Reply |
+        MessageCapabilities.Update |
+        MessageCapabilities.Delete |
+        MessageCapabilities.React |
+        MessageCapabilities.ResolveConversation;
 
     internal string BotToken => _botToken;
 

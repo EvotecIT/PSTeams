@@ -7,9 +7,16 @@ public sealed class DiscordClientTests {
     public void DefaultClientsReuseSharedHttpTransport() {
         using var first = new DiscordClient();
         using var second = new DiscordClient();
+        using var botLifecycle = new DiscordBotLifecycleClient(
+            DiscordConnection.ForBotToken("discord-super-secret-token-value"));
+        using var webhookLifecycle = new DiscordWebhookLifecycleClient(
+            DiscordMessageTarget.ForIncomingWebhook(new Uri(
+                "https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456")));
 
         var httpClient = ReadWebhookHttpClient(first);
         Assert.Same(httpClient, ReadWebhookHttpClient(second));
+        Assert.Same(httpClient, ReadOwnedHttpClient(botLifecycle));
+        Assert.Same(httpClient, ReadOwnedHttpClient(webhookLifecycle));
         Assert.Equal(DiscordHttpClientFactory.DefaultUserAgent, httpClient.DefaultRequestHeaders.UserAgent.ToString());
     }
 
@@ -76,6 +83,13 @@ public sealed class DiscordClientTests {
             typeof(DiscordIncomingWebhookSender)
                 .GetField("_httpClient", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .GetValue(sender));
+    }
+
+    private static HttpClient ReadOwnedHttpClient(object owner) {
+        return Assert.IsType<HttpClient>(
+            owner.GetType()
+                .GetField("_httpClient", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(owner));
     }
 
     private sealed class RecordingSender : IDiscordMessageSender {

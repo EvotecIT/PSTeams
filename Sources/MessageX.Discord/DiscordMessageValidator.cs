@@ -120,7 +120,12 @@ internal static class DiscordMessageValidator {
                 }
                 break;
             case DiscordDeliveryMethod.BotDirectMessage:
-                DiscordSnowflake.Normalize(target.UserId, nameof(target.UserId));
+                if (target.UserId is null) {
+                    DiscordSnowflake.Normalize(target.ChannelId, nameof(target.ChannelId));
+                }
+                else {
+                    DiscordSnowflake.Normalize(target.UserId, nameof(target.UserId));
+                }
                 break;
             default:
                 throw new ArgumentException("Unsupported Discord delivery method.", nameof(target));
