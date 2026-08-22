@@ -15,7 +15,7 @@ public sealed class SlackWebApiLifecycleClient :
 
     /// <summary>Creates a lifecycle client with default MessageX transport behavior.</summary>
     public SlackWebApiLifecycleClient(SlackConnection connection)
-        : this(connection, MessageHttpClientFactory.CreateClient(), disposeHttpClient: true) {
+        : this(connection, SlackHttpClientPool.Shared) {
     }
 
     /// <summary>Creates a lifecycle client with configured MessageX transport behavior.</summary>
