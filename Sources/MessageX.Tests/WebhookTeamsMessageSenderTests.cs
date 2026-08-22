@@ -142,6 +142,43 @@ public sealed class WebhookTeamsMessageSenderTests {
     }
 
     [Fact]
+    public async Task CallerCancellationWinsWhenResponseStreamReportsIoFailure() {
+        using var sender = new WebhookTeamsMessageSender(
+            new HttpClient(new ThrowingResponseStreamHandler(throwAfterCancellation: true)),
+            disposeHttpClient: true);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"));
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sender.SendAsync(
+            new TeamsMessageRequest { Text = "Build completed" },
+            target,
+            cancellation.Token));
+
+        Assert.IsNotType<MessageDeliveryException>(exception);
+        Assert.DoesNotContain("secret-token", exception.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.Gone)]
+    public async Task MissingWebhookResponsesReturnNotFound(HttpStatusCode statusCode) {
+        using var sender = new WebhookTeamsMessageSender(
+            new HttpClient(new RecordingHandler(statusCode)),
+            disposeHttpClient: true);
+        var target = TeamsMessageTarget.ForWorkflowWebhook(
+            new Uri("https://example.test/workflows/secret-token"));
+
+        var result = await sender.SendAsync(
+            new TeamsMessageRequest { Text = "Build completed" },
+            target,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(MessageErrorKind.NotFound, result.ErrorKind);
+    }
+
+    [Fact]
     public async Task TransportTimeoutReturnsSanitizedTransientFailure() {
         using var handler = new DelayingHandler();
         using var httpClient = new HttpClient(handler) {

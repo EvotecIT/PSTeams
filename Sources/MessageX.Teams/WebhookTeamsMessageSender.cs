@@ -76,6 +76,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
                 "Teams webhook request timed out.",
                 MessageErrorKind.Transient);
         } catch (Exception exception) when (exception is HttpRequestException or IOException) {
+            cancellationToken.ThrowIfCancellationRequested();
             throw new MessageDeliveryException(
                 "Teams webhook request failed.",
                 MessageErrorKind.Transient);
@@ -129,7 +130,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
         return statusCode switch {
             401 => MessageErrorKind.Authentication,
             403 => MessageErrorKind.Authorization,
-            404 => MessageErrorKind.NotFound,
+            404 or 410 => MessageErrorKind.NotFound,
             408 => MessageErrorKind.Transient,
             429 => MessageErrorKind.RateLimited,
             >= 500 => MessageErrorKind.Transient,
