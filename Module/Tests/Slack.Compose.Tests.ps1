@@ -89,6 +89,28 @@ Describe 'MessageX Slack PowerShell surface' {
         { Send-SlackMessage -Message $message -Target $conversationTarget -Connection $connection -WhatIf } | Should -Not -Throw
     }
 
+    It 'supports lifecycle and conversation-resolution WhatIf flows without network access' {
+        $secureToken = ConvertTo-SecureString 'xoxb-secret-token' -AsPlainText -Force
+        $connection = New-SlackConnection -BotToken $secureToken -WorkspaceId 'T0123'
+        $message = New-SlackMessage -Text 'updated'
+        $reference = [MessageX.Core.MessageReference]::new('slack', '1712345678.123456')
+        $reference.ConversationId = 'C0123456789'
+        $reference.Capabilities = [MessageX.Core.MessageCapabilities]::Update -bor
+            [MessageX.Core.MessageCapabilities]::Delete -bor
+            [MessageX.Core.MessageCapabilities]::React
+
+        { Update-SlackMessage -Message $message -Reference $reference -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Remove-SlackMessage -Reference $reference -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Add-SlackReaction -Reference $reference -Reaction eyes -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Remove-SlackReaction -Reference $reference -Reaction eyes -Connection $connection -WhatIf } |
+            Should -Not -Throw
+        { Resolve-SlackConversation -UserId U0123456789 -Connection $connection -WhatIf } |
+            Should -Not -Throw
+    }
+
     It 'does not expose webhook credentials through target properties or labels' {
         $target = New-SlackWebhookTarget -Uri 'https://hooks.slack.com/services/T/B/secret-token'
 
@@ -130,6 +152,7 @@ Describe 'MessageX Slack PowerShell surface' {
     It 'exports each Slack cmdlet from PSTeams' {
         $expected = @(
             'ConvertTo-SlackJson'
+            'Add-SlackReaction'
             'New-SlackConnection'
             'New-SlackConversationTarget'
             'New-SlackDivider'
@@ -137,7 +160,11 @@ Describe 'MessageX Slack PowerShell surface' {
             'New-SlackSection'
             'New-SlackText'
             'New-SlackWebhookTarget'
+            'Remove-SlackMessage'
+            'Remove-SlackReaction'
+            'Resolve-SlackConversation'
             'Send-SlackMessage'
+            'Update-SlackMessage'
         )
 
         foreach ($name in $expected) {
