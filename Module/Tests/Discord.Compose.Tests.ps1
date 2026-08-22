@@ -38,6 +38,26 @@ Describe 'MessageX Discord PowerShell surface' {
         $payload.embeds[0].image.url | Should -Be 'attachment://SPOILER_report.png'
     }
 
+    It 'prefers exact upload names over spoiler aliases regardless of attachment order' {
+        foreach ($spoilerFirst in $true, $false) {
+            $spoiler = New-DiscordAttachment -Bytes ([byte[]](1)) -FileName 'report.png' -Spoiler
+            $visible = New-DiscordAttachment -Bytes ([byte[]](2)) -FileName 'report.png'
+            $attachments = if ($spoilerFirst) { @($spoiler, $visible) } else { @($visible, $spoiler) }
+            $message = New-DiscordMessage -Attachments $attachments -Embeds @(
+                New-DiscordSection -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
+            )
+            $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
+            $payload = $message | ConvertTo-DiscordJson -Target $target | ConvertFrom-Json
+
+            $payload.embeds[0].image.url | Should -Be 'attachment://report.png'
+        }
+    }
+
+    It 'rejects attachment filenames containing control characters' {
+        { New-DiscordAttachment -Bytes ([byte[]](1)) -FileName "report`nfinal.txt" } | Should -Throw
+        { New-DiscordAttachment -Bytes ([byte[]](1)) -FileName "report`tfinal.txt" } | Should -Throw
+    }
+
     It 'creates webhook, channel, thread, and direct-message targets without exposing secrets' {
         $webhook = New-DiscordWebhookTarget -Uri 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456' -ThreadId '223456789012345678'
         $channel = New-DiscordChannelTarget -ChannelId '323456789012345678'

@@ -120,8 +120,12 @@ internal static class DiscordMessageRenderer {
 
         var reference = uri.OriginalString;
         foreach (var attachment in attachments) {
-            if (string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal) ||
-                string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal)) {
+            if (string.Equals(reference, "attachment://" + attachment.FileName, StringComparison.Ordinal)) {
+                return reference;
+            }
+        }
+        foreach (var attachment in attachments) {
+            if (string.Equals(reference, "attachment://" + attachment.OriginalFileName, StringComparison.Ordinal)) {
                 return "attachment://" + attachment.FileName;
             }
         }

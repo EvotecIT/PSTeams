@@ -47,6 +47,7 @@ public sealed class DiscordAttachment {
         bool isSpoiler = false) {
         if (string.IsNullOrWhiteSpace(fileName) ||
             fileName.Length > 255 ||
+            fileName.Any(char.IsControl) ||
             fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
             fileName.Contains('/') || fileName.Contains('\\')) {
             throw new ArgumentException("A safe attachment file name is required.", nameof(fileName));

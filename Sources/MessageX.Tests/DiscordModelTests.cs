@@ -149,6 +149,36 @@ public sealed class DiscordModelTests {
     }
 
     [Fact]
+    public void RendererPrefersExactUploadNameOverSpoilerAliasRegardlessOfOrder() {
+        foreach (var spoilerFirst in new[] { true, false }) {
+            var message = new DiscordMessageRequest { Content = "report" };
+            var spoiler = DiscordAttachment.FromBytes("report.png", new byte[] { 1 }, isSpoiler: true);
+            var visible = DiscordAttachment.FromBytes("report.png", new byte[] { 2 });
+            message.Attachments.Add(spoilerFirst ? spoiler : visible);
+            message.Attachments.Add(spoilerFirst ? visible : spoiler);
+            message.Embeds.Add(new DiscordEmbed {
+                Image = new DiscordEmbedMedia { Url = new Uri("attachment://report.png") }
+            });
+
+            var json = DiscordJsonSerializer.Serialize(
+                message,
+                DiscordMessageTarget.ForChannel("123456789012345678"));
+            using var document = JsonDocument.Parse(json);
+
+            Assert.Equal("attachment://report.png", document.RootElement.GetProperty("embeds")[0]
+                .GetProperty("image").GetProperty("url").GetString());
+        }
+    }
+
+    [Theory]
+    [InlineData("report\nfinal.txt")]
+    [InlineData("report\rfinal.txt")]
+    [InlineData("report\tfinal.txt")]
+    public void AttachmentFileNamesRejectControlCharacters(string fileName) {
+        Assert.Throws<ArgumentException>(() => DiscordAttachment.FromBytes(fileName, new byte[] { 1 }));
+    }
+
+    [Fact]
     public void AttachmentFilesAreRejectedBeforeOversizedContentIsRead() {
         var path = Path.GetTempFileName();
         try {
