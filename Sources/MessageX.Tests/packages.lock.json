@@ -624,6 +624,12 @@
           "MessageX.Core": "[0.1.0, )"
         }
       },
+      "messagex.hosting.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )"
+        }
+      },
       "messagex.slack": {
         "type": "Project",
         "dependencies": {
@@ -1318,6 +1324,12 @@
         "type": "Project",
         "dependencies": {
           "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.hosting.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )"
         }
       },
       "messagex.slack": {
