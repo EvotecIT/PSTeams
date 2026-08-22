@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX Discord ASP.NET Core Hosting</Title>
+    <Description>Thin verified Discord interaction endpoint adapter for MessageX ASP.NET Core hosts.</Description>
+    <AssemblyName>MessageX.Discord.Hosting.AspNetCore</AssemblyName>
+    <PackageId>MessageX.Discord.Hosting.AspNetCore</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\MessageX.Discord\MessageX.Discord.csproj" />
+    <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

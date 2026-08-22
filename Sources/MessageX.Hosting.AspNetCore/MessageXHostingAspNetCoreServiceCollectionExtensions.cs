@@ -24,6 +24,7 @@ public static class MessageXHostingAspNetCoreServiceCollectionExtensions {
         services.TryAddSingleton<MessageRouter>();
         services.TryAddSingleton<MessageInboundRequestReader>();
         services.TryAddSingleton<MessageAcknowledgementWriter>();
+        services.TryAddSingleton<MessageReceiveResultProcessor>();
         services.TryAddSingleton<MessageIngressQueue>();
         services.TryAddSingleton<IMessageIngressQueue>(provider =>
             provider.GetRequiredService<MessageIngressQueue>());
