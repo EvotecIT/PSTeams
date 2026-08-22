@@ -19,8 +19,8 @@ Build-Module -ModuleName 'PSTeams' -Path 'Module' {
         Author               = 'Przemyslaw Klys'
         CompanyName          = 'Evotec'
         Copyright            = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
-        Description          = 'PSTeams provides typed Teams and Slack message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.'
-        Tags                 = @('Teams', 'Slack', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'PowerShell', 'Windows', 'MacOS', 'Linux')
+        Description          = 'PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.'
+        Tags                 = @('Teams', 'Slack', 'Discord', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'PowerShell', 'Windows', 'MacOS', 'Linux')
         IconUri              = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
         ProjectUri           = 'https://github.com/EvotecIT/PSTeams'
         PowerShellVersion    = '5.1'

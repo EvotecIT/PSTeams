@@ -7,9 +7,12 @@ Locale: en-US
 ---
 # PSTeams Module
 ## Description
-PSTeams provides typed Teams and Slack message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
+PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
 
 ## PSTeams Cmdlets
+### [ConvertTo-DiscordJson](ConvertTo-DiscordJson.md)
+Serializes a typed Discord message using the exact provider payload contract.
+
 ### [ConvertTo-SlackJson](ConvertTo-SlackJson.md)
 Serializes a typed Slack message using the exact provider payload contract.
 
@@ -81,6 +84,45 @@ Creates a button for ListCard, HeroCard, and ThumbnailCard payloads.
 
 ### [New-CardListItem](New-CardListItem.md)
 Creates one Teams list-card item.
+
+### [New-DiscordAllowedMentions](New-DiscordAllowedMentions.md)
+Creates an explicit Discord mention policy. The default policy notifies nobody.
+
+### [New-DiscordAttachment](New-DiscordAttachment.md)
+Creates an in-memory Discord attachment from a file or byte array.
+
+### [New-DiscordAuthor](New-DiscordAuthor.md)
+Creates Discord embed author metadata.
+
+### [New-DiscordChannelTarget](New-DiscordChannelTarget.md)
+Creates a Discord bot channel target.
+
+### [New-DiscordConnection](New-DiscordConnection.md)
+Creates an authenticated Discord bot connection without exposing its token.
+
+### [New-DiscordDirectMessageTarget](New-DiscordDirectMessageTarget.md)
+Creates a Discord bot direct-message target.
+
+### [New-DiscordFact](New-DiscordFact.md)
+Creates a Discord embed field.
+
+### [New-DiscordFooter](New-DiscordFooter.md)
+Creates Discord embed footer metadata.
+
+### [New-DiscordImage](New-DiscordImage.md)
+Creates Discord embed image or thumbnail media.
+
+### [New-DiscordMessage](New-DiscordMessage.md)
+Creates a provider-native Discord message.
+
+### [New-DiscordSection](New-DiscordSection.md)
+Creates a rich Discord embed.
+
+### [New-DiscordThreadTarget](New-DiscordThreadTarget.md)
+Creates a Discord bot thread-channel target.
+
+### [New-DiscordWebhookTarget](New-DiscordWebhookTarget.md)
+Creates a Discord incoming-webhook target, optionally within an existing thread.
 
 ### [New-HeroCard](New-HeroCard.md)
 Creates or sends a Teams HeroCard payload.
@@ -219,6 +261,9 @@ Creates a send-only Teams incoming webhook or Power Automate Workflow target.
 ### [New-ThumbnailCard](New-ThumbnailCard.md)
 Creates or sends a Teams ThumbnailCard payload.
 
+### [Send-DiscordMessage](Send-DiscordMessage.md)
+Sends simple or typed messages through Discord incoming webhooks or authenticated bot REST.
+
 ### [Send-SlackMessage](Send-SlackMessage.md)
 Sends simple or typed messages through Slack incoming webhooks or the authenticated Web API.
 
@@ -227,3 +272,7 @@ Sends a typed or legacy-composed message to Microsoft Teams.
 
 ### [Send-TeamsMessageBody](Send-TeamsMessageBody.md)
 Sends a raw Teams message payload body to an incoming webhook.
+
+### [Test-DiscordInteractionSignature](Test-DiscordInteractionSignature.md)
+Verifies a Discord interaction signature and bounds its age. The hosting service must separately
+reject duplicate signatures because an age window alone does not prevent replay.

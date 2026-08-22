@@ -1,6 +1,6 @@
 # PSTeams / MessageX - Messaging for PowerShell and .NET
 
-PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into reusable `MessageX` libraries for Teams, Slack, and later Discord while keeping familiar commands such as `Send-TeamsMessage` and adding provider-native commands such as `Send-SlackMessage`.
+PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into reusable `MessageX` libraries for Teams, Slack, and Discord while keeping familiar commands such as `Send-TeamsMessage` and `Send-DiscordMessage` and adding provider-native commands such as `Send-SlackMessage`.
 
 ## PowerShell Module
 
@@ -32,6 +32,7 @@ PSTeams uses a cleaner architecture:
 - `MessageX.Core` owns provider-neutral delivery results, message references, capability flags, and classified errors.
 - `MessageX.Teams` owns Microsoft Teams composition and delivery.
 - `MessageX.Slack` owns Slack incoming-webhook, Web API, and Block Kit messaging without SlackNet or Newtonsoft.Json.
+- `MessageX.Discord` owns Discord incoming-webhook and bot REST delivery, embeds, attachments, and interaction verification without Discord.Net, NetCord, or Newtonsoft.Json.
 - `MessageX.PowerShell` exposes thin provider-native binary PowerShell cmdlets over those libraries.
 - `PSTeams` remains the PowerShell module users install and import.
 
@@ -48,6 +49,9 @@ PSTeams uses a cleaner architecture:
 - Send Slack text and initial Block Kit messages through fixed-destination incoming webhooks or an authenticated bot connection.
 - Address Slack channels, private channels, direct messages, multiparty conversations, and user IDs through provider identifiers supported by `chat.postMessage`.
 - Reply in Slack threads and retain the returned channel and timestamp as a durable `MessageReference` for later lifecycle work.
+- Send Discord messages through incoming webhooks or bot REST to channels, threads, and one-to-one DMs.
+- Compose Discord embeds and attachments, control mentions with a safe notify-nobody default, and retain durable message/channel/thread references.
+- Verify Discord interaction request signatures through an owned API while keeping Bouncy Castle types internal.
 - Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
 
 ## Installing and Updating
@@ -141,6 +145,33 @@ Send-SlackMessage -Message $message -Target $target -Connection $connection -Pas
 
 For a fixed-destination Slack incoming webhook, use `New-SlackWebhookTarget` or the simple `Send-SlackMessage -WebhookText ... -WebhookUri ...` parameter set. Webhook URLs and bot tokens are credentials and should come from a secret store.
 
+Create and preview a Discord message without allowing content to notify mentions by default:
+
+```powershell
+$target = New-DiscordChannelTarget `
+    -ChannelId '123456789012345678' `
+    -GuildId '223456789012345678' `
+    -DisplayName 'Release alerts'
+
+$message = New-DiscordMessage -Content 'Deployment completed' -Embeds @(
+    New-DiscordSection -Title 'Release' -Description 'The deployment completed successfully.' -Color 0x2EB886 -Fields @(
+        New-DiscordFact -Name 'Environment' -Value 'Production' -Inline
+    )
+)
+
+$message | ConvertTo-DiscordJson -Target $target
+```
+
+Send through a Discord bot connection without placing its token in normal output:
+
+```powershell
+$token = Read-Host 'Discord bot token' -AsSecureString
+$connection = New-DiscordConnection -BotToken $token
+Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru
+```
+
+For fixed-destination delivery, use `New-DiscordWebhookTarget` or the simple `Send-DiscordMessage -Text ... -WebhookUri ...` parameter set. `New-DiscordEmbed`, `New-DiscordField`, and `New-DiscordThumbnail` remain aliases for familiar PSDiscord builder names. Webhook URLs and bot tokens are credentials and should come from a secret store. Bot DMs should be user-initiated or otherwise expected, not unsolicited bulk messages.
+
 ## Supported .NET and PowerShell Versions
 
 ### MessageX libraries
@@ -156,7 +187,7 @@ For a fixed-destination Slack incoming webhook, use `New-SlackWebhookTarget` or 
 
 ## Legacy Branch
 
-The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, provider libraries such as `MessageX.Teams` and `MessageX.Slack`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
+The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, provider libraries such as `MessageX.Teams`, `MessageX.Slack`, and `MessageX.Discord`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
 
 ## Links/Blogs
 

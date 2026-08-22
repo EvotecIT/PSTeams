@@ -890,11 +890,19 @@ The PSTeams GitHub repository is the future MessageX repository. Current TeamsX 
 
 ### Phase 3 - Discord notification vertical slice
 
-- [ ] Implement webhook and bot REST sends.
-- [ ] Implement channels, DMs, replies, threads, embeds, allowed mentions, and initial attachments.
-- [ ] Implement `Send-DiscordMessage` and current Discord builders.
-- [ ] Add rate-limit parsing, Ed25519 foundation, live proof, package proof, and dual-runtime PowerShell proof.
-- [ ] Revisit core contracts after all three providers are proven.
+- [x] Implement webhook and bot REST sends.
+- [x] Implement channels, DMs, replies, threads, embeds, allowed mentions, and initial attachments.
+- [x] Implement `Send-DiscordMessage` and current Discord builders.
+- [ ] Add live send proof in the authorized Discord environment; rate-limit, Ed25519, package, and dual-runtime PowerShell proof are part of the candidate gate.
+- [x] Revisit core contracts after all three providers are proven.
+
+#### Recorded Phase 3 candidate evidence
+
+- `MessageX.Discord` owns its `System.Text.Json` protocol surface and targets `net472`, `net8.0`, and `net10.0` without Discord.Net, NetCord, or Newtonsoft.Json. Bouncy Castle 2.7.0 supplies Ed25519 internally without leaking provider types into public APIs.
+- Incoming webhooks force `wait=true` so acceptance includes durable message coordinates. Bot REST covers channels, semantic thread targets, one-to-one DM channel creation, replies, safe-by-default mentions, embeds, multipart attachments, nonce enforcement, rate-limit metadata, bounded streamed responses, and timeout/cancellation behavior.
+- PowerShell exposes typed and simple parameter sets through `Send-DiscordMessage`, secure bot connections, distinct webhook/channel/thread/DM targets, exact JSON preview, attachment and embed builders, legacy PSDiscord builder aliases, and interaction signature verification.
+- The candidate builds without warnings across all three production target frameworks and passes 103 .NET contracts on both .NET 8 and .NET 10. The exact PowerForge-packed PSTeams artifact passes 56/56 module contracts on PowerShell 7 while loading `MessageX.Discord` and `MessageX.PowerShell` from `Lib/Core-net10.0`, and 56/56 on Windows PowerShell 5.1 while loading them from `Lib/Default`.
+- Live Discord webhook, channel, thread, reply, and direct-message sends remain intentionally pending for the final authorized provider-validation phase.
 
 **Exit:** Discord webhook and bot sends work from C# and PowerShell, and shared contracts reflect three real providers rather than one provider generalized early.
 

@@ -11,7 +11,7 @@ Creates a Slack Block Kit section.
 ## SYNTAX
 ### Markdown (Default)
 ```powershell
-New-SlackSection [-Markdown] <string> [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [<CommonParameters>]
+New-SlackSection [[-Markdown] <string>] [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [<CommonParameters>]
 ```
 
 ### PlainText
@@ -94,7 +94,7 @@ Parameter Sets: Markdown
 Aliases: None
 Possible values:
 
-Required: True
+Required: False
 Position: 0
 Default value: None
 Accept pipeline input: False

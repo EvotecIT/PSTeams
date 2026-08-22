@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MessageX.Discord\MessageX.Discord.csproj" />
     <ProjectReference Include="..\MessageX.Slack\MessageX.Slack.csproj" />
     <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />
   </ItemGroup>

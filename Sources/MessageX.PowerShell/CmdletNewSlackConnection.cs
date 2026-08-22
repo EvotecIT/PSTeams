@@ -1,5 +1,4 @@
 using System.Management.Automation;
-using System.Runtime.InteropServices;
 using System.Security;
 
 namespace MessageX.PowerShell;
@@ -22,15 +21,8 @@ public sealed class CmdletNewSlackConnection : PSCmdlet {
 
     /// <inheritdoc />
     protected override void ProcessRecord() {
-        var pointer = IntPtr.Zero;
-        try {
-            pointer = Marshal.SecureStringToBSTR(BotToken);
-            var token = Marshal.PtrToStringBSTR(pointer);
-            WriteObject(SlackConnection.ForBotToken(token ?? string.Empty, ApiBaseUri, WorkspaceId));
-        } finally {
-            if (pointer != IntPtr.Zero) {
-                Marshal.ZeroFreeBSTR(pointer);
-            }
-        }
+        WriteObject(SecureStringSupport.Use(
+            BotToken,
+            token => SlackConnection.ForBotToken(token, ApiBaseUri, WorkspaceId)));
     }
 }
