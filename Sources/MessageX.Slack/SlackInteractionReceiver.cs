@@ -30,14 +30,17 @@ public static class SlackInteractionReceiver {
         }
 
         var body = request.CopyBody();
-        if (!SlackRequestVerifier.VerifyRecent(
-                signingSecret,
-                signature,
-                timestamp,
-                body,
-                request.ReceivedAt,
-                replayWindow ?? DefaultReplayWindow)) {
-            return Reject(401, MessageReceiveFailureKind.Unauthorized);
+        var verification = SlackRequestVerifier.VerifyRecentDetailed(
+            signingSecret,
+            signature,
+            timestamp,
+            body,
+            request.ReceivedAt,
+            replayWindow ?? DefaultReplayWindow);
+        if (verification != SlackRequestVerificationResult.Valid) {
+            return verification == SlackRequestVerificationResult.Stale
+                ? Reject(401, MessageReceiveFailureKind.Stale)
+                : Reject(401, MessageReceiveFailureKind.Unauthorized);
         }
         if (!SlackFormDecoder.TryDecode(body, out var fields)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -114,8 +117,9 @@ public static class SlackInteractionReceiver {
             MessageRoute route;
             string name;
             string? messageTimestamp = null;
+            SlackInteractionPayload providerPayload;
             if (string.Equals(type, "block_actions", StringComparison.Ordinal)) {
-                if (!TrySingleAction(root, out name) ||
+                if (!TrySingleAction(root, out name, out var action) ||
                     !TryNestedOptional(root, "container", "message_ts", 32, out messageTimestamp) ||
                     !TryNestedOptional(root, "container", "channel_id", MaximumCoordinateLength, out var containerChannel)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -123,19 +127,30 @@ public static class SlackInteractionReceiver {
                 channelId ??= containerChannel;
                 kind = SlackInteractionKind.BlockAction;
                 route = MessageRoute.ForAction(name);
+                providerPayload = new SlackInteractionPayload(new[] { action }, null, null);
             } else if (string.Equals(type, "shortcut", StringComparison.Ordinal) ||
                        string.Equals(type, "message_action", StringComparison.Ordinal)) {
                 if (!TryRequired(root, "callback_id", 128, out name)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
+                SlackMessageInput? message = null;
+                if (string.Equals(type, "message_action", StringComparison.Ordinal)) {
+                    if (!TryNestedRequired(root, "message", "ts", 32, out messageTimestamp) ||
+                        !TryNestedOptionalText(root, "message", "text", 40000, out var messageText)) {
+                        return Reject(400, MessageReceiveFailureKind.Malformed);
+                    }
+                    message = new SlackMessageInput(messageTimestamp, messageText);
+                }
                 kind = SlackInteractionKind.Shortcut;
                 route = MessageRoute.ForAction(name);
+                providerPayload = new SlackInteractionPayload(null, null, message);
             } else if (string.Equals(type, "view_submission", StringComparison.Ordinal)) {
-                if (!TryNestedRequired(root, "view", "callback_id", 128, out name)) {
+                if (!TryReadViewSubmission(root, out name, out var view)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 kind = SlackInteractionKind.ViewSubmission;
                 route = MessageRoute.ForSubmission(name);
+                providerPayload = new SlackInteractionPayload(null, view, null);
             } else {
                 return MessageReceiveResult<SlackInteractionEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
@@ -148,7 +163,7 @@ public static class SlackInteractionReceiver {
                 kind,
                 name,
                 null,
-                root.Clone(),
+                providerPayload,
                 new SlackTransientInteractionContext(triggerId, responseUrl));
             return Dispatch(
                 request,
@@ -217,8 +232,12 @@ public static class SlackInteractionReceiver {
             MessageAcknowledgement.Empty(200));
     }
 
-    private static bool TrySingleAction(JsonElement root, out string name) {
+    private static bool TrySingleAction(
+        JsonElement root,
+        out string name,
+        out SlackActionInput actionValue) {
         name = string.Empty;
+        actionValue = null!;
         if (!root.TryGetProperty("actions", out var actions) ||
             actions.ValueKind != JsonValueKind.Array ||
             actions.GetArrayLength() != 1) {
@@ -226,7 +245,164 @@ public static class SlackInteractionReceiver {
         }
         var action = actions[0];
         return action.ValueKind == JsonValueKind.Object &&
-            TryRequired(action, "action_id", 128, out name);
+            TryRequired(action, "action_id", 128, out name) &&
+            TryCreateActionInput(action, name, null, out actionValue);
+    }
+
+    private static bool TryReadViewSubmission(
+        JsonElement root,
+        out string callbackId,
+        out SlackViewSubmissionInput view) {
+        callbackId = string.Empty;
+        view = null!;
+        if (!root.TryGetProperty("view", out var viewElement) ||
+            viewElement.ValueKind != JsonValueKind.Object ||
+            !TryRequired(viewElement, "callback_id", 128, out callbackId)) {
+            return false;
+        }
+
+        var values = new List<SlackViewStateInput>();
+        if (viewElement.TryGetProperty("state", out var state)) {
+            if (state.ValueKind != JsonValueKind.Object ||
+                !state.TryGetProperty("values", out var stateValues) ||
+                stateValues.ValueKind != JsonValueKind.Object) {
+                return false;
+            }
+            foreach (var block in stateValues.EnumerateObject()) {
+                if (!TryNormalizeCoordinate(block.Name, 128, required: true, out var blockId) ||
+                    block.Value.ValueKind != JsonValueKind.Object) {
+                    return false;
+                }
+                foreach (var input in block.Value.EnumerateObject()) {
+                    if (values.Count >= 256 ||
+                        !TryNormalizeCoordinate(input.Name, 128, required: true, out var actionId) ||
+                        input.Value.ValueKind != JsonValueKind.Object ||
+                        !TryCreateActionInput(input.Value, actionId, blockId, out var action)) {
+                        return false;
+                    }
+                    values.Add(new SlackViewStateInput(
+                        blockId,
+                        action.ActionId,
+                        action.Type,
+                        action.Value,
+                        action.SelectedValues));
+                }
+            }
+        }
+        view = new SlackViewSubmissionInput(callbackId, values.ToArray());
+        return true;
+    }
+
+    private static bool TryCreateActionInput(
+        JsonElement action,
+        string actionId,
+        string? blockIdOverride,
+        out SlackActionInput value) {
+        value = null!;
+        if (!TryRequired(action, "type", 64, out var type) ||
+            !TryOptional(action, "block_id", 128, out var blockId) ||
+            !TryOptionalText(action, "value", 40000, out var scalarValue) ||
+            !TryReadSelectedValues(action, out var selectedValues)) {
+            return false;
+        }
+        value = new SlackActionInput(
+            actionId,
+            type,
+            blockIdOverride ?? blockId,
+            scalarValue,
+            selectedValues);
+        return true;
+    }
+
+    private static bool TryReadSelectedValues(JsonElement action, out string[] values) {
+        var selected = new List<string>();
+        if (!TryAppendOptionalText(action, "selected_user", selected) ||
+            !TryAppendOptionalText(action, "selected_conversation", selected) ||
+            !TryAppendOptionalText(action, "selected_channel", selected) ||
+            !TryAppendOptionalText(action, "selected_date", selected) ||
+            !TryAppendOptionalText(action, "selected_time", selected) ||
+            !TryAppendOptionalObjectValue(action, "selected_option", selected) ||
+            !TryAppendOptionalArray(action, "selected_users", selected) ||
+            !TryAppendOptionalArray(action, "selected_conversations", selected) ||
+            !TryAppendOptionalArray(action, "selected_channels", selected) ||
+            !TryAppendOptionalObjectArray(action, "selected_options", selected)) {
+            values = Array.Empty<string>();
+            return false;
+        }
+        values = selected.ToArray();
+        return true;
+    }
+
+    private static bool TryAppendOptionalText(
+        JsonElement element,
+        string propertyName,
+        ICollection<string> values) {
+        if (!TryOptionalText(element, propertyName, 40000, out var value)) {
+            return false;
+        }
+        if (value is not null) {
+            values.Add(value);
+        }
+        return values.Count <= 100;
+    }
+
+    private static bool TryAppendOptionalObjectValue(
+        JsonElement element,
+        string propertyName,
+        ICollection<string> values) {
+        if (!element.TryGetProperty(propertyName, out var owner) || owner.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        return owner.ValueKind == JsonValueKind.Object &&
+            TryAppendOptionalText(owner, "value", values);
+    }
+
+    private static bool TryAppendOptionalArray(
+        JsonElement element,
+        string propertyName,
+        ICollection<string> values) {
+        if (!element.TryGetProperty(propertyName, out var array) || array.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (array.ValueKind != JsonValueKind.Array || array.GetArrayLength() > 100) {
+            return false;
+        }
+        foreach (var item in array.EnumerateArray()) {
+            if (item.ValueKind != JsonValueKind.String ||
+                !TryAppendValue(item.GetString(), values)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool TryAppendOptionalObjectArray(
+        JsonElement element,
+        string propertyName,
+        ICollection<string> values) {
+        if (!element.TryGetProperty(propertyName, out var array) || array.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (array.ValueKind != JsonValueKind.Array || array.GetArrayLength() > 100) {
+            return false;
+        }
+        foreach (var item in array.EnumerateArray()) {
+            if (item.ValueKind != JsonValueKind.Object ||
+                !TryOptionalText(item, "value", 40000, out var itemValue) ||
+                itemValue is null ||
+                !TryAppendValue(itemValue, values)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool TryAppendValue(string? candidate, ICollection<string> values) {
+        if (candidate is null || candidate.Length > 40000 || candidate.IndexOf('\0') >= 0 || values.Count >= 100) {
+            return false;
+        }
+        values.Add(candidate);
+        return true;
     }
 
     private static string CreateDeduplicationKey(string installationId, string signature) {
@@ -318,6 +494,27 @@ public static class SlackInteractionReceiver {
         return accepted;
     }
 
+    private static bool TryOptionalText(
+        JsonElement element,
+        string propertyName,
+        int maximumLength,
+        out string? value) {
+        value = null;
+        if (!element.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (property.ValueKind != JsonValueKind.String) {
+            return false;
+        }
+        var candidate = property.GetString();
+        if (candidate is null || candidate.Length > maximumLength || candidate.IndexOf('\0') >= 0) {
+            return false;
+        }
+        value = candidate;
+        return true;
+    }
+
     private static bool TryNestedRequired(
         JsonElement root,
         string objectName,
@@ -345,6 +542,23 @@ public static class SlackInteractionReceiver {
         }
         return owner.ValueKind == JsonValueKind.Object &&
             TryOptional(owner, propertyName, maximumLength, out value);
+    }
+
+    private static bool TryNestedOptionalText(
+        JsonElement root,
+        string objectName,
+        string propertyName,
+        int maximumLength,
+        out string? value) {
+        value = null;
+        if (!root.TryGetProperty(objectName, out var owner)) {
+            return true;
+        }
+        if (owner.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        return owner.ValueKind == JsonValueKind.Object &&
+            TryOptionalText(owner, propertyName, maximumLength, out value);
     }
 
     private static bool TryNormalizeCoordinate(

@@ -102,6 +102,70 @@ public sealed class SlackEventsApiReceiverTests {
     }
 
     [Fact]
+    public void ChangedDeletedReactionAndThreadEventsUseAffectedMessageCoordinates() {
+        const string changed = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvChanged","event":{"type":"message","subtype":"message_changed","channel":"C1","event_ts":"1787416799.9","message":{"user":"U1","text":"edited","ts":"1787416799.1","thread_ts":"1787416700.1"}}}
+            """;
+        const string deleted = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvDeleted","event":{"type":"message","subtype":"message_deleted","channel":"C1","deleted_ts":"1787416799.2","event_ts":"1787416800.1","previous_message":{"user":"U2","text":"deleted","thread_ts":"1787416700.1"}}}
+            """;
+        const string reaction = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvReaction","event":{"type":"reaction_added","user":"U3","reaction":"thumbsup","event_ts":"1787416801.1","item":{"type":"message","channel":"C2","ts":"1787416799.3"}}}
+            """;
+
+        var changedResult = Receive(changed);
+        var deletedResult = Receive(deleted);
+        var reactionResult = Receive(reaction);
+
+        Assert.Equal("1787416799.1", changedResult.Envelope?.Message?.MessageId);
+        Assert.Equal("edited", changedResult.Envelope?.Payload.Text);
+        Assert.Equal("U1", changedResult.Envelope?.SenderId);
+        Assert.Equal("1787416700.1", changedResult.Envelope?.Message?.ThreadId);
+        Assert.Equal(MessageConversationKind.Thread, changedResult.Envelope?.Conversation?.ConversationKind);
+        Assert.Equal("1787416799.2", deletedResult.Envelope?.Message?.MessageId);
+        Assert.Equal("U2", deletedResult.Envelope?.SenderId);
+        Assert.Equal("C2", reactionResult.Envelope?.Conversation?.ConversationId);
+        Assert.Equal("1787416799.3", reactionResult.Envelope?.Message?.MessageId);
+        Assert.Equal("thumbsup", reactionResult.Envelope?.Payload.ProviderEvent.Reaction);
+    }
+
+    [Fact]
+    public void SafeEventPayloadRoundTripsWithDefaultSystemTextJson() {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"message","user":"U1","text":"hello","channel":"C1","ts":"1787416799.1"}}
+            """;
+        var payload = Receive(json).Envelope!.Payload;
+
+        var serialized = JsonSerializer.Serialize(payload);
+        var roundTrip = JsonSerializer.Deserialize<SlackInboundEvent>(serialized);
+
+        Assert.Equal("message", roundTrip?.EventType);
+        Assert.Equal("C1", roundTrip?.ProviderEvent.ChannelId);
+        Assert.DoesNotContain("JsonElement", serialized, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AuthenticatedStaleRequestHasDistinctFailureClassification() {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"message","channel":"C1","ts":"1787416799.1"}}
+            """;
+        var staleRequest = new MessageInboundRequest(
+            "installation-1",
+            "application/json",
+            Encoding.UTF8.GetBytes(json),
+            ReceivedAt.AddMinutes(6));
+
+        var result = SlackEventsApiReceiver.Receive(
+            staleRequest,
+            SigningSecret,
+            Sign(json),
+            Timestamp);
+
+        Assert.Equal(MessageReceiveFailureKind.Stale, result.FailureKind);
+        Assert.Equal(401, result.Acknowledgement.StatusCode);
+    }
+
+    [Fact]
     public void InvalidSignatureContentTypeAndCoordinatesFailClosed() {
         const string json = """
             {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"message","channel":"C1\u000a","ts":"1787416799.1"}}

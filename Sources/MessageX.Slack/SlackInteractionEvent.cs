@@ -1,21 +1,22 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace MessageX.Slack;
 
 /// <summary>Verified transient Slack slash-command or interactive request payload.</summary>
 public sealed class SlackInteractionEvent {
-    internal SlackInteractionEvent(
+    /// <summary>Creates a verified Slack interaction value or rehydrates its safe persisted projection.</summary>
+    [JsonConstructor]
+    public SlackInteractionEvent(
         SlackInteractionKind kind,
         string name,
         string? text,
-        JsonElement? providerPayload,
-        SlackTransientInteractionContext transientContext) {
+        SlackInteractionPayload? providerPayload,
+        SlackTransientInteractionContext? transientContext = null) {
         Kind = kind;
         Name = name;
         Text = text;
         ProviderPayload = providerPayload;
-        TransientContext = transientContext;
+        TransientContext = transientContext ?? SlackTransientInteractionContext.Unavailable;
     }
 
     /// <summary>Supported interaction shape.</summary>
@@ -28,11 +29,9 @@ public sealed class SlackInteractionEvent {
     public string? Text { get; }
 
     /// <summary>
-    /// Parsed provider payload for interactive requests. This may contain user input and transient provider
-    /// capabilities and must not be persisted or logged as a durable message reference.
+    /// Safe typed provider payload for interactive requests. Transient response and trigger capabilities are excluded.
     /// </summary>
-    [JsonIgnore]
-    public JsonElement? ProviderPayload { get; }
+    public SlackInteractionPayload? ProviderPayload { get; }
 
     /// <summary>Explicitly transient response and trigger capabilities.</summary>
     [JsonIgnore]

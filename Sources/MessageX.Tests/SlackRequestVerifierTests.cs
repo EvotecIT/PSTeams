@@ -79,4 +79,29 @@ public sealed class SlackRequestVerifierTests {
             signedAt,
             TimeSpan.FromMinutes(5)));
     }
+
+    [Fact]
+    public void DetailedVerificationDistinguishesAuthenticatedStaleRequests() {
+        var signedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(OfficialTimestamp));
+        var body = Encoding.UTF8.GetBytes(OfficialBody);
+
+        Assert.Equal(
+            SlackRequestVerificationResult.Stale,
+            SlackRequestVerifier.VerifyRecentDetailed(
+                OfficialSigningSecret,
+                OfficialSignature,
+                OfficialTimestamp,
+                body,
+                signedAt.AddMinutes(6),
+                TimeSpan.FromMinutes(5)));
+        Assert.Equal(
+            SlackRequestVerificationResult.Invalid,
+            SlackRequestVerifier.VerifyRecentDetailed(
+                OfficialSigningSecret,
+                "v0=" + new string('0', 64),
+                OfficialTimestamp,
+                body,
+                signedAt.AddMinutes(6),
+                TimeSpan.FromMinutes(5)));
+    }
 }

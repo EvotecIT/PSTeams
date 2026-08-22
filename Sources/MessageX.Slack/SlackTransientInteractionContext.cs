@@ -7,6 +7,8 @@ namespace MessageX.Slack;
 /// conversation, or message-reference storage.
 /// </summary>
 public sealed class SlackTransientInteractionContext {
+    internal static SlackTransientInteractionContext Unavailable { get; } = new(null, null);
+
     internal SlackTransientInteractionContext(string? triggerId, string? responseUrl) {
         TriggerId = triggerId;
         ResponseUrl = responseUrl;

@@ -18,13 +18,31 @@ public static class SlackRequestVerifier {
         byte[] requestBody,
         DateTimeOffset now,
         TimeSpan maximumAge) {
+        return VerifyRecentDetailed(
+            signingSecret,
+            signature,
+            timestamp,
+            requestBody,
+            now,
+            maximumAge) == SlackRequestVerificationResult.Valid;
+    }
+
+    /// <summary>Verifies a Slack signature and distinguishes a valid stale request from an invalid signature.</summary>
+    public static SlackRequestVerificationResult VerifyRecentDetailed(
+        string signingSecret,
+        string signature,
+        string timestamp,
+        byte[] requestBody,
+        DateTimeOffset now,
+        TimeSpan maximumAge) {
         if (requestBody is null) {
             throw new ArgumentNullException(nameof(requestBody));
         }
         if (string.IsNullOrEmpty(signingSecret) ||
             maximumAge <= TimeSpan.Zero ||
-            !long.TryParse(timestamp, NumberStyles.None, CultureInfo.InvariantCulture, out var unixSeconds)) {
-            return false;
+            !long.TryParse(timestamp, NumberStyles.None, CultureInfo.InvariantCulture, out var unixSeconds) ||
+            !TryDecodeSignature(signature, out var suppliedSignature)) {
+            return SlackRequestVerificationResult.Invalid;
         }
 
         DateTimeOffset signedAt;
@@ -32,13 +50,7 @@ public static class SlackRequestVerifier {
             signedAt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
         }
         catch (ArgumentOutOfRangeException) {
-            return false;
-        }
-
-        var age = now.ToUniversalTime() - signedAt;
-        if (age < -maximumAge || age > maximumAge ||
-            !TryDecodeSignature(signature, out var suppliedSignature)) {
-            return false;
+            return SlackRequestVerificationResult.Invalid;
         }
 
         var prefix = Encoding.UTF8.GetBytes($"v0:{timestamp}:");
@@ -49,7 +61,14 @@ public static class SlackRequestVerifier {
         using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(signingSecret))) {
             expectedSignature = hmac.ComputeHash(signedBytes);
         }
-        return FixedTimeEquals(expectedSignature, suppliedSignature);
+        if (!FixedTimeEquals(expectedSignature, suppliedSignature)) {
+            return SlackRequestVerificationResult.Invalid;
+        }
+
+        var age = now.ToUniversalTime() - signedAt;
+        return age < -maximumAge || age > maximumAge
+            ? SlackRequestVerificationResult.Stale
+            : SlackRequestVerificationResult.Valid;
     }
 
     private static bool TryDecodeSignature(string? value, out byte[] bytes) {

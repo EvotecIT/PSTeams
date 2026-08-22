@@ -32,14 +32,17 @@ public static class SlackEventsApiReceiver {
         }
 
         var body = request.CopyBody();
-        if (!SlackRequestVerifier.VerifyRecent(
-                signingSecret,
-                signature,
-                timestamp,
-                body,
-                request.ReceivedAt,
-                replayWindow ?? DefaultReplayWindow)) {
-            return Reject(401, MessageReceiveFailureKind.Unauthorized);
+        var verification = SlackRequestVerifier.VerifyRecentDetailed(
+            signingSecret,
+            signature,
+            timestamp,
+            body,
+            request.ReceivedAt,
+            replayWindow ?? DefaultReplayWindow);
+        if (verification != SlackRequestVerificationResult.Valid) {
+            return verification == SlackRequestVerificationResult.Stale
+                ? Reject(401, MessageReceiveFailureKind.Stale)
+                : Reject(401, MessageReceiveFailureKind.Unauthorized);
         }
 
         try {
@@ -94,24 +97,74 @@ public static class SlackEventsApiReceiver {
             !TryReadCoordinate(providerEvent, "channel_type", out var channelType) ||
             !TryReadCoordinate(providerEvent, "event_ts", out var eventTimestamp) ||
             !TryReadCoordinate(providerEvent, "ts", out var messageTimestamp) ||
+            !TryReadCoordinate(providerEvent, "thread_ts", out var threadTimestamp) ||
+            !TryReadCoordinate(providerEvent, "user", out var userId) ||
+            !TryReadCoordinate(providerEvent, "channel", out var channelId) ||
+            !TryReadCoordinate(providerEvent, "reaction", out var reaction) ||
             !TryReadText(providerEvent, "text", out var text)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
-        eventTimestamp ??= messageTimestamp;
         var eventKind = ClassifyEvent(eventType, subtype);
         if (eventKind == MessageEventKind.Unknown) {
             return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
                 MessageAcknowledgement.Empty(200));
         }
+        string? itemType = null;
+        if (eventKind == MessageEventKind.MessageChanged) {
+            if (!providerEvent.TryGetProperty("message", out var changedMessage) ||
+                changedMessage.ValueKind != JsonValueKind.Object ||
+                !TryReadCoordinate(changedMessage, "ts", out messageTimestamp) ||
+                messageTimestamp is null ||
+                !TryReadCoordinate(changedMessage, "thread_ts", out threadTimestamp) ||
+                !TryReadCoordinate(changedMessage, "user", out userId) ||
+                !TryReadText(changedMessage, "text", out text)) {
+                return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+        } else if (eventKind == MessageEventKind.MessageDeleted) {
+            if (!TryReadCoordinate(providerEvent, "deleted_ts", out messageTimestamp) ||
+                messageTimestamp is null) {
+                return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+            if (providerEvent.TryGetProperty("previous_message", out var previousMessage)) {
+                if (previousMessage.ValueKind != JsonValueKind.Object ||
+                    !TryReadCoordinate(previousMessage, "thread_ts", out threadTimestamp) ||
+                    !TryReadCoordinate(previousMessage, "user", out userId) ||
+                    !TryReadText(previousMessage, "text", out text)) {
+                    return Reject(400, MessageReceiveFailureKind.Malformed);
+                }
+            }
+        } else if (eventKind == MessageEventKind.ReactionChanged) {
+            if (!providerEvent.TryGetProperty("item", out var item) ||
+                item.ValueKind != JsonValueKind.Object ||
+                !TryReadCoordinate(item, "type", out itemType) ||
+                !string.Equals(itemType, "message", StringComparison.Ordinal) ||
+                !TryReadCoordinate(item, "channel", out channelId) ||
+                channelId is null ||
+                !TryReadCoordinate(item, "ts", out messageTimestamp) ||
+                messageTimestamp is null) {
+                return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+        }
+        eventTimestamp ??= messageTimestamp;
         var route = CreateRoute(eventKind, channelType);
-        if (!TryReadCoordinate(root, "team_id", out var teamId) ||
-            !TryReadCoordinate(providerEvent, "user", out var userId) ||
-            !TryReadCoordinate(providerEvent, "channel", out var channelId)) {
+        if (!TryReadCoordinate(root, "team_id", out var teamId)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
+        var providerPayload = new SlackEventPayload(
+            eventType,
+            subtype,
+            userId,
+            channelId,
+            channelType,
+            messageTimestamp,
+            eventTimestamp,
+            threadTimestamp,
+            text,
+            reaction,
+            itemType);
         var payload = new SlackInboundEvent(
             eventType,
-            providerEvent.Clone(),
+            providerPayload,
             text,
             retryReason,
             retryNumber);
@@ -129,20 +182,23 @@ public static class SlackEventsApiReceiver {
             EventTime = ReadUnixTime(root, "event_time")
         };
         if (channelId is not null) {
+            var conversationKind = GetConversationKind(channelId, threadTimestamp);
             envelope.Conversation = new MessageReference(MessageProviders.Slack) {
                 InstallationId = request.InstallationId,
                 ScopeId = teamId,
                 ConversationId = channelId,
-                ConversationKind = GetConversationKind(channelId, eventKind)
+                ThreadId = threadTimestamp,
+                ConversationKind = conversationKind
             };
         }
-        var parsedTimestamp = SlackMessageValidator.ParseTimestamp(eventTimestamp);
-        if (channelId is not null && eventTimestamp is not null && parsedTimestamp is not null) {
+        var parsedTimestamp = SlackMessageValidator.ParseTimestamp(messageTimestamp);
+        if (channelId is not null && messageTimestamp is not null && parsedTimestamp is not null) {
             envelope.Message = new MessageReference(MessageProviders.Slack) {
                 InstallationId = request.InstallationId,
                 ScopeId = teamId,
                 ConversationId = channelId,
-                MessageId = eventTimestamp,
+                ThreadId = threadTimestamp,
+                MessageId = messageTimestamp,
                 Timestamp = parsedTimestamp,
                 ConversationKind = envelope.Conversation?.ConversationKind ?? MessageConversationKind.Unknown
             };
@@ -187,8 +243,11 @@ public static class SlackEventsApiReceiver {
         return MessageRoute.ForEvent(eventKind);
     }
 
-    private static MessageConversationKind GetConversationKind(string channelId, MessageEventKind eventKind) {
-        if (eventKind == MessageEventKind.MessageReceived && channelId.StartsWith("D", StringComparison.Ordinal)) {
+    private static MessageConversationKind GetConversationKind(string channelId, string? threadTimestamp) {
+        if (threadTimestamp is not null) {
+            return MessageConversationKind.Thread;
+        }
+        if (channelId.StartsWith("D", StringComparison.Ordinal)) {
             return MessageConversationKind.DirectMessage;
         }
         return channelId.StartsWith("C", StringComparison.Ordinal)

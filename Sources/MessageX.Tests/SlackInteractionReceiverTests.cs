@@ -55,7 +55,8 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approve", result.Route?.Name);
         Assert.Equal(SlackInteractionKind.BlockAction, result.Envelope?.Payload.Kind);
         Assert.Equal("1787418599.000100", result.Envelope?.Message?.MessageId);
-        Assert.Equal("button", result.Envelope?.Payload.ProviderPayload?.GetProperty("actions")[0].GetProperty("type").GetString());
+        Assert.Equal("button", result.Envelope?.Payload.ProviderPayload?.Actions[0].Type);
+        Assert.Equal("yes", result.Envelope?.Payload.ProviderPayload?.Actions[0].Value);
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
     }
 
@@ -76,6 +77,46 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approval", result.Route?.Name);
         Assert.Equal(MessageEventKind.ModalSubmitted, result.Envelope?.Kind);
         Assert.Equal(SlackInteractionKind.ViewSubmission, result.Envelope?.Payload.Kind);
+    }
+
+    [Fact]
+    public void MessageShortcutPreservesSelectedMessageCoordinates() {
+        const string payload = """
+            {
+              "type":"message_action",
+              "callback_id":"inspect",
+              "team":{"id":"T123"},
+              "user":{"id":"U123"},
+              "channel":{"id":"C123"},
+              "message":{"ts":"1787418599.000200","text":"selected"}
+            }
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal("1787418599.000200", result.Envelope?.Message?.MessageId);
+        Assert.Equal("selected", result.Envelope?.Payload.ProviderPayload?.Message?.Text);
+    }
+
+    [Fact]
+    public void TypedInteractionPayloadRoundTripsWithoutTransientCapabilities() {
+        const string payload = """
+            {
+              "type":"view_submission",
+              "team":{"id":"T123"},
+              "user":{"id":"U123"},
+              "trigger_id":"secret-trigger",
+              "view":{"callback_id":"approval","state":{"values":{"block":{"choice":{"type":"static_select","selected_option":{"value":"yes"}}}}}}
+            }
+            """;
+        var result = Receive(PayloadForm(payload));
+
+        var json = JsonSerializer.Serialize(result.Envelope!.Payload);
+        var roundTrip = JsonSerializer.Deserialize<SlackInteractionEvent>(json);
+
+        Assert.Equal("yes", roundTrip?.ProviderPayload?.View?.Values[0].SelectedValues[0]);
+        Assert.Null(roundTrip?.TransientContext.TriggerId);
+        Assert.DoesNotContain("secret-trigger", json, StringComparison.Ordinal);
     }
 
     [Fact]
