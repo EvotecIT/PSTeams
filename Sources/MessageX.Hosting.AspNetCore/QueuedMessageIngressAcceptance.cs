@@ -37,6 +37,7 @@ internal sealed class QueuedMessageIngressAcceptance :
             MessageReplayAcceptance.Duplicate => MessageIngressEnqueueStatus.Duplicate,
             MessageReplayAcceptance.Full => MessageIngressEnqueueStatus.Full,
             MessageReplayAcceptance.Stopping => MessageIngressEnqueueStatus.Stopping,
+            MessageReplayAcceptance.Unavailable => MessageIngressEnqueueStatus.Unavailable,
             _ => throw new InvalidOperationException("The replay guard returned an unsupported state.")
         });
     }

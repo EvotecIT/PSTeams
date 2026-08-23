@@ -34,7 +34,13 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             throw new ArgumentNullException(nameof(envelope));
         }
         var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
-        if (!DiscordSnowflake.TryNormalize(envelope.Payload.ApplicationId, out var applicationId) ||
+        if (!string.Equals(
+                envelope.DeduplicationKey,
+                DiscordInteractionIdentity.CreateDeduplicationKey(
+                    envelope.InstallationId,
+                    metadata.EventId!),
+                StringComparison.Ordinal) ||
+            !DiscordSnowflake.TryNormalize(envelope.Payload.ApplicationId, out var applicationId) ||
             !TryNormalizeOwner(envelope.Payload.InstallationOwnerId, out var installationOwnerId) ||
             !TryNormalizeTarget(envelope.Payload.CommandType, envelope.Payload.TargetId, out var targetId) ||
             !MetadataMatches(metadata) ||
@@ -108,6 +114,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             if (projection.Metadata is null ||
                 !MetadataMatches(projection.Metadata) ||
+                !string.Equals(
+                    record.DeduplicationKey,
+                    DiscordInteractionIdentity.CreateDeduplicationKey(
+                        record.InstallationId,
+                        projection.Metadata.EventId!),
+                    StringComparison.Ordinal) ||
                 !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
                 !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
                 !TryNormalizeOwner(projection.InstallationOwnerId, out var installationOwnerId) ||

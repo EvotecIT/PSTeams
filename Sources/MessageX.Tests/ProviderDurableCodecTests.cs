@@ -178,30 +178,30 @@ public sealed class ProviderDurableCodecTests
     [Fact]
     public void DiscordCodecUsesPersistedApplicationIdentityAndRejectsMissingIdentity()
     {
-        using var dataDocument = JsonDocument.Parse("""{"name":"status","type":1}""");
-        var payload = new DiscordInboundInteraction(
-            DiscordInteractionKind.ApplicationCommand,
-            "status",
-            null,
-            "en-US",
-            null,
-            0,
-            DiscordApplicationCommandType.ChatInput,
-            null,
-            dataDocument.RootElement,
-            "100000000000000002");
+        const string json = """
+            {"id":"100000000000000001","application_id":"100000000000000002","type":2,
+             "token":"interaction-secret","guild_id":"100000000000000003",
+             "user":{"id":"100000000000000004"},"data":{"name":"status","type":1}}
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var receivedEnvelope = Assert.IsType<MessageEventEnvelope<DiscordInboundInteraction>>(receive.Envelope);
+        var payload = receivedEnvelope.Payload;
         var rehydrated = JsonSerializer.Deserialize<DiscordInboundInteraction>(
             JsonSerializer.Serialize(payload));
         var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
             MessageProviders.Discord,
-            "installation-a",
-            "discord-persisted-application",
+            receivedEnvelope.InstallationId,
+            receivedEnvelope.DeduplicationKey,
             MessageEventKind.CommandInvoked,
             ReceivedAt,
             Assert.IsType<DiscordInboundInteraction>(rehydrated)) {
-            EventId = "100000000000000001",
-            ScopeId = "100000000000000003",
-            SenderId = "100000000000000004"
+            EventId = receivedEnvelope.EventId,
+            ScopeId = receivedEnvelope.ScopeId,
+            SenderId = receivedEnvelope.SenderId
         };
         var codec = new DiscordInteractionDurableCodec();
 
@@ -209,6 +209,20 @@ public sealed class ProviderDurableCodecTests
 
         Assert.Equal("100000000000000002", decoded.Payload.ApplicationId);
         Assert.Equal("100000000000000002", decoded.Payload.TransientContext.ApplicationId);
+
+        var mismatchedIdentityEnvelope = new MessageEventEnvelope<DiscordInboundInteraction>(
+            MessageProviders.Discord,
+            receivedEnvelope.InstallationId,
+            "discord-request:" + new string('0', 64),
+            MessageEventKind.CommandInvoked,
+            ReceivedAt,
+            Assert.IsType<DiscordInboundInteraction>(rehydrated)) {
+            EventId = receivedEnvelope.EventId,
+            ScopeId = receivedEnvelope.ScopeId,
+            SenderId = receivedEnvelope.SenderId
+        };
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            codec.Encode(MessageRoute.ForCommand("status", "1"), mismatchedIdentityEnvelope));
 
         var missing = new DiscordInboundInteraction(
             DiscordInteractionKind.ApplicationCommand,
@@ -219,17 +233,17 @@ public sealed class ProviderDurableCodecTests
             0,
             DiscordApplicationCommandType.ChatInput,
             null,
-            dataDocument.RootElement);
+            payload.Data);
         var missingEnvelope = new MessageEventEnvelope<DiscordInboundInteraction>(
             MessageProviders.Discord,
-            "installation-a",
-            "discord-missing-application",
+            receivedEnvelope.InstallationId,
+            receivedEnvelope.DeduplicationKey,
             MessageEventKind.CommandInvoked,
             ReceivedAt,
             missing) {
-            EventId = "100000000000000001",
-            ScopeId = "100000000000000003",
-            SenderId = "100000000000000004"
+            EventId = receivedEnvelope.EventId,
+            ScopeId = receivedEnvelope.ScopeId,
+            SenderId = receivedEnvelope.SenderId
         };
         Assert.Throws<MessageDurablePayloadException>(() =>
             codec.Encode(MessageRoute.ForCommand("status", "1"), missingEnvelope));
@@ -549,6 +563,7 @@ public sealed class ProviderDurableCodecTests
 
         foreach (var changed in new[] {
                      stored.Replace("\"target_id\":\"100000000000000105\"", "\"target_id\":\"100000000000000106\"", StringComparison.Ordinal),
+                     stored.Replace("\"eventId\":\"100000000000000101\"", "\"eventId\":\"100000000000000106\"", StringComparison.Ordinal),
                      stored.Replace("\"eventId\":\"100000000000000101\"", "\"eventId\":\"not-a-snowflake\"", StringComparison.Ordinal)
                  }) {
             var tampered = new MessageDurableRecord(

@@ -50,11 +50,16 @@ public sealed class MessageReplayGuard {
                 return MessageReplayAcceptance.Full;
             }
             var enqueue = accept();
-            if (enqueue == MessageIngressEnqueueStatus.Full) {
-                return MessageReplayAcceptance.Full;
-            }
-            if (enqueue == MessageIngressEnqueueStatus.Stopping) {
-                return MessageReplayAcceptance.Stopping;
+            var rejected = enqueue switch {
+                MessageIngressEnqueueStatus.Accepted => (MessageReplayAcceptance?)null,
+                MessageIngressEnqueueStatus.Duplicate => MessageReplayAcceptance.Duplicate,
+                MessageIngressEnqueueStatus.Full => MessageReplayAcceptance.Full,
+                MessageIngressEnqueueStatus.Stopping => MessageReplayAcceptance.Stopping,
+                MessageIngressEnqueueStatus.Unavailable => MessageReplayAcceptance.Unavailable,
+                _ => throw new InvalidOperationException("The ingress owner returned an unsupported acceptance state.")
+            };
+            if (rejected.HasValue) {
+                return rejected.Value;
             }
             var expiresAt = now.Add(_retention);
             var node = _expirations.AddLast(new Entry(key, expiresAt));
@@ -156,5 +161,8 @@ public enum MessageReplayAcceptance {
     Full = 2,
 
     /// <summary>The queue is stopping.</summary>
-    Stopping = 3
+    Stopping = 3,
+
+    /// <summary>The configured ingress owner is unavailable.</summary>
+    Unavailable = 4
 }

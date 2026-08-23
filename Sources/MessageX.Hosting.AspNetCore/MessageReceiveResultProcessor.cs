@@ -68,7 +68,9 @@ public sealed class MessageReceiveResultProcessor {
                 return;
             }
             if (result.RequiresSynchronousDispatch) {
-                using var slot = _synchronousDispatchGate.TryEnter();
+                using var slot = _acceptance is IMessageSynchronousDispatchGate acceptanceGate
+                    ? acceptanceGate.TryEnterSynchronousDispatch()
+                    : _synchronousDispatchGate.TryEnter();
                 if (slot is null) {
                     ReleaseReservation(result);
                     response.Headers.RetryAfter = "1";

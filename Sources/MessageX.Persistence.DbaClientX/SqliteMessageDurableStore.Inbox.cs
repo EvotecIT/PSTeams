@@ -37,7 +37,7 @@ public sealed partial class SqliteMessageDurableStore {
                     ["payload_type"] = record.PayloadType,
                     ["payload"] = record.CopyPayload(),
                     ["status"] = (int)MessageDurableStatus.Pending,
-                    ["available_at"] = Timestamp(record.ReceivedAt),
+                    ["available_at"] = Timestamp(StoreNow()),
                     ["failure_kind"] = (int)MessageDurableFailureKind.None
                 },
                 token).ConfigureAwait(false);

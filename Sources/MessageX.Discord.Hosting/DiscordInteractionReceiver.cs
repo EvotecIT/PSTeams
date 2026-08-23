@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 namespace MessageX.Discord;
@@ -189,7 +187,9 @@ public static class DiscordInteractionReceiver {
             applicationId,
             MessageDurableJsonProjection.CreateSafeClone(data, ForbiddenPersistedProperties),
             transientContext);
-        var deduplicationKey = CreateDeduplicationKey(request.InstallationId, interactionId);
+        var deduplicationKey = DiscordInteractionIdentity.CreateDeduplicationKey(
+            request.InstallationId,
+            interactionId);
         var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
             MessageProviders.Discord,
             request.InstallationId,
@@ -236,19 +236,6 @@ public static class DiscordInteractionReceiver {
             envelope,
             acknowledgement,
             requiresSynchronousDispatch: kind == DiscordInteractionKind.Autocomplete);
-    }
-
-    private static string CreateDeduplicationKey(string installationId, string interactionId) {
-        byte[] hash;
-        using (var sha256 = SHA256.Create()) {
-            hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(
-                installationId + "\n" + interactionId));
-        }
-        var builder = new StringBuilder("discord-request:", 16 + (hash.Length * 2));
-        foreach (var value in hash) {
-            builder.Append(value.ToString("x2", CultureInfo.InvariantCulture));
-        }
-        return builder.ToString();
     }
 
     private static bool TryUserId(JsonElement root, out string userId) {

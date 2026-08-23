@@ -225,6 +225,48 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public void ReplayGuardPropagatesUnavailableWithoutSuppressingProviderRetry() {
+        var guard = new MessageReplayGuard(1, TimeSpan.FromMinutes(1));
+        var result = Dispatch("unavailable-retry");
+
+        Assert.Equal(
+            MessageReplayAcceptance.Unavailable,
+            guard.TryAccept(result, FixedNow, static () => MessageIngressEnqueueStatus.Unavailable));
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(result, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+    }
+
+    [Fact]
+    public async Task ReceiveProcessorUsesAcceptanceOwnedSynchronousDispatchGate() {
+        var acceptance = new GateOwningAcceptance();
+        var router = new MessageRouter();
+        var dispatchCount = 0;
+        router.OnCommand<TestPayload>("status", (_, _) => {
+            Interlocked.Increment(ref dispatchCount);
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var processor = new MessageReceiveResultProcessor(
+            acceptance,
+            new MessageAcknowledgementWriter(),
+            router,
+            new MessageReplayGuard(1, TimeSpan.FromMinutes(1)),
+            new MessageSynchronousDispatchGate(1));
+        var response = ResponseContext();
+        var result = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("acceptance-gate"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+
+        await processor.ProcessAsync(response.Response, result, TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, response.Response.StatusCode);
+        Assert.Equal(1, acceptance.GateEntryCount);
+        Assert.Equal(0, Volatile.Read(ref dispatchCount));
+    }
+
+    [Fact]
     public async Task MissingOrCoordinateChangingCodecFailsBeforeProviderSuccess() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -371,8 +413,9 @@ public sealed class DurableIngressTests {
     public async Task RouteUnmatchedWorkerLeavesWorkForACapableRollingDeploymentPeer() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
+        var olderStore = new CoordinatedReleaseDurableStore(store);
         using var olderProvider = Services(
-            store,
+            olderStore,
             includeCodec: true,
             retryDelay: TimeSpan.Zero).BuildServiceProvider();
         var response = ResponseContext();
@@ -384,9 +427,9 @@ public sealed class DurableIngressTests {
         foreach (var worker in olderWorkers) {
             await worker.StartAsync(TestContext.Current.CancellationToken);
         }
-        await WaitUntilAsync(() => olderProvider
-            .GetRequiredService<IMessageDurableIngressHealth>()
-            .GetHealthSnapshot().Claimed > 0);
+        await olderStore.Released.WaitAsync(
+            TimeSpan.FromSeconds(5),
+            TestContext.Current.CancellationToken);
 
         using var newerProvider = Services(
             store,
@@ -402,9 +445,13 @@ public sealed class DurableIngressTests {
             await worker.StartAsync(TestContext.Current.CancellationToken);
         }
 
-        Assert.Equal("rolling-route", await handled.Task.WaitAsync(
-            TimeSpan.FromSeconds(5),
-            TestContext.Current.CancellationToken));
+        try {
+            Assert.Equal("rolling-route", await handled.Task.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken));
+        } finally {
+            olderStore.Resume();
+        }
         await WaitUntilCompletedAsync(store, "event-rolling-route");
         for (var index = newerWorkers.Length - 1; index >= 0; index--) {
             await newerWorkers[index].StopAsync(TestContext.Current.CancellationToken);
@@ -949,17 +996,6 @@ public sealed class DurableIngressTests {
         throw new TimeoutException("Durable work did not reach completed state.");
     }
 
-    private static async Task WaitUntilAsync(Func<bool> predicate) {
-        var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(5);
-        while (DateTimeOffset.UtcNow < timeoutAt) {
-            if (predicate()) {
-                return;
-            }
-            await Task.Delay(10, TestContext.Current.CancellationToken);
-        }
-        throw new TimeoutException("The durable worker did not reach the expected state.");
-    }
-
     private sealed record TestPayload(string Text);
 
     private sealed class ReservationOwningAcceptance :
@@ -977,6 +1013,24 @@ public sealed class DurableIngressTests {
         public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
             ArgumentNullException.ThrowIfNull(result);
             ReleaseCount++;
+        }
+    }
+
+    private sealed class GateOwningAcceptance :
+        IMessageIngressAcceptance,
+        IMessageSynchronousDispatchGate {
+        public int GateEntryCount { get; private set; }
+
+        public ValueTask<MessageIngressEnqueueStatus> AcceptAsync<TProviderPayload>(
+            MessageReceiveResult<TProviderPayload> result,
+            CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(MessageIngressEnqueueStatus.Accepted);
+        }
+
+        public IDisposable? TryEnterSynchronousDispatch() {
+            GateEntryCount++;
+            return null;
         }
     }
 

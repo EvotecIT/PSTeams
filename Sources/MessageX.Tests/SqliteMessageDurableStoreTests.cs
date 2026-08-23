@@ -35,6 +35,31 @@ public sealed class SqliteMessageDurableStoreTests {
     }
 
     [Fact]
+    public async Task InitialInboxAvailabilityUsesStoreClockInsteadOfSenderTimestamp() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        var futureReceivedAt = BaseTime.AddHours(1);
+        var record = new MessageDurableRecord(
+            MessageProviders.Slack,
+            "installation-a",
+            "clock-skewed-event",
+            MessageRoute.ForAction("approve"),
+            futureReceivedAt,
+            "slack.action.v1",
+            Array.Empty<byte>());
+
+        await store.AcceptInboxAsync(record);
+        var lease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a",
+            1,
+            TimeSpan.FromMinutes(1),
+            BaseTime));
+
+        Assert.Equal(futureReceivedAt, lease.Record.ReceivedAt);
+    }
+
+    [Fact]
     public async Task DeduplicationIsScopedToProviderAndTrustedInstallation() {
         using var database = new TemporaryDatabase();
         using var store = new TestStore(database.Path);
