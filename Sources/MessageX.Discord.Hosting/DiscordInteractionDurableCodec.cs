@@ -33,6 +33,10 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             throw new ArgumentNullException(nameof(envelope));
         }
+        if (!string.Equals(envelope.Provider, MessageProviders.Discord, StringComparison.Ordinal))
+        {
+            throw new MessageDurablePayloadException("The envelope is not owned by the Discord codec.");
+        }
         var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
         if (!string.Equals(
                 envelope.DeduplicationKey,

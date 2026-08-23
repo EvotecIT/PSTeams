@@ -26,6 +26,9 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         MessageEventEnvelope<TeamsInboundActivity> envelope) {
         ArgumentNullException.ThrowIfNull(route);
         ArgumentNullException.ThrowIfNull(envelope);
+        if (!string.Equals(envelope.Provider, MessageProviders.Teams, StringComparison.Ordinal)) {
+            throw new MessageDurablePayloadException("The envelope is not owned by the Teams codec.");
+        }
         var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
         Validate(envelope.Payload, route, metadata, envelope.InstallationId, envelope.DeduplicationKey);
         var projection = new TeamsActivityProjection {

@@ -59,8 +59,15 @@ public sealed class MessageReceiveResultProcessor {
             }
             if (acceptance == MessageIngressEnqueueStatus.Duplicate) {
                 var acknowledgement = result.Acknowledgement;
-                if (result.RequiresSynchronousDispatch &&
-                    _acceptance is IMessageSynchronousAcknowledgementReplay replay) {
+                if (result.RequiresSynchronousDispatch) {
+                    if (_acceptance is not IMessageSynchronousAcknowledgementReplay replay) {
+                        response.Headers.RetryAfter = "1";
+                        await _writer.WriteAsync(
+                            response,
+                            MessageAcknowledgement.Empty(StatusCodes.Status503ServiceUnavailable),
+                            cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
                     acknowledgement = await replay.WaitForAcknowledgementAsync(result, cancellationToken)
                         .ConfigureAwait(false);
                 }

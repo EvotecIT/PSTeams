@@ -16,6 +16,10 @@ public sealed class SlackInboundEventDurableCodec : IMessageDurableCodec<SlackIn
     {
         if (route is null) throw new ArgumentNullException(nameof(route));
         if (envelope is null) throw new ArgumentNullException(nameof(envelope));
+        if (!string.Equals(envelope.Provider, MessageProviders.Slack, StringComparison.Ordinal))
+        {
+            throw new MessageDurablePayloadException("The envelope is not owned by the Slack event codec.");
+        }
         var providerEvent = SlackDurableCodecValidation.NormalizeEvent(envelope.Payload.ProviderEvent);
         if (!string.Equals(envelope.Payload.Text, providerEvent.Text, StringComparison.Ordinal))
         {
@@ -89,6 +93,10 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
     {
         if (route is null) throw new ArgumentNullException(nameof(route));
         if (envelope is null) throw new ArgumentNullException(nameof(envelope));
+        if (!string.Equals(envelope.Provider, MessageProviders.Slack, StringComparison.Ordinal))
+        {
+            throw new MessageDurablePayloadException("The envelope is not owned by the Slack interaction codec.");
+        }
         var name = SlackDurableCodecValidation.InteractionName(envelope.Payload.Kind, envelope.Payload.Name);
         var providerPayload = SlackDurableCodecValidation.NormalizeInteraction(envelope.Payload.ProviderPayload);
         var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);

@@ -696,6 +696,46 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void ProviderCodecsRejectForeignEnvelopesBeforePersistence()
+    {
+        const string slackEventJson = """
+            {"type":"event_callback","team_id":"T123","event_id":"Ev123","event_time":1787418599,"event":{"type":"app_mention","user":"U123","channel":"C123","ts":"1787418599.1","text":"hello"}}
+            """;
+        var slackEvent = SlackEventsApiReceiver.Receive(
+            Request("application/json", slackEventJson),
+            SlackSecret,
+            SlackSign(slackEventJson),
+            SlackTimestamp);
+        const string slackBody = "command=%2Fstatus&user_id=U123&team_id=T123";
+        var slackInteraction = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", slackBody),
+            SlackSecret,
+            SlackSign(slackBody),
+            SlackTimestamp);
+        const string discordJson = """
+            {"id":"100000000000000101","application_id":"100000000000000102","type":2,"token":"interaction-secret","user":{"id":"100000000000000104"},"data":{"name":"status","type":1}}
+            """;
+        var discord = DiscordInteractionReceiver.Receive(
+            Request("application/json", discordJson, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, discordJson),
+            DiscordTimestamp);
+
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            new SlackInboundEventDurableCodec().Encode(
+                slackEvent.Route!,
+                CopyWithProvider(slackEvent.Envelope!, MessageProviders.Discord)));
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            new SlackInteractionEventDurableCodec().Encode(
+                slackInteraction.Route!,
+                CopyWithProvider(slackInteraction.Envelope!, MessageProviders.Discord)));
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            new DiscordInteractionDurableCodec().Encode(
+                discord.Route!,
+                CopyWithProvider(discord.Envelope!, MessageProviders.Slack)));
+    }
+
+    [Fact]
     public void CodecRejectsUnsafeReferenceBeforeStorageAndRouteTamperingAfterRestart()
     {
         const string body = "command=%2Fstatus&user_id=U123&team_id=T123&channel_id=C123";
@@ -762,6 +802,24 @@ public sealed class ProviderDurableCodecTests
         record.ReceivedAt,
         record.PayloadType,
         payload);
+
+    private static MessageEventEnvelope<TProviderPayload> CopyWithProvider<TProviderPayload>(
+        MessageEventEnvelope<TProviderPayload> envelope,
+        string provider) => new(
+            provider,
+            envelope.InstallationId,
+            envelope.DeduplicationKey,
+            envelope.Kind,
+            envelope.ReceivedAt,
+            envelope.Payload) {
+                EventId = envelope.EventId,
+                ScopeId = envelope.ScopeId,
+                SenderId = envelope.SenderId,
+                Conversation = envelope.Conversation,
+                Message = envelope.Message,
+                EventTime = envelope.EventTime,
+                CorrelationId = envelope.CorrelationId
+            };
 
     private static string SlackSign(string body)
     {

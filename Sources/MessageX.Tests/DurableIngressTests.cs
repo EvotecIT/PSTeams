@@ -71,6 +71,38 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task SynchronousDuplicateWithoutAcknowledgementReplayReturnsRetryableFailure() {
+        var acceptance = new FixedAcceptance(MessageIngressEnqueueStatus.Duplicate);
+        var router = new MessageRouter();
+        var calls = 0;
+        router.OnCommand<TestPayload>("status", (_, _) => {
+            Interlocked.Increment(ref calls);
+            return Task.FromResult(MessageHandlerResult.Respond(
+                new MessageAcknowledgement(200, "application/json", Encoding.UTF8.GetBytes("{\"ok\":true}"))));
+        });
+        var processor = new MessageReceiveResultProcessor(
+            acceptance,
+            new MessageAcknowledgementWriter(),
+            router,
+            new MessageReplayGuard(1, TimeSpan.FromMinutes(1)));
+        var synchronous = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("custom-duplicate"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+        var response = ResponseContext();
+
+        await processor.ProcessAsync(
+            response.Response,
+            synchronous,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, response.Response.StatusCode);
+        Assert.Equal("1", response.Response.Headers.RetryAfter);
+        Assert.Equal(0, Volatile.Read(ref calls));
+    }
+
+    [Fact]
     public async Task FailedSynchronousDispatchReleasesReplayReservationForProviderRetry() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -1116,6 +1148,15 @@ public sealed class DurableIngressTests {
     }
 
     private sealed record TestPayload(string Text);
+
+    private sealed class FixedAcceptance(MessageIngressEnqueueStatus status) : IMessageIngressAcceptance {
+        public ValueTask<MessageIngressEnqueueStatus> AcceptAsync<TProviderPayload>(
+            MessageReceiveResult<TProviderPayload> result,
+            CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(status);
+        }
+    }
 
     private sealed class ReservationOwningAcceptance :
         IMessageIngressAcceptance,

@@ -406,6 +406,24 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public void DurableCodecRejectsForeignProviderBeforePersistence() {
+        var dispatch = TeamsActivityMapper.MapMessage(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt);
+        var foreignEnvelope = new MessageEventEnvelope<TeamsInboundActivity>(
+            MessageProviders.Slack,
+            dispatch.Envelope.InstallationId,
+            dispatch.Envelope.DeduplicationKey,
+            dispatch.Envelope.Kind,
+            dispatch.Envelope.ReceivedAt,
+            dispatch.Envelope.Payload);
+
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            new TeamsInboundActivityDurableCodec().Encode(dispatch.Route, foreignEnvelope));
+    }
+
+    [Fact]
     public void DurableCodecRejectsConflictingSenderAndNullAttachmentsAsPayloadFailures() {
         var dispatch = TeamsActivityMapper.MapMessage(
             Message("channel"),
