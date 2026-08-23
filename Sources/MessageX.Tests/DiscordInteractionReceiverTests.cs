@@ -337,6 +337,24 @@ public sealed class DiscordInteractionReceiverTests {
     }
 
     [Fact]
+    public void RetryDeduplicationUsesVerifiedInteractionIdentityInsteadOfRequestSignature() {
+        const string json = """
+            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","user":{"id":"100000000000000073"},"data":{"name":"status","type":1}}
+            """;
+        var retryTimestamp = (long.Parse(Timestamp) + 1).ToString();
+        var first = DiscordInteractionReceiver.Receive(
+            Request(json), PublicKeyHex, Sign(Timestamp, json), Timestamp);
+        var retry = DiscordInteractionReceiver.Receive(
+            Request(json, ReceivedAt.AddSeconds(1)),
+            PublicKeyHex,
+            Sign(retryTimestamp, json),
+            retryTimestamp);
+
+        Assert.Equal(first.Envelope?.EventId, retry.Envelope?.EventId);
+        Assert.Equal(first.Envelope?.DeduplicationKey, retry.Envelope?.DeduplicationKey);
+    }
+
+    [Fact]
     public void InstallationOwnerSelectionFollowsInteractionContextAndConfiguredOwner() {
         const string direct = """
             {

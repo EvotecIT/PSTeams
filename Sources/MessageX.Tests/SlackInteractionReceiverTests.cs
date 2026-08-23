@@ -35,6 +35,18 @@ public sealed class SlackInteractionReceiverTests {
     }
 
     [Fact]
+    public void SignedSslCheckIsAcknowledgedWithoutCommandDispatch() {
+        const string body = "ssl_check=1&token=legacy-verification-token";
+
+        var result = Receive(body);
+
+        Assert.Equal(MessageReceiveStatus.Acknowledged, result.Status);
+        Assert.Equal(200, result.Acknowledgement.StatusCode);
+        Assert.Null(result.Route);
+        Assert.Null(result.Envelope);
+    }
+
+    [Fact]
     public void BlockActionUsesActionIdAndSafeMessageCoordinates() {
         const string payload = """
             {

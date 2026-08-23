@@ -189,7 +189,7 @@ public static class DiscordInteractionReceiver {
             applicationId,
             MessageDurableJsonProjection.CreateSafeClone(data, ForbiddenPersistedProperties),
             transientContext);
-        var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signatureHex);
+        var deduplicationKey = CreateDeduplicationKey(request.InstallationId, interactionId);
         var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
             MessageProviders.Discord,
             request.InstallationId,
@@ -238,11 +238,11 @@ public static class DiscordInteractionReceiver {
             requiresSynchronousDispatch: kind == DiscordInteractionKind.Autocomplete);
     }
 
-    private static string CreateDeduplicationKey(string installationId, string signatureHex) {
+    private static string CreateDeduplicationKey(string installationId, string interactionId) {
         byte[] hash;
         using (var sha256 = SHA256.Create()) {
             hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(
-                installationId + "\n" + signatureHex.ToLowerInvariant()));
+                installationId + "\n" + interactionId));
         }
         var builder = new StringBuilder("discord-request:", 16 + (hash.Length * 2));
         foreach (var value in hash) {

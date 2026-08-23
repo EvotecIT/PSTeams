@@ -667,6 +667,43 @@ public sealed class SqliteMessageDurableStoreTests {
             "sender-a", 1, TimeSpan.FromMinutes(1), BaseTime));
     }
 
+    [Fact]
+    public async Task PurgeReportsFullInboxAndOutboxBatchesInOneTransaction() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+
+        var record = Record("installation-a", "event-terminal-pair");
+        await store.AcceptInboxAsync(record);
+        var inbox = Assert.Single(await store.ClaimInboxAsync(
+            "worker-terminal-pair", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.True(await store.CompleteInboxAsync(
+            inbox.RecordId,
+            inbox.LeaseToken,
+            BaseTime,
+            new[] {
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "terminal-pair-send",
+                    "send-message",
+                    "discord.send.v1",
+                    Array.Empty<byte>(),
+                    BaseTime)
+            }));
+        var outbox = Assert.Single(await store.ClaimOutboxAsync(
+            "sender-terminal-pair", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.True(await store.CompleteOutboxAsync(
+            outbox.RecordId,
+            outbox.LeaseToken,
+            BaseTime));
+
+        Assert.Equal(2, await store.PurgeTerminalAsync(BaseTime.AddHours(1), 1));
+        Assert.Equal(
+            MessageDurableAcceptanceStatus.Accepted,
+            (await store.AcceptInboxAsync(record)).Status);
+    }
+
     private static MessageDurableRecord Record(
         string installationId,
         string deduplicationKey,

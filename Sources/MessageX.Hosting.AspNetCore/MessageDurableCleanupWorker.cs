@@ -28,10 +28,16 @@ internal sealed class MessageDurableCleanupWorker : BackgroundService {
             try {
                 await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
                 var completedBefore = _timeProvider.GetUtcNow().Subtract(_options.TerminalRetention);
-                await _store.PurgeTerminalAsync(
-                    completedBefore,
-                    _options.CleanupBatchSize,
-                    stoppingToken).ConfigureAwait(false);
+                int purged;
+                do {
+                    purged = await _store.PurgeTerminalAsync(
+                        completedBefore,
+                        _options.CleanupBatchSize,
+                        stoppingToken).ConfigureAwait(false);
+                    if (purged >= _options.CleanupBatchSize) {
+                        await Task.Yield();
+                    }
+                } while (purged >= _options.CleanupBatchSize);
             } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
                 return;
             } catch {

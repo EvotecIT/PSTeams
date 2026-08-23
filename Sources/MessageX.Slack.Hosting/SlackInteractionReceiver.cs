@@ -46,6 +46,12 @@ public static class SlackInteractionReceiver {
         if (!SlackFormDecoder.TryDecode(body, out var fields)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
+        if (!fields.ContainsKey("payload") &&
+            fields.TryGetValue("ssl_check", out var sslCheck) &&
+            string.Equals(sslCheck, "1", StringComparison.Ordinal)) {
+            return MessageReceiveResult<SlackInteractionEvent>.Acknowledge(
+                MessageAcknowledgement.Empty(200));
+        }
         return fields.TryGetValue("payload", out var payload)
             ? ReceiveInteractive(request, signature, fields, payload, expectedIdentity)
             : ReceiveCommand(request, signature, fields, expectedIdentity);
