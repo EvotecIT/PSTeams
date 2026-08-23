@@ -8,7 +8,7 @@ The package reads exact bounded request bodies, writes provider acknowledgements
 builder.Services.AddMessageXHostingAspNetCore(options => {
     options.QueueCapacity = 256;
     options.MaximumRequestBodyBytes = 1024 * 1024;
-    options.ReplayCacheCapacity = 65536;
+    options.ReplayCapacity = 65536;
     options.ReplayRetention = TimeSpan.FromHours(1);
 });
 ```

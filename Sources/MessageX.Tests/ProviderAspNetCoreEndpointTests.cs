@@ -33,7 +33,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await provider.GetRequiredService<SlackHttpEndpointHandler>().HandleEventsAsync(
             context,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -52,11 +52,11 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await handler.HandleEventsAsync(
             first,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
         await handler.HandleEventsAsync(
             second,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
@@ -73,7 +73,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await provider.GetRequiredService<SlackHttpEndpointHandler>().HandleEventsAsync(
             context,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
@@ -88,7 +88,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             context,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            DiscordConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -106,11 +106,11 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await handler.HandleEventsAsync(
             first,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
         await handler.HandleEventsAsync(
             duplicate,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
@@ -132,14 +132,14 @@ public sealed class ProviderAspNetCoreEndpointTests {
                     })));
             });
         const string json = """
-            {"id":"100000000000000001","application_id":"100000000000000002","type":4,"token":"token","user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
+            {"id":"100000000000000001","application_id":"100000000000000002","type":4,"token":"token","authorizing_integration_owners":{"1":"100000000000000003"},"user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
             """;
         var context = DiscordContext(json);
         var duplicate = DiscordContext(json);
 
         await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             context,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            DiscordConfiguration(),
             TestContext.Current.CancellationToken);
         await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             duplicate,
@@ -252,11 +252,11 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await slackProvider.GetRequiredService<SlackHttpEndpointHandler>().HandleEventsAsync(
             slack,
-            new SlackEndpointConfiguration("workspace-a", SlackSecret),
+            SlackConfiguration(),
             TestContext.Current.CancellationToken);
         await discordProvider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             discord,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            DiscordConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status415UnsupportedMediaType, slack.Response.StatusCode);
@@ -265,8 +265,8 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
     [Fact]
     public void ProviderConfigurationAndDependencySurfacesDoNotExposeSigningMaterialOrCrossLoadAdapters() {
-        var slack = new SlackEndpointConfiguration("workspace-a", SlackSecret);
-        var discord = new DiscordEndpointConfiguration("application-a", DiscordPublicKey);
+        var slack = SlackConfiguration();
+        var discord = DiscordConfiguration();
         using var slackProvider = SlackServices(capacity: 1).BuildServiceProvider();
         using var discordProvider = DiscordServices(capacity: 1).BuildServiceProvider();
 
@@ -327,8 +327,18 @@ public sealed class ProviderAspNetCoreEndpointTests {
     private static byte[] ResponseBody(DefaultHttpContext context) =>
         ((MemoryStream)context.Response.Body).ToArray();
 
+    private static SlackEndpointConfiguration SlackConfiguration() =>
+        new("workspace-a", SlackSecret, "A1", "T1");
+
+    private static DiscordEndpointConfiguration DiscordConfiguration() =>
+        new(
+            "application-a",
+            DiscordPublicKey,
+            "100000000000000002",
+            "100000000000000003");
+
     private static string SlackEvent(string eventId) =>
-        $"{{\"type\":\"event_callback\",\"team_id\":\"T1\",\"event_id\":\"{eventId}\",\"event\":{{\"type\":\"message\",\"user\":\"U1\",\"channel\":\"C1\",\"ts\":\"1787416799.1\"}}}}";
+        $"{{\"type\":\"event_callback\",\"api_app_id\":\"A1\",\"team_id\":\"T1\",\"event_id\":\"{eventId}\",\"event\":{{\"type\":\"message\",\"user\":\"U1\",\"channel\":\"C1\",\"ts\":\"1787416799.1\"}}}}";
 
     private static string SignSlack(string body) {
         var bodyBytes = Encoding.UTF8.GetBytes(body);

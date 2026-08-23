@@ -105,9 +105,9 @@ public sealed class AspNetCoreHostingTests {
 
         Assert.Equal(MessageIngressEnqueueStatus.Accepted,
             await acceptance.AcceptAsync(Dispatch("first"), TestContext.Current.CancellationToken));
-        Assert.Equal(MessageIngressEnqueueStatus.Accepted,
+        Assert.Equal(MessageIngressEnqueueStatus.Duplicate,
             await acceptance.AcceptAsync(Dispatch("first"), TestContext.Current.CancellationToken));
-        Assert.Equal(MessageIngressEnqueueStatus.Unavailable,
+        Assert.Equal(MessageIngressEnqueueStatus.Full,
             await acceptance.AcceptAsync(Dispatch("second"), TestContext.Current.CancellationToken));
         Assert.Equal(1, queue.GetHealthSnapshot().Queued);
     }
@@ -304,7 +304,7 @@ public sealed class AspNetCoreHostingTests {
         services.AddMessageXHostingAspNetCore(options => {
             options.QueueCapacity = capacity;
             if (replayCapacity.HasValue) {
-                options.ReplayCacheCapacity = replayCapacity.Value;
+                options.ReplayCapacity = replayCapacity.Value;
             }
         });
         return services;

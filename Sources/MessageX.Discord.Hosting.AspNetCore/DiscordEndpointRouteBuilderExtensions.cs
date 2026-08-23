@@ -33,6 +33,7 @@ public static class DiscordEndpointRouteBuilderExtensions {
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status413PayloadTooLarge)
             .Produces(StatusCodes.Status415UnsupportedMediaType)
             .Produces(StatusCodes.Status503ServiceUnavailable);

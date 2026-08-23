@@ -191,6 +191,25 @@ public sealed class SlackEventsApiReceiverTests {
     }
 
     [Fact]
+    public void InstallationIdentityAcceptsNonEnterpriseAuthorizationWithNullEnterpriseId() {
+        const string json = """
+            {"type":"event_callback","api_app_id":"A1","team_id":"T-other","event_id":"Ev1",
+             "authorizations":[{"team_id":"T1","enterprise_id":null}],
+             "event":{"type":"message","user":"U1","channel":"C1","ts":"1787416799.1"}}
+            """;
+
+        var result = SlackEventsApiReceiver.Receive(
+            Request(json),
+            SigningSecret,
+            Sign(json),
+            Timestamp,
+            expectedIdentity: new SlackInstallationIdentity("A1", "T1"));
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal("C1", result.Envelope?.Conversation?.ConversationId);
+    }
+
+    [Fact]
     public void InvalidSignatureContentTypeAndCoordinatesFailClosed() {
         const string json = """
             {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"message","channel":"C1\u000a","ts":"1787416799.1"}}

@@ -17,7 +17,8 @@ public static class SlackEventsApiReceiver {
         string timestamp,
         int? retryNumber = null,
         string? retryReason = null,
-        TimeSpan? replayWindow = null) {
+        TimeSpan? replayWindow = null,
+        SlackInstallationIdentity? expectedIdentity = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -62,6 +63,9 @@ public static class SlackEventsApiReceiver {
             if (!string.Equals(envelopeType, "event_callback", StringComparison.Ordinal)) {
                 return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
+            }
+            if (expectedIdentity is not null && !MatchesExpectedIdentity(root, expectedIdentity)) {
+                return Reject(403, MessageReceiveFailureKind.Unauthorized);
             }
             return ReceiveEventCallback(request, root, retryNumber, retryReason?.Trim());
         }
@@ -297,6 +301,9 @@ public static class SlackEventsApiReceiver {
         if (!element.TryGetProperty(propertyName, out var property)) {
             return true;
         }
+        if (property.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
         if (property.ValueKind != JsonValueKind.String) {
             return false;
         }
@@ -307,6 +314,43 @@ public static class SlackEventsApiReceiver {
         var normalized = candidate?.Trim();
         value = string.IsNullOrEmpty(normalized) ? null : normalized;
         return true;
+    }
+
+    private static bool MatchesExpectedIdentity(
+        JsonElement root,
+        SlackInstallationIdentity expectedIdentity) {
+        if (!TryReadCoordinate(root, "api_app_id", out var applicationId) ||
+            applicationId is null ||
+            !string.Equals(applicationId, expectedIdentity.ApplicationId, StringComparison.Ordinal) ||
+            !TryReadCoordinate(root, "team_id", out var workspaceId) ||
+            !TryReadCoordinate(root, "enterprise_id", out var enterpriseId) ||
+            !TryReadCoordinate(root, "context_team_id", out var contextWorkspaceId) ||
+            !TryReadCoordinate(root, "context_enterprise_id", out var contextEnterpriseId)) {
+            return false;
+        }
+        if (expectedIdentity.Matches(
+                applicationId,
+                contextWorkspaceId ?? workspaceId,
+                contextEnterpriseId ?? enterpriseId)) {
+            return true;
+        }
+        if (!root.TryGetProperty("authorizations", out var authorizations)) {
+            return false;
+        }
+        if (authorizations.ValueKind != JsonValueKind.Array || authorizations.GetArrayLength() > 100) {
+            return false;
+        }
+        foreach (var authorization in authorizations.EnumerateArray()) {
+            if (authorization.ValueKind != JsonValueKind.Object ||
+                !TryReadCoordinate(authorization, "team_id", out var authorizedWorkspaceId) ||
+                !TryReadCoordinate(authorization, "enterprise_id", out var authorizedEnterpriseId)) {
+                return false;
+            }
+            if (expectedIdentity.Matches(applicationId, authorizedWorkspaceId, authorizedEnterpriseId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static bool TryReadText(JsonElement element, string propertyName, out string? value) {
