@@ -93,8 +93,18 @@ public static class SlackEventsApiReceiver {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
 
-        if (!TryReadCoordinate(providerEvent, "subtype", out var subtype) ||
-            !TryReadCoordinate(providerEvent, "channel_type", out var channelType) ||
+        string? subtype = null;
+        if (string.Equals(eventType, "message", StringComparison.Ordinal) &&
+            !TryReadCoordinate(providerEvent, "subtype", out subtype)) {
+            return Reject(400, MessageReceiveFailureKind.Malformed);
+        }
+        var eventKind = ClassifyEvent(eventType, subtype);
+        if (eventKind == MessageEventKind.Unknown) {
+            return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
+                MessageAcknowledgement.Empty(200));
+        }
+
+        if (!TryReadCoordinate(providerEvent, "channel_type", out var channelType) ||
             !TryReadCoordinate(providerEvent, "event_ts", out var eventTimestamp) ||
             !TryReadCoordinate(providerEvent, "ts", out var messageTimestamp) ||
             !TryReadCoordinate(providerEvent, "thread_ts", out var threadTimestamp) ||
@@ -103,11 +113,6 @@ public static class SlackEventsApiReceiver {
             !TryReadCoordinate(providerEvent, "reaction", out var reaction) ||
             !TryReadText(providerEvent, "text", out var text)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
-        }
-        var eventKind = ClassifyEvent(eventType, subtype);
-        if (eventKind == MessageEventKind.Unknown) {
-            return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
-                MessageAcknowledgement.Empty(200));
         }
         string? itemType = null;
         if (eventKind == MessageEventKind.MessageChanged) {
@@ -237,7 +242,8 @@ public static class SlackEventsApiReceiver {
             return MessageRoute.ForMention();
         }
         if (eventKind == MessageEventKind.MessageReceived &&
-            string.Equals(channelType, "im", StringComparison.Ordinal)) {
+            (string.Equals(channelType, "im", StringComparison.Ordinal) ||
+             string.Equals(channelType, "mpim", StringComparison.Ordinal))) {
             return MessageRoute.ForDirectMessage();
         }
         return MessageRoute.ForEvent(eventKind);

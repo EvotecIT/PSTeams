@@ -43,6 +43,7 @@ public sealed class SlackInteractionReceiverTests {
               "user":{"id":"U123"},
               "channel":{"id":"C123"},
               "container":{"channel_id":"C123","message_ts":"1787418599.000100"},
+              "message":{"thread_ts":"1787418500.000100"},
               "trigger_id":"trigger-2",
               "response_url":"https://hooks.slack.com/actions/T123/1/secret",
               "actions":[{"type":"button","action_id":"approve","value":"yes"}]
@@ -55,6 +56,8 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approve", result.Route?.Name);
         Assert.Equal(SlackInteractionKind.BlockAction, result.Envelope?.Payload.Kind);
         Assert.Equal("1787418599.000100", result.Envelope?.Message?.MessageId);
+        Assert.Equal("1787418500.000100", result.Envelope?.Message?.ThreadId);
+        Assert.Equal(MessageConversationKind.Thread, result.Envelope?.Conversation?.ConversationKind);
         Assert.Equal("button", result.Envelope?.Payload.ProviderPayload?.Actions[0].Type);
         Assert.Equal("yes", result.Envelope?.Payload.ProviderPayload?.Actions[0].Value);
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
@@ -77,6 +80,17 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approval", result.Route?.Name);
         Assert.Equal(MessageEventKind.ModalSubmitted, result.Envelope?.Kind);
         Assert.Equal(SlackInteractionKind.ViewSubmission, result.Envelope?.Payload.Kind);
+    }
+
+    [Fact]
+    public void DateTimePickerSelectionIsPreservedAsItsUnixTimestamp() {
+        const string payload = """
+            {"type":"view_submission","team":{"id":"T123"},"user":{"id":"U123"},"view":{"callback_id":"schedule","state":{"values":{"when":{"start":{"type":"datetimepicker","selected_date_time":1787418600}}}}}}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal("1787418600", result.Envelope?.Payload.ProviderPayload?.View?.Values[0].SelectedValues[0]);
     }
 
     [Fact]

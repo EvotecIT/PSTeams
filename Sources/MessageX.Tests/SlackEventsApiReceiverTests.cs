@@ -89,9 +89,34 @@ public sealed class SlackEventsApiReceiverTests {
     }
 
     [Fact]
+    public void MultipartyDirectMessageUsesTheDirectMessageRoute() {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvMpim","event":{"type":"message","user":"U1","channel":"G1","channel_type":"mpim","ts":"1787416799.1","text":"group dm"}}
+            """;
+
+        var result = Receive(json);
+
+        Assert.Equal(MessageRouteKind.DirectMessage, result.Route?.Kind);
+        Assert.Equal(MessageEventKind.MessageReceived, result.Envelope?.Kind);
+    }
+
+    [Fact]
     public void UnsupportedVerifiedEventIsAcknowledgedWithoutDispatch() {
         const string json = """
             {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"app_home_opened"}}
+            """;
+
+        var result = Receive(json);
+
+        Assert.Equal(MessageReceiveStatus.Acknowledged, result.Status);
+        Assert.Equal(200, result.Acknowledgement.StatusCode);
+        Assert.Null(result.Envelope);
+    }
+
+    [Fact]
+    public void UnsupportedVerifiedEventDoesNotParseMessageOnlyCoordinateShapes() {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvChannel","event":{"type":"channel_created","channel":{"id":"C1","name":"general"}}}
             """;
 
         var result = Receive(json);

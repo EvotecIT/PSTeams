@@ -117,11 +117,13 @@ public static class SlackInteractionReceiver {
             MessageRoute route;
             string name;
             string? messageTimestamp = null;
+            string? threadTimestamp = null;
             SlackInteractionPayload providerPayload;
             if (string.Equals(type, "block_actions", StringComparison.Ordinal)) {
                 if (!TrySingleAction(root, out name, out var action) ||
                     !TryNestedOptional(root, "container", "message_ts", 32, out messageTimestamp) ||
-                    !TryNestedOptional(root, "container", "channel_id", MaximumCoordinateLength, out var containerChannel)) {
+                    !TryNestedOptional(root, "container", "channel_id", MaximumCoordinateLength, out var containerChannel) ||
+                    !TryNestedOptional(root, "message", "thread_ts", 32, out threadTimestamp)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 channelId ??= containerChannel;
@@ -136,6 +138,7 @@ public static class SlackInteractionReceiver {
                 SlackMessageInput? message = null;
                 if (string.Equals(type, "message_action", StringComparison.Ordinal)) {
                     if (!TryNestedRequired(root, "message", "ts", 32, out messageTimestamp) ||
+                        !TryNestedOptional(root, "message", "thread_ts", 32, out threadTimestamp) ||
                         !TryNestedOptionalText(root, "message", "text", 40000, out var messageText)) {
                         return Reject(400, MessageReceiveFailureKind.Malformed);
                     }
@@ -173,7 +176,8 @@ public static class SlackInteractionReceiver {
                 teamId ?? enterpriseId,
                 userId,
                 channelId,
-                messageTimestamp);
+                messageTimestamp,
+                threadTimestamp);
         }
         catch (JsonException) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -188,7 +192,8 @@ public static class SlackInteractionReceiver {
         string? scopeId,
         string userId,
         string? channelId,
-        string? messageTimestamp) {
+        string? messageTimestamp,
+        string? threadTimestamp = null) {
         var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signature);
         var envelope = new MessageEventEnvelope<SlackInteractionEvent>(
             MessageProviders.Slack,
@@ -203,15 +208,18 @@ public static class SlackInteractionReceiver {
             CorrelationId = request.CorrelationId
         };
         if (channelId is not null) {
-            var conversationKind = channelId.StartsWith("C", StringComparison.Ordinal)
-                ? MessageConversationKind.Channel
-                : channelId.StartsWith("D", StringComparison.Ordinal)
-                    ? MessageConversationKind.DirectMessage
-                    : MessageConversationKind.Unknown;
+            var conversationKind = threadTimestamp is not null
+                ? MessageConversationKind.Thread
+                : channelId.StartsWith("C", StringComparison.Ordinal)
+                    ? MessageConversationKind.Channel
+                    : channelId.StartsWith("D", StringComparison.Ordinal)
+                        ? MessageConversationKind.DirectMessage
+                        : MessageConversationKind.Unknown;
             envelope.Conversation = new MessageReference(MessageProviders.Slack) {
                 InstallationId = request.InstallationId,
                 ScopeId = scopeId,
                 ConversationId = channelId,
+                ThreadId = threadTimestamp,
                 ConversationKind = conversationKind
             };
             var parsedTimestamp = SlackMessageValidator.ParseTimestamp(messageTimestamp);
@@ -220,6 +228,7 @@ public static class SlackInteractionReceiver {
                     InstallationId = request.InstallationId,
                     ScopeId = scopeId,
                     ConversationId = channelId,
+                    ThreadId = threadTimestamp,
                     ConversationKind = conversationKind,
                     MessageId = messageTimestamp,
                     Timestamp = parsedTimestamp
@@ -320,6 +329,7 @@ public static class SlackInteractionReceiver {
             !TryAppendOptionalText(action, "selected_conversation", selected) ||
             !TryAppendOptionalText(action, "selected_channel", selected) ||
             !TryAppendOptionalText(action, "selected_date", selected) ||
+            !TryAppendOptionalUnixTimestamp(action, "selected_date_time", selected) ||
             !TryAppendOptionalText(action, "selected_time", selected) ||
             !TryAppendOptionalObjectValue(action, "selected_option", selected) ||
             !TryAppendOptionalArray(action, "selected_users", selected) ||
@@ -343,6 +353,20 @@ public static class SlackInteractionReceiver {
         if (value is not null) {
             values.Add(value);
         }
+        return values.Count <= 100;
+    }
+
+    private static bool TryAppendOptionalUnixTimestamp(
+        JsonElement element,
+        string propertyName,
+        ICollection<string> values) {
+        if (!element.TryGetProperty(propertyName, out var property) || property.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (property.ValueKind != JsonValueKind.Number || !property.TryGetInt64(out var value)) {
+            return false;
+        }
+        values.Add(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return values.Count <= 100;
     }
 
