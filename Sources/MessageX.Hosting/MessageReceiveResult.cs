@@ -33,7 +33,11 @@ public sealed class MessageReceiveResult<TProviderPayload> {
     /// <summary>Verified typed envelope for a dispatch-ready result.</summary>
     public MessageEventEnvelope<TProviderPayload>? Envelope { get; }
 
-    /// <summary>Whether the provider response must be produced by dispatching the handler before acknowledgement.</summary>
+    /// <summary>
+    /// Whether the provider response must be produced by dispatching the handler before acknowledgement.
+    /// Synchronous results remain inline and use process-local replay protection; durable ingress does not defer or
+    /// persist them because the handler-produced acknowledgement must be returned on the original provider request.
+    /// </summary>
     public bool RequiresSynchronousDispatch { get; }
 
     /// <summary>Creates a rejected receive result.</summary>

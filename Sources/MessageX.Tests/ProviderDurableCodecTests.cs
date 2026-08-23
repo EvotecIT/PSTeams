@@ -236,6 +236,35 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void DiscordCodecRejectsReducedPublicProjectionBeforePersistence()
+    {
+        var payload = new DiscordInboundInteraction(
+            DiscordInteractionKind.ApplicationCommand,
+            "status",
+            null,
+            "en-US",
+            null,
+            0,
+            DiscordApplicationCommandType.ChatInput,
+            null,
+            "100000000000000002");
+        var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
+            MessageProviders.Discord,
+            "installation-a",
+            "discord-reduced-projection",
+            MessageEventKind.CommandInvoked,
+            ReceivedAt,
+            payload) {
+            EventId = "100000000000000001",
+            ScopeId = "100000000000000003",
+            SenderId = "100000000000000004"
+        };
+
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            new DiscordInteractionDurableCodec().Encode(MessageRoute.ForCommand("status", "1"), envelope));
+    }
+
+    [Fact]
     public void ProviderCodecsRoundTripNormalizedRouteIdentifiers()
     {
         const string slackJson = """
@@ -568,6 +597,15 @@ public sealed class ProviderDurableCodecTests
         receive.Envelope.Conversation = new MessageReference(MessageProviders.Slack)
         {
             InstallationId = receive.Envelope.InstallationId,
+            ScopeId = "other-scope",
+            ConversationId = "C123"
+        };
+        Assert.Throws<ArgumentException>(() => codec.Encode(receive.Route!, receive.Envelope));
+
+        receive.Envelope.Conversation = new MessageReference(MessageProviders.Slack)
+        {
+            InstallationId = receive.Envelope.InstallationId,
+            ScopeId = receive.Envelope.ScopeId,
             ConversationId = "C123"
         };
         var valid = codec.Encode(receive.Route!, receive.Envelope);

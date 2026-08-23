@@ -33,21 +33,36 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             throw new ArgumentNullException(nameof(envelope));
         }
-        if (!DiscordSnowflake.TryNormalize(envelope.Payload.ApplicationId, out var applicationId)) {
+        var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
+        if (!DiscordSnowflake.TryNormalize(envelope.Payload.ApplicationId, out var applicationId) ||
+            !TryNormalizeOwner(envelope.Payload.InstallationOwnerId, out var installationOwnerId) ||
+            !TryNormalizeTarget(envelope.Payload.CommandType, envelope.Payload.TargetId, out var targetId) ||
+            !MetadataMatches(metadata) ||
+            !RouteMatches(envelope.Payload.Kind, envelope.Payload.Name, envelope.Payload.CommandType, route) ||
+            !IsSafeOptional(envelope.Payload.Locale, 64) ||
+            !IsSafeOptional(envelope.Payload.GuildLocale, 64) ||
+            envelope.Payload.Context is < 0 or > 2 ||
+            envelope.Payload.Data.ValueKind != JsonValueKind.Object ||
+            !DataMatches(
+                envelope.Payload.Kind,
+                envelope.Payload.Name,
+                envelope.Payload.CommandType,
+                targetId,
+                envelope.Payload.Data)) {
             throw new MessageDurablePayloadException(
-                "The Discord durable projection requires a canonical application identifier.");
+                "The Discord interaction cannot be represented as a complete durable payload.");
         }
         var projection = new DiscordInteractionProjection
         {
-            Metadata = MessageDurableEnvelopeMetadata.Capture(envelope),
+            Metadata = metadata,
             Kind = envelope.Payload.Kind,
             Name = envelope.Payload.Name,
-            InstallationOwnerId = envelope.Payload.InstallationOwnerId,
+            InstallationOwnerId = installationOwnerId,
             Locale = envelope.Payload.Locale,
             GuildLocale = envelope.Payload.GuildLocale,
             Context = envelope.Payload.Context,
             CommandType = envelope.Payload.CommandType,
-            TargetId = envelope.Payload.TargetId,
+            TargetId = targetId,
             ApplicationId = applicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };

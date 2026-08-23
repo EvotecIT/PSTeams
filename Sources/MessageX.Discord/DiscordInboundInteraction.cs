@@ -5,7 +5,10 @@ namespace MessageX.Discord;
 
 /// <summary>Verified Discord interaction with safe routing coordinates and transient provider data.</summary>
 public sealed class DiscordInboundInteraction {
-    /// <summary>Creates a safe persisted Discord interaction projection without transient provider capabilities.</summary>
+    /// <summary>
+    /// Creates a safe volatile Discord interaction projection without provider data or transient capabilities.
+    /// The durable codec rejects this reduced projection because it cannot reconstruct dispatchable interaction data.
+    /// </summary>
     public DiscordInboundInteraction(
         DiscordInteractionKind kind,
         string name,

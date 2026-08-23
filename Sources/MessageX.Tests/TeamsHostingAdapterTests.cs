@@ -685,12 +685,6 @@ public sealed class TeamsHostingAdapterTests {
 
         public string Path { get; }
 
-        public void Dispose() {
-            foreach (var path in new[] { Path, Path + "-wal", Path + "-shm" }) {
-                if (File.Exists(path)) {
-                    File.Delete(path);
-                }
-            }
-        }
+        public void Dispose() => TemporaryPathCleanup.DeleteSqliteDatabase(Path);
     }
 }

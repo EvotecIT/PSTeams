@@ -7,7 +7,9 @@ namespace MessageX.Hosting.AspNetCore;
 /// <summary>Registers durable MessageX acceptance and provider payload codecs.</summary>
 public static class MessageXDurableIngressServiceCollectionExtensions {
     /// <summary>
-    /// Replaces volatile queue acceptance with a registered <see cref="IMessageDurableStore"/>.
+    /// Replaces volatile queue acceptance for asynchronous dispatch with a registered
+    /// <see cref="IMessageDurableStore"/>. Provider acknowledgements produced by synchronous handlers remain inline
+    /// with process-local replay protection and are not persisted for restart replay.
     /// </summary>
     public static IServiceCollection AddMessageXDurableIngress(
         this IServiceCollection services,

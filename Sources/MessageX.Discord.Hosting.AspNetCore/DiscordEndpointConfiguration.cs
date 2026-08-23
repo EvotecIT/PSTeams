@@ -65,9 +65,11 @@ public sealed class DiscordEndpointConfiguration {
         if (allowZero && string.Equals(value, "0", StringComparison.Ordinal)) {
             return "0";
         }
-        if (value is null || value.Length is < 17 or > 20 || value.Any(character => character is < '0' or > '9')) {
-            throw new ArgumentException("A Discord snowflake identifier is required.", parameterName);
+        var normalized = DiscordSnowflake.Normalize(value, parameterName);
+        if (normalized.Length is < 17 or > 20 ||
+            !string.Equals(value, normalized, StringComparison.Ordinal)) {
+            throw new ArgumentException("A canonical Discord snowflake identifier is required.", parameterName);
         }
-        return value;
+        return normalized;
     }
 }

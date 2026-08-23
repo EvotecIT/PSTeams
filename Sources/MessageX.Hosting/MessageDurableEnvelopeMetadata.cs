@@ -29,18 +29,21 @@ public sealed class MessageDurableEnvelopeMetadata {
         if (envelope is null) {
             throw new ArgumentNullException(nameof(envelope));
         }
+        var conversation = MessageDurableReference.Capture(
+            envelope.Conversation,
+            envelope.Provider,
+            envelope.InstallationId);
+        var message = MessageDurableReference.Capture(
+            envelope.Message,
+            envelope.Provider,
+            envelope.InstallationId);
+        ValidateReferenceHierarchy(envelope.ScopeId, envelope.Conversation, envelope.Message);
         return new MessageDurableEnvelopeMetadata {
             EventId = envelope.EventId,
             ScopeId = envelope.ScopeId,
             SenderId = envelope.SenderId,
-            Conversation = MessageDurableReference.Capture(
-                envelope.Conversation,
-                envelope.Provider,
-                envelope.InstallationId),
-            Message = MessageDurableReference.Capture(
-                envelope.Message,
-                envelope.Provider,
-                envelope.InstallationId),
+            Conversation = conversation,
+            Message = message,
             EventTime = envelope.EventTime,
             CorrelationId = envelope.CorrelationId
         };

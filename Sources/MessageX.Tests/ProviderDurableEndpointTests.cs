@@ -369,10 +369,6 @@ public sealed class ProviderDurableEndpointTests {
 
         public string Path { get; }
 
-        public void Dispose() {
-            if (Directory.Exists(_directory)) {
-                Directory.Delete(_directory, recursive: true);
-            }
-        }
+        public void Dispose() => TemporaryPathCleanup.DeleteDirectory(_directory);
     }
 }

@@ -9,6 +9,7 @@ internal static class DiscordSnowflake {
         }
         var normalized = value.Trim();
         if (string.IsNullOrEmpty(normalized) ||
+            normalized[0] == '0' ||
             !ulong.TryParse(normalized, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ||
             parsed == 0) {
             throw new ArgumentException("A valid Discord snowflake identifier is required.", parameterName);

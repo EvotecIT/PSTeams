@@ -37,7 +37,7 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
-    public async Task SynchronousDispatchUsesReplayProtectionWithoutCreatingDeferredDurableWork() {
+    public async Task SynchronousDispatchIsExplicitlyProcessLocalAndCreatesNoDeferredDurableWork() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
         using var provider = Services(store, includeCodec: true).BuildServiceProvider();
@@ -1422,12 +1422,6 @@ public sealed class DurableIngressTests {
 
         public string Path { get; }
 
-        public void Dispose() {
-            foreach (var path in new[] { Path, Path + "-wal", Path + "-shm" }) {
-                if (File.Exists(path)) {
-                    File.Delete(path);
-                }
-            }
-        }
+        public void Dispose() => TemporaryPathCleanup.DeleteSqliteDatabase(Path);
     }
 }

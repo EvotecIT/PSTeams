@@ -15,7 +15,9 @@ builder.Services.AddMessageXHostingAspNetCore(options => {
 
 Use a provider endpoint package to verify Slack or Discord requests and enqueue only verified dispatch-ready envelopes. Microsoft Teams hosting continues to use the Microsoft Teams SDK adapter.
 
-The default ingress is intentionally volatile but suppresses accepted provider deduplication coordinates for a bounded retention window. It fails closed when that replay cache is full. A host that needs provider success only after durable acceptance can register an `IMessageDurableStore`, call `AddMessageXDurableIngress`, and register one `IMessageDurableCodec<TProviderPayload>` for every accepted payload type. The codec is the security boundary that persists a bounded safe projection and reconstructs it after restart; transient tokens, response URLs, signing material, raw requests, and SDK contexts must not enter that projection.
+The default ingress is intentionally volatile but suppresses accepted provider deduplication coordinates for a bounded retention window. It fails closed when that replay cache is full. A host that needs provider success only after durable acceptance for asynchronously dispatched work can register an `IMessageDurableStore`, call `AddMessageXDurableIngress`, and register one `IMessageDurableCodec<TProviderPayload>` for every accepted payload type. The codec is the security boundary that persists a bounded safe projection and reconstructs it after restart; transient tokens, response URLs, signing material, raw requests, and SDK contexts must not enter that projection.
+
+Provider operations whose acknowledgement is produced by the handler are an explicit exception: they must run inline on the original request, use bounded process-local replay protection, and are not persisted or replayed after a host restart. This currently includes Discord autocomplete and Teams Adaptive Card invoke responses. Use provider retry behavior and idempotent handlers for those synchronous operations.
 
 ```csharp
 builder.Services.AddMessageXDurableIngress(options => {

@@ -25,6 +25,34 @@ public sealed class ProviderAspNetCoreEndpointTests {
     private static readonly string DiscordPublicKey = Convert.ToHexString(
         DiscordPrivateKey.GeneratePublicKey().GetEncoded());
 
+    [Theory]
+    [InlineData("00000000000000000", "100000000000000003")]
+    [InlineData("010000000000000002", "100000000000000003")]
+    [InlineData("1", "100000000000000003")]
+    [InlineData(" 100000000000000002 ", "100000000000000003")]
+    [InlineData("100000000000000002", "00000000000000000")]
+    [InlineData("100000000000000002", "010000000000000003")]
+    public void DiscordEndpointConfigurationRejectsNonCanonicalSnowflakes(
+        string applicationId,
+        string installationOwnerId) {
+        Assert.Throws<ArgumentException>(() => new DiscordEndpointConfiguration(
+            "application-a",
+            DiscordPublicKey,
+            applicationId,
+            installationOwnerId));
+    }
+
+    [Fact]
+    public void DiscordEndpointConfigurationAllowsExactUserInstallSentinel() {
+        var configuration = new DiscordEndpointConfiguration(
+            "application-a",
+            DiscordPublicKey,
+            "100000000000000002",
+            "0");
+
+        Assert.Equal("0", configuration.InstallationOwnerId);
+    }
+
     [Fact]
     public async Task SlackUrlVerificationWritesImmediateExactChallengeWithoutEnqueueing() {
         using var provider = SlackServices(capacity: 1).BuildServiceProvider();
