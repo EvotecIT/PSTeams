@@ -4,9 +4,9 @@ public sealed partial class SqliteMessageDurableStore {
     private const string CreateInboxSql = """
         CREATE TABLE IF NOT EXISTS messagex_inbox (
             record_id TEXT NOT NULL PRIMARY KEY,
-            provider TEXT NOT NULL,
-            installation_id TEXT NOT NULL,
-            deduplication_key TEXT NOT NULL,
+            provider TEXT NOT NULL COLLATE BINARY,
+            installation_id TEXT NOT NULL COLLATE BINARY,
+            deduplication_key TEXT NOT NULL COLLATE BINARY,
             route_kind INTEGER NOT NULL,
             event_kind INTEGER NOT NULL,
             route_name TEXT NULL,
@@ -30,9 +30,9 @@ public sealed partial class SqliteMessageDurableStore {
         CREATE TABLE IF NOT EXISTS messagex_outbox (
             record_id TEXT NOT NULL PRIMARY KEY,
             inbox_record_id TEXT NOT NULL,
-            provider TEXT NOT NULL,
-            installation_id TEXT NOT NULL,
-            deduplication_key TEXT NOT NULL,
+            provider TEXT NOT NULL COLLATE BINARY,
+            installation_id TEXT NOT NULL COLLATE BINARY,
+            deduplication_key TEXT NOT NULL COLLATE BINARY,
             operation TEXT NOT NULL,
             payload_type TEXT NOT NULL,
             payload BLOB NOT NULL,

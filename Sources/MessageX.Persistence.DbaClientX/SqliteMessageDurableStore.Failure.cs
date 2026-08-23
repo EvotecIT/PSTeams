@@ -16,10 +16,10 @@ public sealed partial class SqliteMessageDurableStore {
             throw new ArgumentOutOfRangeException(nameof(table));
         }
 
-        var now = StoreNow();
-        var nowText = Timestamp(now);
         await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
         return await session.RunInTransactionAsync(async (transaction, token) => {
+            var now = StoreNow();
+            var nowText = Timestamp(now);
             var leases = await transaction.QueryAsListAsync(
                 $"SELECT attempt_count FROM {table} WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token AND lease_expires_at > @now;",
                 static row => new FailureLeaseState(row.GetInt32(0)),
@@ -79,24 +79,26 @@ public sealed partial class SqliteMessageDurableStore {
             throw new ArgumentOutOfRangeException(nameof(table));
         }
 
-        var now = StoreNow();
-        var renewedUntil = now.Add(leaseDuration);
         await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
-        var updated = await session.ExecuteNonQueryAsync(
-            $"""
-            UPDATE {table}
-            SET lease_expires_at = @lease_expires_at
-            WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token
-              AND lease_expires_at > @now;
-            """,
-            new Dictionary<string, object?> {
-                ["lease_expires_at"] = Timestamp(renewedUntil),
-                ["record_id"] = recordId,
-                ["leased"] = (int)MessageDurableStatus.Leased,
-                ["lease_token"] = leaseToken,
-                ["now"] = Timestamp(now)
-            },
-            cancellationToken).ConfigureAwait(false);
-        return updated == 1 ? new MessageLeaseRenewal(renewedUntil) : null;
+        return await session.RunInTransactionAsync(async (transaction, token) => {
+            var now = StoreNow();
+            var renewedUntil = now.Add(leaseDuration);
+            var updated = await transaction.ExecuteNonQueryAsync(
+                $"""
+                UPDATE {table}
+                SET lease_expires_at = @lease_expires_at
+                WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token
+                  AND lease_expires_at > @now;
+                """,
+                new Dictionary<string, object?> {
+                    ["lease_expires_at"] = Timestamp(renewedUntil),
+                    ["record_id"] = recordId,
+                    ["leased"] = (int)MessageDurableStatus.Leased,
+                    ["lease_token"] = leaseToken,
+                    ["now"] = Timestamp(now)
+                },
+                token).ConfigureAwait(false);
+            return updated == 1 ? new MessageLeaseRenewal(renewedUntil) : null;
+        }, cancellationToken).ConfigureAwait(false);
     }
 }

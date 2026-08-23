@@ -54,6 +54,23 @@ public sealed class SqliteMessageDurableStoreTests {
     }
 
     [Fact]
+    public async Task DeduplicationCoordinatesUseOrdinalBinaryIdentity() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+
+        var first = await store.AcceptInboxAsync(Record("Installation-A", "Event-A"));
+        var second = await store.AcceptInboxAsync(Record("installation-a", "Event-A"));
+        var third = await store.AcceptInboxAsync(Record("Installation-A", "event-a"));
+
+        Assert.Equal(MessageDurableAcceptanceStatus.Accepted, first.Status);
+        Assert.Equal(MessageDurableAcceptanceStatus.Accepted, second.Status);
+        Assert.Equal(MessageDurableAcceptanceStatus.Accepted, third.Status);
+        Assert.Equal(3, (await store.ClaimInboxAsync(
+            "worker-a", 10, TimeSpan.FromMinutes(1), BaseTime)).Count);
+    }
+
+    [Fact]
     public async Task ConcurrentWorkersCannotLeaseTheSameInboxRecord() {
         using var database = new TemporaryDatabase();
         using var firstStore = new TestStore(database.Path);

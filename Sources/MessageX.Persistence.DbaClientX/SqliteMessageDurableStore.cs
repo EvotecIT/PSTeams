@@ -39,12 +39,13 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         if (string.IsNullOrWhiteSpace(databasePath) || databasePath.Any(char.IsControl)) {
             throw new ArgumentException("A SQLite database path is required.", nameof(databasePath));
         }
-        _databasePath = databasePath.Trim();
-        if (IsInMemoryPath(_databasePath)) {
+        var trimmedDatabasePath = databasePath.Trim();
+        if (IsInMemoryPath(trimmedDatabasePath)) {
             throw new ArgumentException(
                 "In-memory SQLite paths are not durable and cannot back MessageX persistence.",
                 nameof(databasePath));
         }
+        _databasePath = NormalizeDatabasePath(trimmedDatabasePath);
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _ownsClient = ownsClient;
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
@@ -87,6 +88,14 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         (databasePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) &&
          (databasePath.Contains(":memory:", StringComparison.OrdinalIgnoreCase) ||
           databasePath.Contains("mode=memory", StringComparison.OrdinalIgnoreCase)));
+
+    private static string NormalizeDatabasePath(string databasePath) {
+        var normalized = databasePath.Trim();
+        if (normalized.StartsWith("file:", StringComparison.OrdinalIgnoreCase)) {
+            return normalized;
+        }
+        return Path.GetFullPath(normalized);
+    }
 
     private static string Required(string? value, string parameterName, int maximumLength = 256) {
         if (value is null || value.Length > maximumLength || value.Any(char.IsControl)) {
