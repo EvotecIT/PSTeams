@@ -43,6 +43,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             GuildLocale = envelope.Payload.GuildLocale,
             Context = envelope.Payload.Context,
             CommandType = envelope.Payload.CommandType,
+            TargetId = envelope.Payload.TargetId,
             ApplicationId = envelope.Payload.TransientContext.ApplicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };
@@ -93,6 +94,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 !IsSafeOptional(projection.Locale, 64) ||
                 !IsSafeOptional(projection.GuildLocale, 64) ||
                 projection.Context is < 0 or > 2 ||
+                !TryNormalizeTarget(projection.CommandType, projection.TargetId, out var targetId) ||
                 projection.Data.ValueKind != JsonValueKind.Object ||
                 !DataMatches(projection.Kind, projection.Name!, projection.CommandType, projection.Data))
             {
@@ -106,6 +108,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 projection.GuildLocale,
                 projection.Context,
                 projection.CommandType,
+                targetId,
                 MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
                 new DiscordTransientInteractionContext(applicationId, null, null));
             return projection.Metadata.Restore(record, payload);
@@ -127,7 +130,11 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         MessageRoute route)
     {
         if (name is null || name.Length is 0 or > 128 || name.Any(char.IsControl) ||
-            !RouteNameMatches(name.Trim(), route))
+            !RouteNameMatches(
+                kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
+                    ? name
+                    : name.Trim(),
+                route))
         {
             return false;
         }
@@ -163,15 +170,22 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         if (value is null) {
             return true;
         }
-        if (string.Equals(value, "0", StringComparison.Ordinal)) {
-            normalized = value;
-            return true;
-        }
         if (!DiscordSnowflake.TryNormalize(value, out var snowflake)) {
             return false;
         }
         normalized = snowflake;
         return true;
+    }
+
+    private static bool TryNormalizeTarget(
+        DiscordApplicationCommandType? commandType,
+        string? value,
+        out string? normalized) {
+        normalized = null;
+        if (commandType is DiscordApplicationCommandType.User or DiscordApplicationCommandType.Message) {
+            return DiscordSnowflake.TryNormalize(value, out normalized);
+        }
+        return value is null;
     }
 
     private static bool DataMatches(
@@ -193,7 +207,10 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             return false;
         }
-        if (!string.Equals(candidate.Trim(), name, StringComparison.Ordinal)) {
+        var comparable = kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
+            ? candidate
+            : candidate.Trim();
+        if (!string.Equals(comparable, name, StringComparison.Ordinal)) {
             return false;
         }
         if (kind is DiscordInteractionKind.ApplicationCommand or DiscordInteractionKind.Autocomplete) {
@@ -217,6 +234,7 @@ internal sealed class DiscordInteractionProjection
     public string? GuildLocale { get; set; }
     public int? Context { get; set; }
     public DiscordApplicationCommandType? CommandType { get; set; }
+    public string? TargetId { get; set; }
     public string? ApplicationId { get; set; }
     public JsonElement Data { get; set; }
 }

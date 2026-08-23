@@ -169,11 +169,20 @@ internal static class SlackDurableCodecValidation
     public static SlackEventPayload NormalizeEvent(SlackEventPayload? value)
     {
         if (value is null) throw new MessageDurablePayloadException("The Slack event projection is required.");
-        return new SlackEventPayload(Required(value.Type, 256), Optional(value.Subtype, 256),
+        var type = Required(value.Type, 256);
+        var normalized = new SlackEventPayload(type, Optional(value.Subtype, 256),
             Optional(value.UserId, 256), Optional(value.ChannelId, 256), Optional(value.ChannelType, 256),
             Optional(value.MessageTimestamp, 256), Optional(value.EventTimestamp, 256),
             Optional(value.ThreadTimestamp, 256), OptionalText(value.Text, 40000), Optional(value.Reaction, 256),
             Optional(value.ItemType, 256));
+        if (type is "reaction_added" or "reaction_removed" &&
+            (normalized.UserId is null || normalized.ChannelId is null ||
+             normalized.MessageTimestamp is null || normalized.Reaction is null ||
+             !string.Equals(normalized.ItemType, "message", StringComparison.Ordinal)))
+        {
+            throw new MessageDurablePayloadException("A Slack reaction projection requires its actor and message target coordinates.");
+        }
+        return normalized;
     }
 
     public static SlackInteractionPayload? NormalizeInteraction(SlackInteractionPayload? value)

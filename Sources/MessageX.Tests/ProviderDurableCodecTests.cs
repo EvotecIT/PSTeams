@@ -159,8 +159,56 @@ public sealed class ProviderDurableCodecTests
 
         var discordDecoded = discordCodec.Decode(discordCodec.Encode(discordReceive.Route!, discordReceive.Envelope!));
 
-        Assert.Equal("approve", discordDecoded.Payload.Name);
+        Assert.Equal(" approve ", discordDecoded.Payload.Name);
         Assert.Equal(" approve ", discordDecoded.Payload.Data.GetProperty("custom_id").GetString());
+    }
+
+    [Fact]
+    public void DiscordContextCommandCodecRetainsSafeTargetCoordinate()
+    {
+        const string json = """
+            {
+              "id":"100000000000000101","application_id":"100000000000000102","type":2,
+              "token":"interaction-secret","channel_id":"100000000000000103",
+              "user":{"id":"100000000000000104"},
+              "data":{"name":"inspect","type":3,"target_id":"100000000000000105"}
+            }
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(receive.Route!, receive.Envelope!));
+
+        Assert.Equal("100000000000000105", decoded.Payload.TargetId);
+        Assert.Equal("100000000000000105", decoded.Message?.MessageId);
+    }
+
+    [Fact]
+    public void SlackReactionCodecRequiresActorAndMessageTargetCoordinates()
+    {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvReaction","event":{"type":"reaction_added","user":"U3","reaction":"thumbsup","event_ts":"1787416801.1","item":{"type":"message","channel":"C2","ts":"1787416799.3"}}}
+            """;
+        var receive = SlackEventsApiReceiver.Receive(
+            Request("application/json", json),
+            SlackSecret,
+            SlackSign(json),
+            SlackTimestamp);
+        var codec = new SlackInboundEventDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var changed = Encoding.UTF8.GetString(valid.CopyPayload()).Replace(
+            "\"reaction\":\"thumbsup\"",
+            "\"reaction\":null",
+            StringComparison.Ordinal);
+        var tampered = new MessageDurableRecord(valid.Provider, valid.InstallationId,
+            valid.DeduplicationKey, valid.Route, valid.ReceivedAt, valid.PayloadType,
+            Encoding.UTF8.GetBytes(changed));
+
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
     }
 
     [Fact]
@@ -300,7 +348,8 @@ public sealed class ProviderDurableCodecTests
 
         foreach (var changed in new[] {
                      stored.Replace("\"type\":1", "\"type\":2", StringComparison.Ordinal),
-                     stored.Replace("100000000000000006", "tenant-a", StringComparison.Ordinal)
+                     stored.Replace("100000000000000006", "tenant-a", StringComparison.Ordinal),
+                     stored.Replace("100000000000000006", "0", StringComparison.Ordinal)
                  }) {
             var tampered = new MessageDurableRecord(valid.Provider, valid.InstallationId,
                 valid.DeduplicationKey, valid.Route, valid.ReceivedAt, valid.PayloadType,

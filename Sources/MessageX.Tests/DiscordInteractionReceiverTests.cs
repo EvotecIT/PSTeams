@@ -220,7 +220,7 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal("inspect", roundTrip.Name);
         Assert.Equal("100000000000000094", roundTrip.TargetId);
         Assert.Equal(JsonValueKind.Undefined, roundTrip.Data.ValueKind);
-        Assert.Equal(string.Empty, roundTrip.TransientContext.Token);
+        Assert.Null(roundTrip.TransientContext.Token);
         Assert.DoesNotContain("secret", persisted, StringComparison.Ordinal);
     }
 
