@@ -3,8 +3,8 @@ namespace MessageX.Hosting.AspNetCore;
 /// <summary>Bounded installation-scoped replay suppression for accepted in-memory ingress.</summary>
 public sealed class MessageReplayGuard {
     private readonly object _sync = new();
-    private readonly Dictionary<string, DateTimeOffset> _accepted = new(StringComparer.Ordinal);
-    private readonly Queue<Entry> _expirations = new();
+    private readonly Dictionary<string, LinkedListNode<Entry>> _accepted = new(StringComparer.Ordinal);
+    private readonly LinkedList<Entry> _expirations = new();
     private readonly int _capacity;
     private readonly TimeSpan _retention;
     private DateTimeOffset _lastObservedAt = DateTimeOffset.MinValue;
@@ -57,8 +57,8 @@ public sealed class MessageReplayGuard {
                 return MessageReplayAcceptance.Stopping;
             }
             var expiresAt = now.Add(_retention);
-            _accepted.Add(key, expiresAt);
-            _expirations.Enqueue(new Entry(key, expiresAt));
+            var node = _expirations.AddLast(new Entry(key, expiresAt));
+            _accepted.Add(key, node);
             return MessageReplayAcceptance.Accepted;
         }
     }
@@ -75,16 +75,17 @@ public sealed class MessageReplayGuard {
             result.Envelope.InstallationId,
             result.Envelope.DeduplicationKey);
         lock (_sync) {
-            _accepted.Remove(key);
+            if (_accepted.Remove(key, out var node)) {
+                _expirations.Remove(node);
+            }
         }
     }
 
     private void Prune(DateTimeOffset now) {
-        while (_expirations.Count > 0 && _expirations.Peek().ExpiresAt <= now) {
-            var expired = _expirations.Dequeue();
-            if (_accepted.TryGetValue(expired.Key, out var current) && current == expired.ExpiresAt) {
-                _accepted.Remove(expired.Key);
-            }
+        while (_expirations.First is not null && _expirations.First.Value.ExpiresAt <= now) {
+            var expired = _expirations.First;
+            _expirations.RemoveFirst();
+            _accepted.Remove(expired.Value.Key);
         }
     }
 

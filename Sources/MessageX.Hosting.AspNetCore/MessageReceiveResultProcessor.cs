@@ -87,13 +87,11 @@ public sealed class MessageReceiveResultProcessor {
         if (result.Route is null || result.Envelope is null) {
             throw new InvalidOperationException("Synchronous dispatch requires a verified route and envelope.");
         }
+        MessageAcknowledgement acknowledgement;
         try {
             var dispatch = await _router.DispatchAsync(result.Route, result.Envelope, cancellationToken)
                 .ConfigureAwait(false);
-            await _writer.WriteAsync(
-                response,
-                dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement,
-                cancellationToken).ConfigureAwait(false);
+            acknowledgement = dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement;
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             throw;
         } catch {
@@ -102,6 +100,8 @@ public sealed class MessageReceiveResultProcessor {
                 response,
                 MessageAcknowledgement.Empty(StatusCodes.Status500InternalServerError),
                 cancellationToken).ConfigureAwait(false);
+            return;
         }
+        await _writer.WriteAsync(response, acknowledgement, cancellationToken).ConfigureAwait(false);
     }
 }

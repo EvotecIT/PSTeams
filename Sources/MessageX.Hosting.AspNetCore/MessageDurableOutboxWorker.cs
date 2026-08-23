@@ -28,9 +28,9 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
-        try {
-            while (!stoppingToken.IsCancellationRequested) {
+        while (!stoppingToken.IsCancellationRequested) {
+            try {
+                await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
                 if (_payloadTypes.Length == 0) {
                     await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
                     continue;
@@ -47,8 +47,11 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
                 }
                 await Task.WhenAll(leases.Select(lease => ProcessAsync(lease, stoppingToken)))
                     .ConfigureAwait(false);
+            } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                break;
+            } catch {
+                await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
             }
-        } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
         }
     }
 
