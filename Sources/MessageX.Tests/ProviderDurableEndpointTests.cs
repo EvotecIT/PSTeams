@@ -30,6 +30,7 @@ public sealed class ProviderDurableEndpointTests {
     [Fact]
     public async Task SlackEndpointCommitsBeforeAckAndDispatchesOnceAfterRestart() {
         using var database = new TemporaryDatabase();
+        var acceptanceGate = new AcceptanceGate();
         const string payload = """
             {"type":"block_actions","team":{"id":"T1"},"user":{"id":"U1"},"channel":{"id":"C1"},
              "trigger_id":"trigger-secret","response_url":"https://hooks.slack.com/actions/secret",
@@ -37,14 +38,20 @@ public sealed class ProviderDurableEndpointTests {
             """;
         var body = "payload=" + Uri.EscapeDataString(payload);
 
-        using (var accepting = SlackServices(database.Path).BuildServiceProvider()) {
+        using (var accepting = SlackServices(database.Path, acceptanceGate).BuildServiceProvider()) {
             var handler = accepting.GetRequiredService<SlackHttpEndpointHandler>();
             var first = SlackContext(body);
             var duplicate = SlackContext(body);
-            await handler.HandleInteractionsAsync(
+            first.Response.StatusCode = StatusCodes.Status418ImATeapot;
+            var acceptingFirst = handler.HandleInteractionsAsync(
                 first,
                 new SlackEndpointConfiguration("workspace-a", SlackSecret),
                 TestContext.Current.CancellationToken);
+            await acceptanceGate.Entered.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Assert.Equal(StatusCodes.Status418ImATeapot, first.Response.StatusCode);
+            Assert.False(acceptingFirst.IsCompleted);
+            acceptanceGate.Release();
+            await acceptingFirst.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             await handler.HandleInteractionsAsync(
                 duplicate,
                 new SlackEndpointConfiguration("workspace-a", SlackSecret),
@@ -61,8 +68,7 @@ public sealed class ProviderDurableEndpointTests {
         var handled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         restarted.GetRequiredService<MessageRouter>().OnAction<SlackInteractionEvent>("approve", (context, _) => {
             Interlocked.Increment(ref calls);
-            Assert.Equal("yes", context.Envelope.Payload.ProviderPayload?
-                .GetProperty("actions")[0].GetProperty("value").GetString());
+            Assert.Equal("yes", context.Envelope.Payload.ProviderPayload?.Actions[0].Value);
             Assert.Null(context.Envelope.Payload.TransientContext.TriggerId);
             Assert.Null(context.Envelope.Payload.TransientContext.ResponseUrl);
             handled.TrySetResult(true);
@@ -81,19 +87,27 @@ public sealed class ProviderDurableEndpointTests {
     [Fact]
     public async Task DiscordEndpointCommitsBeforeDeferredAckAndRestoresWithoutToken() {
         using var database = new TemporaryDatabase();
+        var acceptanceGate = new AcceptanceGate();
         const string json = """
             {"id":"100000000000000001","application_id":"100000000000000002","type":2,
              "token":"interaction-secret","guild_id":"100000000000000003","channel_id":"100000000000000004",
              "member":{"user":{"id":"100000000000000005"}},
-             "data":{"name":"status","options":[{"name":"target","value":"server-1"}]}}
+             "data":{"name":"status","type":1,"options":[{"name":"target","value":"server-1"}]}}
             """;
 
-        using (var accepting = DiscordServices(database.Path).BuildServiceProvider()) {
+        using (var accepting = DiscordServices(database.Path, acceptanceGate).BuildServiceProvider()) {
             var context = DiscordContext(json);
-            await accepting.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            context.Response.StatusCode = StatusCodes.Status418ImATeapot;
+            var acceptingRequest = accepting.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
                 context,
                 new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
                 TestContext.Current.CancellationToken);
+            await acceptanceGate.Entered.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Assert.Equal(StatusCodes.Status418ImATeapot, context.Response.StatusCode);
+            Assert.Empty(ResponseBody(context));
+            Assert.False(acceptingRequest.IsCompleted);
+            acceptanceGate.Release();
+            await acceptingRequest.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
             Assert.Contains("\"type\":5", Encoding.UTF8.GetString(ResponseBody(context)), StringComparison.Ordinal);
@@ -101,7 +115,7 @@ public sealed class ProviderDurableEndpointTests {
 
         using var restarted = DiscordServices(database.Path).BuildServiceProvider();
         var handled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        restarted.GetRequiredService<MessageRouter>().OnCommand<DiscordInboundInteraction>("status", (context, _) => {
+        restarted.GetRequiredService<MessageRouter>().OnCommand<DiscordInboundInteraction>("status", "1", (context, _) => {
             Assert.Equal("server-1", context.Envelope.Payload.Data
                 .GetProperty("options")[0].GetProperty("value").GetString());
             Assert.False(context.Envelope.Payload.TransientContext.CanFollowUp);
@@ -118,22 +132,27 @@ public sealed class ProviderDurableEndpointTests {
             .GetHealthSnapshot().Completed);
     }
 
-    private static ServiceCollection SlackServices(string databasePath) {
-        var services = DurableServices(databasePath, SlackNow);
+    private static ServiceCollection SlackServices(string databasePath, AcceptanceGate? acceptanceGate = null) {
+        var services = DurableServices(databasePath, SlackNow, acceptanceGate);
         services.AddMessageXSlackAspNetCore();
         return services;
     }
 
-    private static ServiceCollection DiscordServices(string databasePath) {
-        var services = DurableServices(databasePath, DiscordNow);
+    private static ServiceCollection DiscordServices(string databasePath, AcceptanceGate? acceptanceGate = null) {
+        var services = DurableServices(databasePath, DiscordNow, acceptanceGate);
         services.AddMessageXDiscordAspNetCore();
         return services;
     }
 
-    private static ServiceCollection DurableServices(string databasePath, DateTimeOffset now) {
+    private static ServiceCollection DurableServices(
+        string databasePath,
+        DateTimeOffset now,
+        AcceptanceGate? acceptanceGate) {
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FixedTimeProvider(now));
-        services.AddSingleton<IMessageDurableStore>(new SqliteMessageDurableStore(databasePath));
+        services.AddSingleton<IMessageDurableStore>(_ => new BlockingDurableStore(
+            new SqliteMessageDurableStore(databasePath),
+            acceptanceGate));
         services.AddMessageXHostingAspNetCore();
         services.AddMessageXDurableIngress(options => {
             options.PollInterval = TimeSpan.FromMilliseconds(10);
@@ -220,6 +239,105 @@ public sealed class ProviderDurableEndpointTests {
         private readonly DateTimeOffset _now;
         public FixedTimeProvider(DateTimeOffset now) => _now = now;
         public override DateTimeOffset GetUtcNow() => _now;
+    }
+
+    private sealed class AcceptanceGate {
+        private readonly TaskCompletionSource<bool> _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Entered => _entered.Task;
+
+        public async Task WaitAsync(CancellationToken cancellationToken) {
+            _entered.TrySetResult(true);
+            await _released.Task.WaitAsync(cancellationToken);
+        }
+
+        public void Release() => _released.TrySetResult(true);
+    }
+
+    private sealed class BlockingDurableStore : IMessageDurableStore, IDisposable {
+        private readonly SqliteMessageDurableStore _inner;
+        private readonly AcceptanceGate? _acceptanceGate;
+
+        public BlockingDurableStore(SqliteMessageDurableStore inner, AcceptanceGate? acceptanceGate) {
+            _inner = inner;
+            _acceptanceGate = acceptanceGate;
+        }
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) =>
+            _inner.InitializeAsync(cancellationToken);
+
+        public async Task<MessageDurableAcceptance> AcceptInboxAsync(
+            MessageDurableRecord record,
+            CancellationToken cancellationToken = default) {
+            if (_acceptanceGate is not null) {
+                await _acceptanceGate.WaitAsync(cancellationToken);
+            }
+            return await _inner.AcceptInboxAsync(record, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
+            string ownerId,
+            int maximumCount,
+            TimeSpan leaseDuration,
+            IReadOnlyCollection<string> payloadTypes,
+            CancellationToken cancellationToken = default) =>
+            _inner.ClaimInboxAsync(ownerId, maximumCount, leaseDuration, payloadTypes, cancellationToken);
+
+        public Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            CancellationToken cancellationToken = default) =>
+            _inner.RenewInboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
+
+        public Task<bool> CompleteInboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageOutboxBatch? outbox = null,
+            CancellationToken cancellationToken = default) =>
+            _inner.CompleteInboxAsync(recordId, leaseToken, outbox, cancellationToken);
+
+        public Task<MessageDurableFailureResult> FailInboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageDurableFailureKind failureKind,
+            TimeSpan retryDelay,
+            int maximumAttempts,
+            CancellationToken cancellationToken = default) =>
+            _inner.FailInboxAsync(recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken);
+
+        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+            string ownerId,
+            int maximumCount,
+            TimeSpan leaseDuration,
+            IReadOnlyCollection<string> payloadTypes,
+            CancellationToken cancellationToken = default) =>
+            _inner.ClaimOutboxAsync(ownerId, maximumCount, leaseDuration, payloadTypes, cancellationToken);
+
+        public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            CancellationToken cancellationToken = default) =>
+            _inner.RenewOutboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
+
+        public Task<bool> CompleteOutboxAsync(
+            string recordId,
+            string leaseToken,
+            CancellationToken cancellationToken = default) =>
+            _inner.CompleteOutboxAsync(recordId, leaseToken, cancellationToken);
+
+        public Task<MessageDurableFailureResult> FailOutboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageDurableFailureKind failureKind,
+            TimeSpan retryDelay,
+            int maximumAttempts,
+            CancellationToken cancellationToken = default) =>
+            _inner.FailOutboxAsync(recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken);
+
+        public void Dispose() => _inner.Dispose();
     }
 
     private sealed class TemporaryDatabase : IDisposable {
