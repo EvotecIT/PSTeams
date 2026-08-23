@@ -100,6 +100,7 @@ public static class DiscordInteractionReceiver {
 
         string name;
         DiscordApplicationCommandType? commandType = null;
+        string? targetId = null;
         MessageRoute route;
         MessageAcknowledgement acknowledgement;
         switch (kind) {
@@ -110,13 +111,16 @@ public static class DiscordInteractionReceiver {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 commandType = (DiscordApplicationCommandType)commandTypeValue;
+                if (commandTypeValue is 2 or 3 && !TryRequiredSnowflake(data, "target_id", out targetId)) {
+                    return Reject(400, MessageReceiveFailureKind.Malformed);
+                }
                 route = MessageRoute.ForCommand(
                     name,
                     commandTypeValue.ToString(CultureInfo.InvariantCulture));
                 acknowledgement = DiscordInteractionAcknowledgement.DeferredMessage();
                 break;
             case DiscordInteractionKind.MessageComponent:
-                if (!TryRequired(data, "custom_id", 100, out name)) {
+                if (!TryRequiredOpaque(data, "custom_id", 100, out name)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 route = MessageRoute.ForAction(name);
@@ -133,7 +137,7 @@ public static class DiscordInteractionReceiver {
                 acknowledgement = DiscordInteractionAcknowledgement.EmptyAutocomplete();
                 break;
             case DiscordInteractionKind.ModalSubmit:
-                if (!TryRequired(data, "custom_id", 100, out name)) {
+                if (!TryRequiredOpaque(data, "custom_id", 100, out name)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 route = MessageRoute.ForSubmission(name);
@@ -156,6 +160,7 @@ public static class DiscordInteractionReceiver {
             guildLocale,
             context,
             commandType,
+            targetId,
             data.Clone(),
             transientContext);
         var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signatureHex);
@@ -175,7 +180,7 @@ public static class DiscordInteractionReceiver {
             var isThread = channelType is 10 or 11 or 12;
             var conversationKind = isThread
                 ? MessageConversationKind.Thread
-                : context is 1 or 2
+                : channelType is 1 or 3 || context is 1 or 2
                 ? MessageConversationKind.DirectMessage
                 : guildId is not null
                     ? MessageConversationKind.Channel
@@ -187,8 +192,11 @@ public static class DiscordInteractionReceiver {
                 ThreadId = isThread ? channelId : null,
                 ConversationKind = conversationKind
             };
-            if (messageId is not null) {
-                envelope.Message = new MessageReference(MessageProviders.Discord, messageId) {
+            var effectiveMessageId = commandType == DiscordApplicationCommandType.Message
+                ? targetId
+                : messageId;
+            if (effectiveMessageId is not null) {
+                envelope.Message = new MessageReference(MessageProviders.Discord, effectiveMessageId) {
                     InstallationId = request.InstallationId,
                     ScopeId = scopeId,
                     ConversationId = channelId,
@@ -373,6 +381,26 @@ public static class DiscordInteractionReceiver {
             return false;
         }
         return TryNormalize(property.GetString(), maximumLength, required: true, out value);
+    }
+
+    private static bool TryRequiredOpaque(
+        JsonElement root,
+        string propertyName,
+        int maximumLength,
+        out string value) {
+        value = string.Empty;
+        if (!root.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.String) {
+            return false;
+        }
+        var candidate = property.GetString();
+        if (candidate is null || candidate.Length == 0 ||
+            candidate.Length > maximumLength ||
+            candidate.Any(char.IsControl)) {
+            return false;
+        }
+        value = candidate;
+        return true;
     }
 
     private static bool TryOptional(

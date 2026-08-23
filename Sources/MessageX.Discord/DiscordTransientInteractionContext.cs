@@ -4,6 +4,9 @@ namespace MessageX.Discord;
 
 /// <summary>Short-lived Discord follow-up capability that must never enter durable reference storage.</summary>
 public sealed class DiscordTransientInteractionContext {
+    internal static DiscordTransientInteractionContext Unavailable { get; } =
+        new(string.Empty, string.Empty, DateTimeOffset.MinValue);
+
     internal DiscordTransientInteractionContext(
         string applicationId,
         string token,

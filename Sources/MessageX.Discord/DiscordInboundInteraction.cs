@@ -5,6 +5,29 @@ namespace MessageX.Discord;
 
 /// <summary>Verified Discord interaction with safe routing coordinates and transient provider data.</summary>
 public sealed class DiscordInboundInteraction {
+    /// <summary>Creates a safe persisted Discord interaction projection without transient provider capabilities.</summary>
+    [JsonConstructor]
+    public DiscordInboundInteraction(
+        DiscordInteractionKind kind,
+        string name,
+        string? installationOwnerId,
+        string? locale,
+        string? guildLocale,
+        int? context,
+        DiscordApplicationCommandType? commandType,
+        string? targetId) : this(
+            kind,
+            name,
+            installationOwnerId,
+            locale,
+            guildLocale,
+            context,
+            commandType,
+            targetId,
+            default,
+            DiscordTransientInteractionContext.Unavailable) {
+    }
+
     internal DiscordInboundInteraction(
         DiscordInteractionKind kind,
         string name,
@@ -13,6 +36,7 @@ public sealed class DiscordInboundInteraction {
         string? guildLocale,
         int? context,
         DiscordApplicationCommandType? commandType,
+        string? targetId,
         JsonElement data,
         DiscordTransientInteractionContext transientContext) {
         Kind = kind;
@@ -22,6 +46,7 @@ public sealed class DiscordInboundInteraction {
         GuildLocale = guildLocale;
         Context = context;
         CommandType = commandType;
+        TargetId = targetId;
         Data = data;
         TransientContext = transientContext;
     }
@@ -46,6 +71,9 @@ public sealed class DiscordInboundInteraction {
 
     /// <summary>Application-command type when the interaction is a command or autocomplete request.</summary>
     public DiscordApplicationCommandType? CommandType { get; }
+
+    /// <summary>Target user or message identifier for a Discord context command.</summary>
+    public string? TargetId { get; }
 
     /// <summary>Provider-native interaction data. May contain user input and is intentionally transient.</summary>
     [JsonIgnore]

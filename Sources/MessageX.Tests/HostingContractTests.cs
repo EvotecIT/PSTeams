@@ -285,6 +285,16 @@ public sealed class HostingContractTests {
             MessageAcknowledgement.Empty(400)));
     }
 
+    [Fact]
+    public void ReceiveResultRetainsThreeArgumentDispatchAbi() {
+        var overload = typeof(MessageReceiveResult<TestPayload>)
+            .GetMethods()
+            .Single(method => method.Name == nameof(MessageReceiveResult<TestPayload>.Dispatch) &&
+                method.GetParameters().Length == 3);
+
+        Assert.NotNull(overload);
+    }
+
     private static MessageEventEnvelope<TPayload> Envelope<TPayload>(
         TPayload payload,
         MessageEventKind kind) => new(

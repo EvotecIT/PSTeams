@@ -65,7 +65,7 @@ public sealed class MessageRoute {
         new(
             MessageRouteKind.Action,
             MessageEventKind.ActionInvoked,
-            NormalizeName(name, nameof(name)),
+            NormalizeOpaqueName(name, nameof(name)),
             MessageRouteNameComparison.Ordinal);
 
     /// <summary>Creates a named modal or dialog submission route.</summary>
@@ -73,7 +73,7 @@ public sealed class MessageRoute {
         new(
             MessageRouteKind.Submission,
             MessageEventKind.ModalSubmitted,
-            NormalizeName(name, nameof(name)),
+            NormalizeOpaqueName(name, nameof(name)),
             MessageRouteNameComparison.Ordinal);
 
     /// <summary>Creates a named provider-native autocomplete route.</summary>
@@ -98,6 +98,17 @@ public sealed class MessageRoute {
                 parameterName);
         }
         return normalized!;
+    }
+
+    private static string NormalizeOpaqueName(string? value, string parameterName) {
+        if (value is null || value.Length == 0 ||
+            value.Length > MaximumNameLength ||
+            value.Any(char.IsControl)) {
+            throw new ArgumentException(
+                "Route names must be bounded non-empty text without control characters.",
+                parameterName);
+        }
+        return value!;
     }
 
     private static string? NormalizeQualifier(string? value, string parameterName) {

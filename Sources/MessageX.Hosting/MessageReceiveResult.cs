@@ -66,8 +66,15 @@ public sealed class MessageReceiveResult<TProviderPayload> {
     public static MessageReceiveResult<TProviderPayload> Dispatch(
         MessageRoute route,
         MessageEventEnvelope<TProviderPayload> envelope,
+        MessageAcknowledgement acknowledgement) =>
+        Dispatch(route, envelope, acknowledgement, requiresSynchronousDispatch: false);
+
+    /// <summary>Creates a verified event ready for persistence, enqueueing, or synchronous dispatch.</summary>
+    public static MessageReceiveResult<TProviderPayload> Dispatch(
+        MessageRoute route,
+        MessageEventEnvelope<TProviderPayload> envelope,
         MessageAcknowledgement acknowledgement,
-        bool requiresSynchronousDispatch = false) {
+        bool requiresSynchronousDispatch) {
         if (route is null) {
             throw new ArgumentNullException(nameof(route));
         }

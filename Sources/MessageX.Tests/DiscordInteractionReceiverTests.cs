@@ -102,6 +102,25 @@ public sealed class DiscordInteractionReceiverTests {
     }
 
     [Fact]
+    public void OpaqueComponentIdentifiersPreserveWhitespaceAndDmChannelTypes() {
+        const string json = """
+            {
+              "id":"100000000000000016","application_id":"100000000000000017","type":3,
+              "token":"token-opaque","channel_id":"100000000000000018",
+              "channel":{"id":"100000000000000018","type":3},
+              "user":{"id":"100000000000000019"},
+              "data":{"custom_id":" approve ","component_type":2}
+            }
+            """;
+
+        var result = Receive(json);
+
+        Assert.Equal(" approve ", result.Route?.Name);
+        Assert.Equal(" approve ", result.Envelope?.Payload.Name);
+        Assert.Equal(MessageConversationKind.DirectMessage, result.Envelope?.Conversation?.ConversationKind);
+    }
+
+    [Fact]
     public void ModalAndAutocompleteUseTruthfulDistinctRoutesAndAcknowledgements() {
         const string modal = """
             {
@@ -167,10 +186,10 @@ public sealed class DiscordInteractionReceiverTests {
     [Fact]
     public void SameNamedApplicationCommandTypesHaveDistinctRouteIdentity() {
         const string userCommand = """
-            {"id":"100000000000000061","application_id":"100000000000000062","type":2,"token":"t","user":{"id":"100000000000000063"},"data":{"name":"inspect","type":2}}
+            {"id":"100000000000000061","application_id":"100000000000000062","type":2,"token":"t","user":{"id":"100000000000000063"},"data":{"name":"inspect","type":2,"target_id":"100000000000000064"}}
             """;
         const string messageCommand = """
-            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","user":{"id":"100000000000000073"},"data":{"name":"inspect","type":3}}
+            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","channel_id":"100000000000000074","channel":{"id":"100000000000000074","type":1},"user":{"id":"100000000000000073"},"data":{"name":"inspect","type":3,"target_id":"100000000000000075"}}
             """;
 
         var user = Receive(userCommand);
@@ -180,6 +199,29 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal("3", message.Route?.Qualifier);
         Assert.Equal(DiscordApplicationCommandType.User, user.Envelope?.Payload.CommandType);
         Assert.Equal(DiscordApplicationCommandType.Message, message.Envelope?.Payload.CommandType);
+        Assert.Equal("100000000000000064", user.Envelope?.Payload.TargetId);
+        Assert.Equal("100000000000000075", message.Envelope?.Payload.TargetId);
+        Assert.Equal("100000000000000075", message.Envelope?.Message?.MessageId);
+        Assert.Equal(MessageConversationKind.DirectMessage, message.Envelope?.Conversation?.ConversationKind);
+    }
+
+    [Fact]
+    public void SafeInteractionProjectionRoundTripsWithoutTransientCapability() {
+        const string json = """
+            {"id":"100000000000000091","application_id":"100000000000000092","type":2,"token":"secret","user":{"id":"100000000000000093"},"data":{"name":"inspect","type":2,"target_id":"100000000000000094"}}
+            """;
+        var result = Receive(json);
+
+        var persisted = JsonSerializer.Serialize(result.Envelope!.Payload);
+        var roundTrip = JsonSerializer.Deserialize<DiscordInboundInteraction>(persisted);
+
+        Assert.NotNull(roundTrip);
+        Assert.Equal(DiscordInteractionKind.ApplicationCommand, roundTrip.Kind);
+        Assert.Equal("inspect", roundTrip.Name);
+        Assert.Equal("100000000000000094", roundTrip.TargetId);
+        Assert.Equal(JsonValueKind.Undefined, roundTrip.Data.ValueKind);
+        Assert.Equal(string.Empty, roundTrip.TransientContext.Token);
+        Assert.DoesNotContain("secret", persisted, StringComparison.Ordinal);
     }
 
     [Fact]
