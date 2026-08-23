@@ -15,64 +15,63 @@ internal static class SlackRichTextProjection {
     public static bool TryRead(
         JsonElement owner,
         string propertyName,
-        out JsonElement? value) {
+        out MessageDataValue? value) {
         value = null;
         if (!owner.TryGetProperty(propertyName, out var candidate) ||
             candidate.ValueKind == JsonValueKind.Null) {
             return true;
         }
         try {
-            value = Normalize(candidate);
+            value = Normalize(MessageDataValue.ParseJson(candidate.GetRawText()));
             return true;
         } catch (Exception exception) when (IsProjectionException(exception)) {
             return false;
         }
     }
 
-    public static JsonElement? Normalize(JsonElement? value) =>
-        value is null ? null : Normalize(value.Value);
+    public static MessageDataValue? Normalize(MessageDataValue? value) =>
+        value is null ? null : NormalizeRequired(value);
 
-    private static JsonElement Normalize(JsonElement value) {
-        if (value.ValueKind != JsonValueKind.Object ||
-            Encoding.UTF8.GetByteCount(value.GetRawText()) > MaximumBytes) {
+    private static MessageDataValue NormalizeRequired(MessageDataValue value) {
+        if (value.Kind != MessageDataValueKind.Object ||
+            Encoding.UTF8.GetByteCount(value.ToJsonString()) > MaximumBytes) {
             throw new MessageDurablePayloadException(
                 "A Slack rich-text input must be an object no larger than 40 KB.");
         }
         var clone = MessageDurableJsonProjection.CreateSafeClone(value, ForbiddenProperties);
         Validate(clone);
-        if (JsonSerializer.SerializeToUtf8Bytes(clone).Length > MaximumBytes) {
+        if (Encoding.UTF8.GetByteCount(clone.ToJsonString()) > MaximumBytes) {
             throw new MessageDurablePayloadException("A Slack rich-text input cannot exceed 40 KB.");
         }
         return clone;
     }
 
-    private static void Validate(JsonElement value) {
-        switch (value.ValueKind) {
-            case JsonValueKind.Object:
-                foreach (var property in value.EnumerateObject()) {
-                    if (property.Name.Length > MaximumPropertyNameLength ||
-                        property.Name.Any(char.IsControl)) {
+    private static void Validate(MessageDataValue value) {
+        switch (value.Kind) {
+            case MessageDataValueKind.Object:
+                foreach (var property in value.Properties) {
+                    if (property.Key.Length > MaximumPropertyNameLength ||
+                        property.Key.Any(char.IsControl)) {
                         throw new MessageDurablePayloadException(
                             "A Slack rich-text property name is unsafe.");
                     }
                     Validate(property.Value);
                 }
                 break;
-            case JsonValueKind.Array:
-                foreach (var item in value.EnumerateArray()) {
+            case MessageDataValueKind.Array:
+                foreach (var item in value.Items) {
                     Validate(item);
                 }
                 break;
-            case JsonValueKind.String:
+            case MessageDataValueKind.String:
                 var text = value.GetString();
                 if (text is null || text.Length > MaximumBytes || text.IndexOf('\0') >= 0) {
                     throw new MessageDurablePayloadException("A Slack rich-text value is unsafe.");
                 }
                 break;
-            case JsonValueKind.Number:
-            case JsonValueKind.True:
-            case JsonValueKind.False:
-            case JsonValueKind.Null:
+            case MessageDataValueKind.Number:
+            case MessageDataValueKind.Boolean:
+            case MessageDataValueKind.Null:
                 break;
             default:
                 throw new MessageDurablePayloadException("A Slack rich-text value is malformed.");

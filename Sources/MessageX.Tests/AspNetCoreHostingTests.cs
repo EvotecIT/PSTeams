@@ -275,6 +275,27 @@ public sealed class AspNetCoreHostingTests {
     }
 
     [Fact]
+    public void ReplayAcknowledgementBodyBudgetIsValidatedIndependently() {
+        var services = new ServiceCollection();
+        services.AddMessageXHostingAspNetCore(options =>
+            options.ReplayAcknowledgementBodyBytes = 32 * 1024 * 1024);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Equal(
+            32 * 1024 * 1024,
+            provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>()
+                .Value.ReplayAcknowledgementBodyBytes);
+
+        var invalidServices = new ServiceCollection();
+        invalidServices.AddMessageXHostingAspNetCore(options =>
+            options.ReplayAcknowledgementBodyBytes =
+                MessageXHostingAspNetCoreOptions.MaximumReplayAcknowledgementBodyBytes + 1);
+        using var invalidProvider = invalidServices.BuildServiceProvider();
+        Assert.Throws<OptionsValidationException>(() =>
+            invalidProvider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
+    }
+
+    [Fact]
     public void SynchronousDispatchCapacityIsValidatedIndependently() {
         var services = new ServiceCollection();
         services.AddMessageXHostingAspNetCore(options => options.SynchronousDispatchCapacity = 2);

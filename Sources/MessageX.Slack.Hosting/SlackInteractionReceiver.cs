@@ -262,7 +262,8 @@ public static class SlackInteractionReceiver {
         return MessageReceiveResult<SlackInteractionEvent>.Dispatch(
             route,
             envelope,
-            MessageAcknowledgement.Empty(200));
+            MessageAcknowledgement.Empty(200),
+            requiresSynchronousDispatch: interaction.Kind == SlackInteractionKind.ViewSubmission);
     }
 
     private static bool TrySingleAction(

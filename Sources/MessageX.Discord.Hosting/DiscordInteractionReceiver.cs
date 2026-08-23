@@ -32,17 +32,6 @@ public static class DiscordInteractionReceiver {
         if (request.BodyLength is <= 0 or > MaximumBodyBytes) {
             return Reject(413, MessageReceiveFailureKind.Malformed);
         }
-        if (!long.TryParse(timestamp, NumberStyles.None, CultureInfo.InvariantCulture, out var unixSeconds)) {
-            return Reject(401, MessageReceiveFailureKind.Unauthorized);
-        }
-        DateTimeOffset signedAt;
-        try {
-            signedAt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
-        }
-        catch (ArgumentOutOfRangeException) {
-            return Reject(401, MessageReceiveFailureKind.Unauthorized);
-        }
-
         var body = request.CopyBody();
         if (!DiscordInteractionVerifier.VerifyRecent(
                 publicKeyHex,
@@ -75,7 +64,6 @@ public static class DiscordInteractionReceiver {
             return ReceiveDispatchable(
                 request,
                 signatureHex,
-                signedAt,
                 root,
                 kind,
                 expectedApplicationId,
@@ -89,12 +77,12 @@ public static class DiscordInteractionReceiver {
     private static MessageReceiveResult<DiscordInboundInteraction> ReceiveDispatchable(
         MessageInboundRequest request,
         string signatureHex,
-        DateTimeOffset signedAt,
         JsonElement root,
         DiscordInteractionKind kind,
         string? expectedApplicationId,
         string? expectedInstallationOwnerId) {
         if (!TryRequiredSnowflake(root, "id", out var interactionId) ||
+            !DiscordSnowflake.TryGetTimestamp(interactionId, out var interactionCreatedAt) ||
             !TryRequiredSnowflake(root, "application_id", out var applicationId) ||
             !TryRequired(root, "token", MaximumTokenLength, out var token) ||
             !root.TryGetProperty("data", out var data) ||
@@ -174,7 +162,7 @@ public static class DiscordInteractionReceiver {
         var transientContext = new DiscordTransientInteractionContext(
             applicationId,
             token,
-            signedAt.Add(InteractionTokenLifetime));
+            interactionCreatedAt.Add(InteractionTokenLifetime));
         var payload = new DiscordInboundInteraction(
             kind,
             name,
@@ -185,7 +173,9 @@ public static class DiscordInteractionReceiver {
             commandType,
             targetId,
             applicationId,
-            MessageDurableJsonProjection.CreateSafeClone(data, ForbiddenPersistedProperties),
+            MessageDurableJsonProjection.CreateSafeClone(
+                MessageDataValue.ParseJson(data.GetRawText()),
+                ForbiddenPersistedProperties),
             transientContext);
         var deduplicationKey = DiscordInteractionIdentity.CreateDeduplicationKey(
             request.InstallationId,

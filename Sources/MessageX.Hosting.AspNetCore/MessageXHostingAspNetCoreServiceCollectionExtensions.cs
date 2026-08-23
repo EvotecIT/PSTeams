@@ -25,7 +25,11 @@ public static class MessageXHostingAspNetCoreServiceCollectionExtensions {
         services.TryAddSingleton<MessageAcknowledgementWriter>();
         services.TryAddSingleton(provider => {
             var value = provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value;
-            return new MessageReplayGuard(value.ReplayCapacity, value.ReplayRetention);
+            return new MessageReplayGuard(
+                value.ReplayCapacity,
+                value.ReplayRetention,
+                value.ReplayAcknowledgementBodyBytes,
+                provider.GetRequiredService<TimeProvider>());
         });
         services.TryAddSingleton(provider => {
             var value = provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value;

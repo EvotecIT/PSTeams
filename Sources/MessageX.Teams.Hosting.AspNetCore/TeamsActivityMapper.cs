@@ -361,10 +361,10 @@ internal static class TeamsActivityMapper {
             throw new ArgumentException("Teams message attachments exceed the supported shape.", nameof(activity));
         }
         return attachments.Select(attachment => {
-            JsonElement? content = attachment.Content is null
+            MessageDataValue? content = attachment.Content is null
                 ? null
                 : MessageDurableJsonProjection.CreateSafeClone(
-                    JsonSerializer.SerializeToElement(attachment.Content),
+                    MessageDataValue.ParseJson(JsonSerializer.Serialize(attachment.Content)),
                     ForbiddenAttachmentProperties);
             return new TeamsInboundAttachment(
                 NormalizeOptional(attachment.ContentType?.ToString(), "attachment.ContentType"),

@@ -147,8 +147,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         values.Count <= 32 &&
         values.All(static attachment =>
             IsCoordinate(attachment.ContentType) &&
-            IsCoordinate(attachment.Name) &&
-            (attachment.Content is not { } content || content.ValueKind != JsonValueKind.Undefined));
+            IsCoordinate(attachment.Name));
 
     private static TeamsInboundAttachment[] NormalizeAttachments(
         IReadOnlyList<TeamsInboundAttachment>? attachments) {
@@ -164,7 +163,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             attachment.Content is null
                 ? null
                 : MessageDurableJsonProjection.CreateSafeClone(
-                    attachment.Content.Value,
+                    attachment.Content,
                     ForbiddenAttachmentProperties))).ToArray();
     }
 

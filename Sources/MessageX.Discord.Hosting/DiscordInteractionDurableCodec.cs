@@ -48,7 +48,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             !IsSafeOptional(envelope.Payload.Locale, 64) ||
             !IsSafeOptional(envelope.Payload.GuildLocale, 64) ||
             envelope.Payload.Context is < 0 or > 2 ||
-            envelope.Payload.Data.ValueKind != JsonValueKind.Object ||
+            envelope.Payload.Data.Kind != MessageDataValueKind.Object ||
             !DataMatches(
                 envelope.Payload.Kind,
                 envelope.Payload.Name,
@@ -127,7 +127,8 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 !IsSafeOptional(projection.GuildLocale, 64) ||
                 projection.Context is < 0 or > 2 ||
                 !TryNormalizeTarget(projection.CommandType, projection.TargetId, out var targetId) ||
-                projection.Data.ValueKind != JsonValueKind.Object ||
+                projection.Data is null ||
+                projection.Data.Kind != MessageDataValueKind.Object ||
                 !DataMatches(
                     projection.Kind,
                     projection.Name!,
@@ -231,13 +232,13 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         string name,
         DiscordApplicationCommandType? commandType,
         string? targetId,
-        JsonElement data)
+        MessageDataValue data)
     {
         var propertyName = kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
             ? "custom_id"
             : "name";
         if (!data.TryGetProperty(propertyName, out var property) ||
-            property.ValueKind != JsonValueKind.String)
+            property.Kind != MessageDataValueKind.String)
         {
             return false;
         }
@@ -255,14 +256,14 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         if (kind is DiscordInteractionKind.ApplicationCommand or DiscordInteractionKind.Autocomplete) {
             if (!commandType.HasValue ||
                 !data.TryGetProperty("type", out var type) ||
-                type.ValueKind != JsonValueKind.Number ||
+                type.Kind != MessageDataValueKind.Number ||
                 !type.TryGetInt32(out var value) ||
                 value != (int)commandType.Value) {
                 return false;
             }
             if (commandType is DiscordApplicationCommandType.User or DiscordApplicationCommandType.Message) {
                 return data.TryGetProperty("target_id", out var target) &&
-                    target.ValueKind == JsonValueKind.String &&
+                    target.Kind == MessageDataValueKind.String &&
                     string.Equals(target.GetString(), targetId, StringComparison.Ordinal);
             }
             return true;
@@ -296,5 +297,5 @@ internal sealed class DiscordInteractionProjection
     public DiscordApplicationCommandType? CommandType { get; set; }
     public string? TargetId { get; set; }
     public string? ApplicationId { get; set; }
-    public JsonElement Data { get; set; }
+    public MessageDataValue? Data { get; set; }
 }

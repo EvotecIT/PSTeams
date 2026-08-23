@@ -38,9 +38,11 @@ public sealed class DiscordInteractionReceiverTests {
 
     [Fact]
     public void CommandProducesDeferredTypedEnvelopeAndRedactsTransientToken() {
-        const string json = """
+        var interactionCreatedAt = ReceivedAt.AddMinutes(-1);
+        var interactionId = SnowflakeAt(interactionCreatedAt);
+        var json = $$$"""
             {
-              "id":"100000000000000001",
+              "id":"{{{interactionId}}}",
               "application_id":"100000000000000002",
               "type":2,
               "token":"interaction-secret-token",
@@ -68,12 +70,12 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal("1", result.Route?.Qualifier);
         Assert.Equal(DiscordApplicationCommandType.ChatInput, result.Envelope?.Payload.CommandType);
         Assert.Equal(MessageEventKind.CommandInvoked, result.Envelope?.Kind);
-        Assert.Equal("100000000000000001", result.Envelope?.EventId);
+        Assert.Equal(interactionId, result.Envelope?.EventId);
         Assert.Equal("100000000000000003", result.Envelope?.ScopeId);
         Assert.Equal("100000000000000005", result.Envelope?.SenderId);
         Assert.Equal(MessageConversationKind.Channel, result.Envelope?.Conversation?.ConversationKind);
         Assert.Equal(5, AckType(result.Acknowledgement));
-        Assert.Equal(ReceivedAt.AddMinutes(15), result.Envelope?.Payload.TransientContext.ExpiresAt);
+        Assert.Equal(interactionCreatedAt.AddMinutes(15), result.Envelope?.Payload.TransientContext.ExpiresAt);
         Assert.Equal("interaction-secret-token", result.Envelope?.Payload.TransientContext.Token);
         var persisted = JsonSerializer.Serialize(result.Envelope?.Payload);
         Assert.DoesNotContain("interaction-secret-token", persisted, StringComparison.Ordinal);
@@ -221,7 +223,7 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(DiscordInteractionKind.ApplicationCommand, roundTrip.Kind);
         Assert.Equal("inspect", roundTrip.Name);
         Assert.Equal("100000000000000094", roundTrip.TargetId);
-        Assert.Equal(JsonValueKind.Object, roundTrip.Data.ValueKind);
+        Assert.Equal(MessageDataValueKind.Object, roundTrip.Data.Kind);
         Assert.Equal("100000000000000094", roundTrip.Data.GetProperty("target_id").GetString());
         Assert.Null(roundTrip.TransientContext.Token);
         Assert.DoesNotContain("secret", persisted, StringComparison.Ordinal);
@@ -241,7 +243,7 @@ public sealed class DiscordInteractionReceiverTests {
                 null,
                 DiscordApplicationCommandType.ChatInput,
                 null,
-                document.RootElement);
+                MessageDataValue.ParseJson(document.RootElement.GetRawText()));
         }
 
         Assert.Equal("server-1", interaction.Data.GetProperty("options")[0].GetProperty("value").GetString());
@@ -338,20 +340,26 @@ public sealed class DiscordInteractionReceiverTests {
 
     [Fact]
     public void RetryDeduplicationUsesVerifiedInteractionIdentityInsteadOfRequestSignature() {
-        const string json = """
-            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","user":{"id":"100000000000000073"},"data":{"name":"status","type":1}}
+        var interactionCreatedAt = ReceivedAt.AddMinutes(-1);
+        var interactionId = SnowflakeAt(interactionCreatedAt);
+        var json = $$$"""
+            {"id":"{{{interactionId}}}","application_id":"100000000000000072","type":2,"token":"t","user":{"id":"100000000000000073"},"data":{"name":"status","type":1}}
             """;
-        var retryTimestamp = (long.Parse(Timestamp) + 1).ToString();
+        var retryTimestamp = (long.Parse(Timestamp) + 60).ToString();
         var first = DiscordInteractionReceiver.Receive(
             Request(json), PublicKeyHex, Sign(Timestamp, json), Timestamp);
         var retry = DiscordInteractionReceiver.Receive(
-            Request(json, ReceivedAt.AddSeconds(1)),
+            Request(json, ReceivedAt.AddMinutes(1)),
             PublicKeyHex,
             Sign(retryTimestamp, json),
             retryTimestamp);
 
         Assert.Equal(first.Envelope?.EventId, retry.Envelope?.EventId);
         Assert.Equal(first.Envelope?.DeduplicationKey, retry.Envelope?.DeduplicationKey);
+        Assert.Equal(interactionCreatedAt.AddMinutes(15), first.Envelope?.Payload.TransientContext.ExpiresAt);
+        Assert.Equal(
+            first.Envelope?.Payload.TransientContext.ExpiresAt,
+            retry.Envelope?.Payload.TransientContext.ExpiresAt);
     }
 
     [Fact]
@@ -431,6 +439,12 @@ public sealed class DiscordInteractionReceiverTests {
         signer.BlockUpdate(timestampBytes, 0, timestampBytes.Length);
         signer.BlockUpdate(body, 0, body.Length);
         return Convert.ToHexString(signer.GenerateSignature());
+    }
+
+    private static string SnowflakeAt(DateTimeOffset timestamp) {
+        const long discordEpochMilliseconds = 1420070400000;
+        var milliseconds = timestamp.ToUnixTimeMilliseconds() - discordEpochMilliseconds;
+        return checked((ulong)milliseconds << 22).ToString();
     }
 
     private static int AckType(MessageAcknowledgement acknowledgement) {

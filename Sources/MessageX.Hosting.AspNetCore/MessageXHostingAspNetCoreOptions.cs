@@ -20,6 +20,12 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// <summary>Largest configurable in-memory replay set.</summary>
     public const int MaximumReplayCapacity = 10_000_000;
 
+    /// <summary>Default aggregate acknowledgement-body bytes retained for synchronous replay.</summary>
+    public const int DefaultReplayAcknowledgementBodyBytes = 16 * 1024 * 1024;
+
+    /// <summary>Largest configurable aggregate acknowledgement-body replay budget.</summary>
+    public const int MaximumReplayAcknowledgementBodyBytes = 256 * 1024 * 1024;
+
     /// <summary>Minimum retention that covers every supported provider signature replay window.</summary>
     public static readonly TimeSpan MinimumReplayRetention = TimeSpan.FromHours(1);
 
@@ -40,6 +46,13 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// peak verified request rate across all installations multiplied by <see cref="ReplayRetention"/>.
     /// </summary>
     public int ReplayCapacity { get; set; } = DefaultReplayCapacity;
+
+    /// <summary>
+    /// Aggregate response-body bytes retained for exact replay of completed synchronous dispatches.
+    /// When this budget is full, the original response still succeeds while duplicates receive a
+    /// retryable response and a later request may dispatch again.
+    /// </summary>
+    public int ReplayAcknowledgementBodyBytes { get; set; } = DefaultReplayAcknowledgementBodyBytes;
 
     /// <summary>Retention for accepted in-memory deduplication coordinates.</summary>
     public TimeSpan ReplayRetention { get; set; } = DefaultReplayRetention;

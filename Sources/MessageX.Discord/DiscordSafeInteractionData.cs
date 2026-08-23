@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 namespace MessageX.Discord;
@@ -12,10 +13,17 @@ internal static class DiscordSafeInteractionData {
         },
         StringComparer.OrdinalIgnoreCase);
 
-    public static JsonElement Create(JsonElement value) {
+    public static MessageDataValue Create(MessageDataValue value) {
+        if (value is null) {
+            throw new ArgumentNullException(nameof(value));
+        }
+        using var document = JsonDocument.Parse(value.ToJsonString());
+        return Create(document.RootElement);
+    }
+
+    public static MessageDataValue Create(JsonElement value) {
         if (value.ValueKind == JsonValueKind.Undefined) {
-            using var empty = JsonDocument.Parse("{}");
-            return empty.RootElement.Clone();
+            return MessageDataValue.FromObject(Array.Empty<KeyValuePair<string, MessageDataValue>>());
         }
         if (value.ValueKind != JsonValueKind.Object) {
             throw new ArgumentException("Discord interaction data must be a JSON object.", nameof(value));
@@ -27,10 +35,7 @@ internal static class DiscordSafeInteractionData {
         if (stream.Length > MaximumBytes) {
             throw new ArgumentException("Discord interaction data cannot exceed 1 MiB.", nameof(value));
         }
-        using var document = JsonDocument.Parse(
-            stream.ToArray(),
-            new JsonDocumentOptions { MaxDepth = MaximumDepth });
-        return document.RootElement.Clone();
+        return MessageDataValue.ParseJson(Encoding.UTF8.GetString(stream.ToArray()));
     }
 
     private static void Write(JsonElement value, Utf8JsonWriter writer, int depth) {

@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Text.Json" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 

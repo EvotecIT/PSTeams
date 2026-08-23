@@ -26,6 +26,12 @@ internal sealed class MessageXHostingAspNetCoreOptionsValidator : IValidateOptio
                 $"{nameof(options.ReplayCapacity)} must be between 1 and " +
                 $"{MessageXHostingAspNetCoreOptions.MaximumReplayCapacity}.");
         }
+        if (options.ReplayAcknowledgementBodyBytes is < 1 or
+            > MessageXHostingAspNetCoreOptions.MaximumReplayAcknowledgementBodyBytes) {
+            return ValidateOptionsResult.Fail(
+                $"{nameof(options.ReplayAcknowledgementBodyBytes)} must be between 1 and " +
+                $"{MessageXHostingAspNetCoreOptions.MaximumReplayAcknowledgementBodyBytes}.");
+        }
         if (options.ReplayRetention < MessageXHostingAspNetCoreOptions.MinimumReplayRetention ||
             options.ReplayRetention > TimeSpan.FromDays(7)) {
             return ValidateOptionsResult.Fail(

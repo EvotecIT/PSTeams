@@ -272,6 +272,10 @@ public sealed class HostingContractTests {
         Assert.Equal("application/json", request.ContentType);
         Assert.Equal(new byte[] { 4, 5, 6 }, acknowledgement.CopyBody());
         Assert.Equal("application/json", acknowledgement.ContentType);
+        Assert.Throws<ArgumentException>(() => new MessageAcknowledgement(
+            200,
+            "application/json",
+            new byte[MessageAcknowledgement.MaximumBodyBytes + 1]));
     }
 
     [Fact]

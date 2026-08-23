@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace MessageX.Slack;
@@ -59,7 +58,7 @@ public sealed class SlackActionInput {
         string? blockId,
         string? value,
         string[]? selectedValues,
-        JsonElement? richTextValue) {
+        MessageDataValue? richTextValue) {
         ActionId = actionId ?? throw new ArgumentNullException(nameof(actionId));
         Type = type ?? throw new ArgumentNullException(nameof(type));
         BlockId = blockId;
@@ -84,16 +83,16 @@ public sealed class SlackActionInput {
     public string[] SelectedValues { get; }
 
     /// <summary>Bounded capability-free rich-text input when supplied.</summary>
-    public JsonElement? RichTextValue { get; }
+    public MessageDataValue? RichTextValue { get; }
 
-    private static JsonElement? CloneRichText(JsonElement? value) {
+    private static MessageDataValue? CloneRichText(MessageDataValue? value) {
         if (value is null) {
             return null;
         }
-        if (value.Value.ValueKind != JsonValueKind.Object) {
-            throw new ArgumentException("A Slack rich-text input must be a JSON object.", nameof(value));
+        if (value.Kind != MessageDataValueKind.Object) {
+            throw new ArgumentException("A Slack rich-text input must be an object.", nameof(value));
         }
-        return value.Value.Clone();
+        return value;
     }
 }
 
@@ -158,7 +157,7 @@ public sealed class SlackViewStateInput {
         string? value,
         string[]? selectedValues,
         string[]? fileIds,
-        JsonElement? richTextValue) {
+        MessageDataValue? richTextValue) {
         BlockId = blockId ?? throw new ArgumentNullException(nameof(blockId));
         ActionId = actionId ?? throw new ArgumentNullException(nameof(actionId));
         Type = type ?? throw new ArgumentNullException(nameof(type));
@@ -187,16 +186,16 @@ public sealed class SlackViewStateInput {
     public string[] FileIds { get; }
 
     /// <summary>Bounded capability-free rich-text input when supplied.</summary>
-    public JsonElement? RichTextValue { get; }
+    public MessageDataValue? RichTextValue { get; }
 
-    private static JsonElement? CloneRichText(JsonElement? value) {
+    private static MessageDataValue? CloneRichText(MessageDataValue? value) {
         if (value is null) {
             return null;
         }
-        if (value.Value.ValueKind != JsonValueKind.Object) {
-            throw new ArgumentException("A Slack rich-text input must be a JSON object.", nameof(value));
+        if (value.Kind != MessageDataValueKind.Object) {
+            throw new ArgumentException("A Slack rich-text input must be an object.", nameof(value));
         }
-        return value.Value.Clone();
+        return value;
     }
 }
 

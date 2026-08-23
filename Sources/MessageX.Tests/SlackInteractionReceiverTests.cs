@@ -150,6 +150,7 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approval", result.Route?.Name);
         Assert.Equal(MessageEventKind.ModalSubmitted, result.Envelope?.Kind);
         Assert.Equal(SlackInteractionKind.ViewSubmission, result.Envelope?.Payload.Kind);
+        Assert.True(result.RequiresSynchronousDispatch);
     }
 
     [Fact]

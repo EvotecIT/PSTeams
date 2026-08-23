@@ -1,24 +1,51 @@
 namespace MessageX.Hosting.AspNetCore;
 
 /// <summary>Bounded installation-scoped replay suppression for accepted in-memory ingress.</summary>
-public sealed class MessageReplayGuard {
+public sealed class MessageReplayGuard : IDisposable {
+    private static readonly TimeSpan MaximumTimerDueTime =
+        TimeSpan.FromMilliseconds(int.MaxValue - 1L);
+    private static readonly MessageAcknowledgement RetryableAcknowledgement =
+        MessageAcknowledgement.Empty(503);
     private readonly object _sync = new();
     private readonly Dictionary<string, LinkedListNode<Entry>> _accepted = new(StringComparer.Ordinal);
     private readonly LinkedList<Entry> _expirations = new();
     private readonly int _capacity;
     private readonly TimeSpan _retention;
+    private readonly int _acknowledgementBodyCapacity;
+    private readonly TimeProvider _timeProvider;
+    private ITimer? _expirationTimer;
     private DateTimeOffset _lastObservedAt = DateTimeOffset.MinValue;
+    private int _acknowledgementBodyBytes;
+    private bool _disposed;
 
     /// <summary>Creates a bounded replay guard.</summary>
-    public MessageReplayGuard(int capacity, TimeSpan retention) {
+    public MessageReplayGuard(int capacity, TimeSpan retention) : this(
+        capacity,
+        retention,
+        MessageXHostingAspNetCoreOptions.DefaultReplayAcknowledgementBodyBytes,
+        TimeProvider.System) {
+    }
+
+    /// <summary>Creates a replay guard with an explicit acknowledgement-body budget and clock.</summary>
+    public MessageReplayGuard(
+        int capacity,
+        TimeSpan retention,
+        int acknowledgementBodyCapacity,
+        TimeProvider timeProvider) {
         if (capacity < 1) {
             throw new ArgumentOutOfRangeException(nameof(capacity));
         }
         if (retention <= TimeSpan.Zero) {
             throw new ArgumentOutOfRangeException(nameof(retention));
         }
+        if (acknowledgementBodyCapacity is < 1 or
+            > MessageXHostingAspNetCoreOptions.MaximumReplayAcknowledgementBodyBytes) {
+            throw new ArgumentOutOfRangeException(nameof(acknowledgementBodyCapacity));
+        }
         _capacity = capacity;
         _retention = retention;
+        _acknowledgementBodyCapacity = acknowledgementBodyCapacity;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     /// <summary>Atomically suppresses duplicates and records the coordinate only after ingress accepts it.</summary>
@@ -37,18 +64,17 @@ public sealed class MessageReplayGuard {
             result.Envelope.InstallationId,
             result.Envelope.DeduplicationKey);
         lock (_sync) {
-            if (now < _lastObservedAt) {
-                now = _lastObservedAt;
-            } else {
-                _lastObservedAt = now;
-            }
+            ThrowIfDisposed();
+            now = ObserveNow(now);
             Prune(now);
+            ScheduleExpiration(now);
             if (_accepted.ContainsKey(key)) {
                 return MessageReplayAcceptance.Duplicate;
             }
             if (_accepted.Count >= _capacity) {
                 return MessageReplayAcceptance.Full;
             }
+            var expiresAt = now.Add(_retention);
             var enqueue = accept();
             var rejected = enqueue switch {
                 MessageIngressEnqueueStatus.Accepted => (MessageReplayAcceptance?)null,
@@ -61,9 +87,9 @@ public sealed class MessageReplayGuard {
             if (rejected.HasValue) {
                 return rejected.Value;
             }
-            var expiresAt = now.Add(_retention);
             var node = _expirations.AddLast(new Entry(key, expiresAt));
             _accepted.Add(key, node);
+            ScheduleExpiration(now);
             return MessageReplayAcceptance.Accepted;
         }
     }
@@ -80,9 +106,10 @@ public sealed class MessageReplayGuard {
             result.Envelope.InstallationId,
             result.Envelope.DeduplicationKey);
         lock (_sync) {
+            ThrowIfDisposed();
             if (_accepted.Remove(key, out var node)) {
-                _expirations.Remove(node);
-                node.Value.Acknowledgement.TrySetCanceled();
+                Remove(node, RetryableAcknowledgement);
+                ScheduleExpiration(ObserveNow(_timeProvider.GetUtcNow()));
             }
         }
     }
@@ -94,8 +121,9 @@ public sealed class MessageReplayGuard {
         var key = GetKey(result);
         Task<MessageAcknowledgement> acknowledgement;
         lock (_sync) {
+            ThrowIfDisposed();
             if (!_accepted.TryGetValue(key, out var node)) {
-                throw new InvalidOperationException("The synchronous replay reservation is no longer available.");
+                return ValueTask.FromResult(RetryableAcknowledgement);
             }
             acknowledgement = node.Value.Acknowledgement.Task;
         }
@@ -109,8 +137,37 @@ public sealed class MessageReplayGuard {
         ArgumentNullException.ThrowIfNull(acknowledgement);
         var key = GetKey(result);
         lock (_sync) {
-            if (_accepted.TryGetValue(key, out var node)) {
-                node.Value.Acknowledgement.TrySetResult(acknowledgement);
+            ThrowIfDisposed();
+            if (!_accepted.TryGetValue(key, out var node) || node.Value.IsCompleted) {
+                return;
+            }
+            if (_acknowledgementBodyBytes >
+                _acknowledgementBodyCapacity - acknowledgement.BodyLength) {
+                _accepted.Remove(key);
+                Remove(node, RetryableAcknowledgement);
+                ScheduleExpiration(ObserveNow(_timeProvider.GetUtcNow()));
+                return;
+            }
+            if (node.Value.Acknowledgement.TrySetResult(acknowledgement)) {
+                node.Value.IsCompleted = true;
+                node.Value.RetainedBodyBytes = acknowledgement.BodyLength;
+                _acknowledgementBodyBytes += acknowledgement.BodyLength;
+            }
+        }
+    }
+
+    /// <summary>Stops expiry work and releases every retained acknowledgement.</summary>
+    public void Dispose() {
+        lock (_sync) {
+            if (_disposed) {
+                return;
+            }
+            _disposed = true;
+            _expirationTimer?.Dispose();
+            _expirationTimer = null;
+            while (_expirations.First is { } node) {
+                _accepted.Remove(node.Value.Key);
+                Remove(node, RetryableAcknowledgement);
             }
         }
     }
@@ -118,11 +175,69 @@ public sealed class MessageReplayGuard {
     private void Prune(DateTimeOffset now) {
         while (_expirations.First is not null && _expirations.First.Value.ExpiresAt <= now) {
             var expired = _expirations.First;
-            _expirations.RemoveFirst();
             _accepted.Remove(expired.Value.Key);
-            expired.Value.Acknowledgement.TrySetCanceled();
+            Remove(expired, RetryableAcknowledgement);
         }
     }
+
+    private void Expire() {
+        lock (_sync) {
+            if (_disposed) {
+                return;
+            }
+            var now = ObserveNow(_timeProvider.GetUtcNow());
+            Prune(now);
+            ScheduleExpiration(now);
+        }
+    }
+
+    private DateTimeOffset ObserveNow(DateTimeOffset now) {
+        if (now < _lastObservedAt) {
+            return _lastObservedAt;
+        }
+        _lastObservedAt = now;
+        return now;
+    }
+
+    private void ScheduleExpiration(DateTimeOffset now) {
+        if (_disposed) {
+            return;
+        }
+        if (_expirations.First is null) {
+            _expirationTimer?.Dispose();
+            _expirationTimer = null;
+            return;
+        }
+        var dueTime = _expirations.First.Value.ExpiresAt - now;
+        if (dueTime < TimeSpan.Zero) {
+            dueTime = TimeSpan.Zero;
+        } else if (dueTime > MaximumTimerDueTime) {
+            dueTime = MaximumTimerDueTime;
+        }
+        if (_expirationTimer is null) {
+            _expirationTimer = _timeProvider.CreateTimer(
+                static state => ((MessageReplayGuard)state!).Expire(),
+                this,
+                dueTime,
+                Timeout.InfiniteTimeSpan);
+        } else {
+            _expirationTimer.Change(dueTime, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    private void Remove(
+        LinkedListNode<Entry> node,
+        MessageAcknowledgement unsettledAcknowledgement) {
+        _expirations.Remove(node);
+        _acknowledgementBodyBytes -= node.Value.RetainedBodyBytes;
+        node.Value.RetainedBodyBytes = 0;
+        if (!node.Value.IsCompleted) {
+            node.Value.Acknowledgement.TrySetResult(unsettledAcknowledgement);
+            node.Value.IsCompleted = true;
+        }
+    }
+
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     private static string GetKey<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
         ArgumentNullException.ThrowIfNull(result);
@@ -144,6 +259,8 @@ public sealed class MessageReplayGuard {
 
         public string Key { get; }
         public DateTimeOffset ExpiresAt { get; }
+        public bool IsCompleted { get; set; }
+        public int RetainedBodyBytes { get; set; }
         public TaskCompletionSource<MessageAcknowledgement> Acknowledgement { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
     }

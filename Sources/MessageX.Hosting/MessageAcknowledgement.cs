@@ -1,7 +1,10 @@
 namespace MessageX.Hosting;
 
-/// <summary>Transient provider acknowledgement returned by an HTTP host before asynchronous dispatch.</summary>
+/// <summary>Transient provider acknowledgement returned by an HTTP host.</summary>
 public sealed class MessageAcknowledgement {
+    /// <summary>Largest provider acknowledgement body retained or written by MessageX.</summary>
+    public const int MaximumBodyBytes = 64 * 1024;
+
     private readonly byte[] _body;
 
     /// <summary>Creates an acknowledgement with an exact response body.</summary>
@@ -14,6 +17,11 @@ public sealed class MessageAcknowledgement {
             throw new ArgumentException(
                 "Acknowledgement content types must be bounded text without control characters.",
                 nameof(contentType));
+        }
+        if (body is { Length: > MaximumBodyBytes }) {
+            throw new ArgumentException(
+                $"Acknowledgement bodies cannot exceed {MaximumBodyBytes} bytes.",
+                nameof(body));
         }
         StatusCode = statusCode;
         ContentType = string.IsNullOrWhiteSpace(contentType) ? null : contentType!.Trim();

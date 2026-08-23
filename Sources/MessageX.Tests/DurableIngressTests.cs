@@ -207,7 +207,7 @@ public sealed class DurableIngressTests {
 
     [Fact]
     public void ReleasedReplayReservationsDoNotRetainExpirationEntries() {
-        var guard = new MessageReplayGuard(1, TimeSpan.FromHours(1));
+        using var guard = new MessageReplayGuard(1, TimeSpan.FromHours(1));
         for (var index = 0; index < 1000; index++) {
             var result = Dispatch("released-" + index);
             Assert.Equal(
@@ -225,8 +225,112 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task ReleasedSynchronousReservationSettlesCurrentAndRacingDuplicatesAsRetryable() {
+        using var guard = new MessageReplayGuard(1, TimeSpan.FromHours(1));
+        var result = Dispatch("released-synchronous");
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(result, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+        var currentDuplicate = guard.WaitForAcknowledgementAsync(
+            result,
+            TestContext.Current.CancellationToken);
+
+        guard.Release(result);
+
+        Assert.Equal(
+            StatusCodes.Status503ServiceUnavailable,
+            (await currentDuplicate).StatusCode);
+        Assert.Equal(
+            StatusCodes.Status503ServiceUnavailable,
+            (await guard.WaitForAcknowledgementAsync(
+                result,
+                TestContext.Current.CancellationToken)).StatusCode);
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(result, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+    }
+
+    [Fact]
+    public async Task ReplayAcknowledgementBodyBudgetReleasesOverflowForProviderRetry() {
+        using var guard = new MessageReplayGuard(
+            2,
+            TimeSpan.FromHours(1),
+            acknowledgementBodyCapacity: 4,
+            TimeProvider.System);
+        var retained = Dispatch("retained-body");
+        var overflow = Dispatch("overflow-body");
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(retained, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+        guard.Complete(
+            retained,
+            new MessageAcknowledgement(200, "application/octet-stream", new byte[4]));
+        Assert.Equal(
+            4,
+            (await guard.WaitForAcknowledgementAsync(
+                retained,
+                TestContext.Current.CancellationToken)).BodyLength);
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(overflow, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+
+        guard.Complete(
+            overflow,
+            new MessageAcknowledgement(200, "application/octet-stream", new byte[1]));
+
+        Assert.Equal(
+            StatusCodes.Status503ServiceUnavailable,
+            (await guard.WaitForAcknowledgementAsync(
+                overflow,
+                TestContext.Current.CancellationToken)).StatusCode);
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(overflow, FixedNow, static () => MessageIngressEnqueueStatus.Accepted));
+    }
+
+    [Fact]
+    public void ReplayGuardExpiresCompletedBodiesWithoutSubsequentTraffic() {
+        using var guard = new MessageReplayGuard(
+            1,
+            TimeSpan.FromMilliseconds(25),
+            acknowledgementBodyCapacity: 1024,
+            TimeProvider.System);
+        var result = Dispatch("timer-expiry");
+        Assert.Equal(
+            MessageReplayAcceptance.Accepted,
+            guard.TryAccept(
+                result,
+                TimeProvider.System.GetUtcNow(),
+                static () => MessageIngressEnqueueStatus.Accepted));
+        guard.Complete(
+            result,
+            new MessageAcknowledgement(200, "application/octet-stream", new byte[1024]));
+
+        Assert.True(SpinWait.SpinUntil(
+            () => ReplayGuardCount(guard) == 0 && ReplayGuardBodyBytes(guard) == 0,
+            TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void ReplayGuardChunksPublicRetentionBeyondPlatformTimerLimit() {
+        using var guard = new MessageReplayGuard(1, TimeSpan.FromDays(30));
+        var accepted = 0;
+
+        var result = guard.TryAccept(
+            Dispatch("long-retention"),
+            TimeProvider.System.GetUtcNow(),
+            () => {
+                Interlocked.Increment(ref accepted);
+                return MessageIngressEnqueueStatus.Accepted;
+            });
+
+        Assert.Equal(MessageReplayAcceptance.Accepted, result);
+        Assert.Equal(1, Volatile.Read(ref accepted));
+    }
+
+    [Fact]
     public void ReplayGuardPropagatesUnavailableWithoutSuppressingProviderRetry() {
-        var guard = new MessageReplayGuard(1, TimeSpan.FromMinutes(1));
+        using var guard = new MessageReplayGuard(1, TimeSpan.FromMinutes(1));
         var result = Dispatch("unavailable-retry");
 
         Assert.Equal(
@@ -949,6 +1053,21 @@ public sealed class DurableIngressTests {
             MessageRoute.ForCommand("status"),
             Envelope(text),
             MessageAcknowledgement.Empty(StatusCodes.Status200OK));
+
+    private static int ReplayGuardCount(MessageReplayGuard guard) {
+        var field = typeof(MessageReplayGuard).GetField(
+            "_accepted",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var value = field?.GetValue(guard);
+        return Assert.IsType<int>(value?.GetType().GetProperty("Count")?.GetValue(value));
+    }
+
+    private static int ReplayGuardBodyBytes(MessageReplayGuard guard) {
+        var field = typeof(MessageReplayGuard).GetField(
+            "_acknowledgementBodyBytes",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        return Assert.IsType<int>(field?.GetValue(guard));
+    }
 
     private static MessageEventEnvelope<TestPayload> Envelope(string text) => new(
         MessageProviders.Slack,

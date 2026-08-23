@@ -5,6 +5,7 @@ using MessageX.Discord;
 using MessageX.Discord.Hosting.AspNetCore;
 using MessageX.Hosting;
 using MessageX.Hosting.AspNetCore;
+using MessageX.Slack;
 using MessageX.Slack.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -144,6 +145,45 @@ public sealed class ProviderAspNetCoreEndpointTests {
         Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
         Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
         Assert.Equal(1, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task SlackViewSubmissionReturnsHandlerValidationInlineAndReplaysIt() {
+        using var provider = SlackServices(capacity: 1).BuildServiceProvider();
+        var dispatchCount = 0;
+        provider.GetRequiredService<MessageRouter>().OnSubmission<SlackInteractionEvent>(
+            "approval",
+            (_, _) => {
+                Interlocked.Increment(ref dispatchCount);
+                return Task.FromResult(MessageHandlerResult.Respond(new MessageAcknowledgement(
+                    StatusCodes.Status200OK,
+                    "application/json; charset=utf-8",
+                    Encoding.UTF8.GetBytes("{\"response_action\":\"errors\",\"errors\":{\"reason\":\"Required\"}}"))));
+            });
+        const string json = """
+            {"type":"view_submission","api_app_id":"A1","team":{"id":"T1"},"user":{"id":"U1"},"view":{"callback_id":"approval","state":{"values":{}}}}
+            """;
+        var context = SlackInteractionContext(json);
+        var duplicate = SlackInteractionContext(json);
+        var handler = provider.GetRequiredService<SlackHttpEndpointHandler>();
+
+        await handler.HandleInteractionsAsync(
+            context,
+            SlackConfiguration(),
+            TestContext.Current.CancellationToken);
+        await handler.HandleInteractionsAsync(
+            duplicate,
+            SlackConfiguration(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
+        using var body = JsonDocument.Parse(ResponseBody(context));
+        Assert.Equal("errors", body.RootElement.GetProperty("response_action").GetString());
+        Assert.Equal("Required", body.RootElement.GetProperty("errors").GetProperty("reason").GetString());
+        Assert.Equal(ResponseBody(context), ResponseBody(duplicate));
+        Assert.Equal(1, Volatile.Read(ref dispatchCount));
+        Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
     }
 
     [Fact]
@@ -345,6 +385,15 @@ public sealed class ProviderAspNetCoreEndpointTests {
         var context = Context(body, "application/json; charset=utf-8");
         context.Request.Headers["X-Slack-Request-Timestamp"] = SlackTimestamp;
         context.Request.Headers["X-Slack-Signature"] = SignSlack(json);
+        return context;
+    }
+
+    private static DefaultHttpContext SlackInteractionContext(string json) {
+        var form = "payload=" + Uri.EscapeDataString(json);
+        var body = Encoding.UTF8.GetBytes(form);
+        var context = Context(body, "application/x-www-form-urlencoded; charset=utf-8");
+        context.Request.Headers["X-Slack-Request-Timestamp"] = SlackTimestamp;
+        context.Request.Headers["X-Slack-Signature"] = SignSlack(form);
         return context;
     }
 

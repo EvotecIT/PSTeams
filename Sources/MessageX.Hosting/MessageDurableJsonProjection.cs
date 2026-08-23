@@ -1,75 +1,52 @@
-using System.Text.Json;
+using System.Text;
 
 namespace MessageX.Hosting;
 
-/// <summary>Creates bounded JSON projections while removing provider capability fields recursively.</summary>
+/// <summary>Creates bounded provider-data projections while removing capability fields recursively.</summary>
 public static class MessageDurableJsonProjection {
     private const int MaximumDepth = 64;
     private const int MaximumBytes = 1024 * 1024;
 
-    /// <summary>Clones JSON while omitting case-insensitive property names at every depth.</summary>
-    public static JsonElement CreateSafeClone(
-        JsonElement value,
+    /// <summary>Clones provider data while omitting case-insensitive property names at every depth.</summary>
+    public static MessageDataValue CreateSafeClone(
+        MessageDataValue value,
         IEnumerable<string> forbiddenPropertyNames) {
+        if (value is null) {
+            throw new ArgumentNullException(nameof(value));
+        }
         if (forbiddenPropertyNames is null) {
             throw new ArgumentNullException(nameof(forbiddenPropertyNames));
         }
         var forbidden = new HashSet<string>(forbiddenPropertyNames, StringComparer.OrdinalIgnoreCase);
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream)) {
-            Write(value, writer, forbidden, 0);
+        var clone = Clone(value, forbidden, 0);
+        if (Encoding.UTF8.GetByteCount(clone.ToJsonString()) > MaximumBytes) {
+            throw new MessageDurablePayloadException("A safe durable provider projection cannot exceed 1 MiB.");
         }
-        if (stream.Length > MaximumBytes) {
-            throw new MessageDurablePayloadException("A safe durable JSON projection cannot exceed 1 MiB.");
-        }
-        using var document = JsonDocument.Parse(stream.ToArray(), new JsonDocumentOptions { MaxDepth = MaximumDepth });
-        return document.RootElement.Clone();
+        return clone;
     }
 
-    private static void Write(
-        JsonElement value,
-        Utf8JsonWriter writer,
+    private static MessageDataValue Clone(
+        MessageDataValue value,
         ISet<string> forbidden,
         int depth) {
         if (depth > MaximumDepth) {
-            throw new MessageDurablePayloadException("A safe durable JSON projection cannot exceed 64 levels.");
+            throw new MessageDurablePayloadException("A safe durable provider projection cannot exceed 64 levels.");
         }
-        switch (value.ValueKind) {
-            case JsonValueKind.Object:
-                writer.WriteStartObject();
-                foreach (var property in value.EnumerateObject()) {
-                    if (forbidden.Contains(property.Name)) {
-                        continue;
-                    }
-                    writer.WritePropertyName(property.Name);
-                    Write(property.Value, writer, forbidden, depth + 1);
-                }
-                writer.WriteEndObject();
-                break;
-            case JsonValueKind.Array:
-                writer.WriteStartArray();
-                foreach (var item in value.EnumerateArray()) {
-                    Write(item, writer, forbidden, depth + 1);
-                }
-                writer.WriteEndArray();
-                break;
-            case JsonValueKind.String:
-                writer.WriteStringValue(value.GetString());
-                break;
-            case JsonValueKind.Number:
-                value.WriteTo(writer);
-                break;
-            case JsonValueKind.True:
-                writer.WriteBooleanValue(true);
-                break;
-            case JsonValueKind.False:
-                writer.WriteBooleanValue(false);
-                break;
-            case JsonValueKind.Null:
-                writer.WriteNullValue();
-                break;
-            default:
-                throw new MessageDurablePayloadException("Undefined JSON values cannot enter durable storage.");
-        }
+        return value.Kind switch {
+            MessageDataValueKind.Object => MessageDataValue.FromObject(
+                value.Properties
+                    .Where(property => !forbidden.Contains(property.Key))
+                    .Select(property => new KeyValuePair<string, MessageDataValue>(
+                        property.Key,
+                        Clone(property.Value, forbidden, depth + 1)))),
+            MessageDataValueKind.Array => MessageDataValue.FromArray(
+                value.Items.Select(item => Clone(item, forbidden, depth + 1))),
+            MessageDataValueKind.String or
+            MessageDataValueKind.Number or
+            MessageDataValueKind.Boolean or
+            MessageDataValueKind.Null => value,
+            _ => throw new MessageDurablePayloadException(
+                "Undefined provider values cannot enter durable storage.")
+        };
     }
 }

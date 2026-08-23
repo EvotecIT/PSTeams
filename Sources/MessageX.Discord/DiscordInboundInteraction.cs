@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace MessageX.Discord;
@@ -43,7 +42,7 @@ public sealed class DiscordInboundInteraction {
         int? context,
         DiscordApplicationCommandType? commandType,
         string? targetId,
-        JsonElement data,
+        MessageDataValue data,
         string? applicationId = null) : this(
             kind,
             name,
@@ -68,7 +67,7 @@ public sealed class DiscordInboundInteraction {
         DiscordApplicationCommandType? commandType,
         string? targetId,
         string? applicationId,
-        JsonElement data,
+        MessageDataValue data,
         DiscordTransientInteractionContext transientContext) {
         Kind = kind;
         Name = name;
@@ -111,16 +110,12 @@ public sealed class DiscordInboundInteraction {
     public string? ApplicationId { get; }
 
     /// <summary>Safe provider-native interaction data, including bounded command options and modal inputs.</summary>
-    public JsonElement Data { get; }
+    public MessageDataValue Data { get; }
 
     /// <summary>Explicitly transient follow-up capability.</summary>
     [JsonIgnore]
     public DiscordTransientInteractionContext TransientContext { get; }
 
-    private static readonly JsonElement EmptyData = CreateEmptyData();
-
-    private static JsonElement CreateEmptyData() {
-        using var document = JsonDocument.Parse("{}");
-        return document.RootElement.Clone();
-    }
+    private static readonly MessageDataValue EmptyData =
+        MessageDataValue.FromObject(Array.Empty<KeyValuePair<string, MessageDataValue>>());
 }
