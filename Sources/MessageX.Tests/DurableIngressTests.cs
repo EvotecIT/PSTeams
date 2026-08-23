@@ -361,6 +361,75 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task EveryOutboxBatchLeaseStartsBeforeASynchronousHandlerCanBlock() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = Services(store, includeCodec: true, retryDelay: TimeSpan.Zero);
+        services.AddMessageXOutboxHandler<SynchronousBlockingOutboxHandler>();
+        using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (context, _) => {
+            var records = new[] { "block", "continue" }
+                .Select(value => new MessageOutboxRecord(
+                    context.Envelope.Provider,
+                    context.Envelope.InstallationId,
+                    context.Envelope.DeduplicationKey + ":" + value,
+                    value,
+                    "test.sync-block.v1",
+                    Encoding.UTF8.GetBytes(value),
+                    FixedNow));
+            return Task.FromResult(MessageHandlerResult.CompletedWithOutbox(
+                new MessageOutboxBatch(records)));
+        });
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            ResponseContext().Response,
+            Dispatch("sync-block-outbox"),
+            TestContext.Current.CancellationToken);
+        var workers = provider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in workers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        var handler = Assert.IsType<SynchronousBlockingOutboxHandler>(
+            provider.GetServices<IMessageOutboxHandler>().Single());
+        await handler.BothEntered.Task.WaitAsync(
+            TimeSpan.FromSeconds(5),
+            TestContext.Current.CancellationToken);
+        for (var index = workers.Length - 1; index >= 0; index--) {
+            await workers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task DurableInboxWorkerRecoversAfterTransientStoreFailure() {
+        using var database = new TemporaryDatabase();
+        using var innerStore = new SqliteMessageDurableStore(database.Path);
+        var store = new TransientInboxClaimFailureStore(innerStore);
+        using var provider = Services(store, includeCodec: true, retryDelay: TimeSpan.Zero)
+            .BuildServiceProvider();
+        var handled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (_, _) => {
+            handled.TrySetResult(true);
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            ResponseContext().Response,
+            Dispatch("transient-store"),
+            TestContext.Current.CancellationToken);
+        var workers = provider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in workers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        await handled.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(1, store.ClaimFailures);
+        Assert.True(provider.GetRequiredService<IMessageDurableIngressHealth>()
+            .GetHealthSnapshot().Unavailable > 0);
+        for (var index = workers.Length - 1; index >= 0; index--) {
+            await workers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task LongHandlerRenewsLeaseBeforeAnotherWorkerCanClaimIt() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -629,6 +698,27 @@ public sealed class DurableIngressTests {
         }
     }
 
+    private sealed class SynchronousBlockingOutboxHandler : IMessageOutboxHandler {
+        private readonly ManualResetEventSlim _continued = new(false);
+
+        public string PayloadType => "test.sync-block.v1";
+
+        public TaskCompletionSource<bool> BothEntered { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task DeliverAsync(MessageOutboxRecord record, CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            var value = Encoding.UTF8.GetString(record.CopyPayload());
+            if (string.Equals(value, "continue", StringComparison.Ordinal)) {
+                _continued.Set();
+            } else if (!_continued.Wait(TimeSpan.FromSeconds(3), cancellationToken)) {
+                throw new TimeoutException("A later outbox lease never reached its handler.");
+            }
+            BothEntered.TrySetResult(true);
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class TestPayloadCodec : IMessageDurableCodec<TestPayload> {
         public string PayloadType => "test.payload.v1";
 
@@ -775,6 +865,106 @@ public sealed class DurableIngressTests {
                 maximumAttempts,
                 cancellationToken);
         }
+
+        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+            string ownerId,
+            int maximumCount,
+            TimeSpan leaseDuration,
+            IReadOnlyCollection<string> payloadTypes,
+            CancellationToken cancellationToken = default) =>
+            _inner.ClaimOutboxAsync(ownerId, maximumCount, leaseDuration, payloadTypes, cancellationToken);
+
+        public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            CancellationToken cancellationToken = default) =>
+            _inner.RenewOutboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
+
+        public Task<bool> CompleteOutboxAsync(
+            string recordId,
+            string leaseToken,
+            CancellationToken cancellationToken = default) =>
+            _inner.CompleteOutboxAsync(recordId, leaseToken, cancellationToken);
+
+        public Task<MessageDurableFailureResult> FailOutboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageDurableFailureKind failureKind,
+            TimeSpan retryDelay,
+            int maximumAttempts,
+            CancellationToken cancellationToken = default) =>
+            _inner.FailOutboxAsync(
+                recordId,
+                leaseToken,
+                failureKind,
+                retryDelay,
+                maximumAttempts,
+                cancellationToken);
+    }
+
+    private sealed class TransientInboxClaimFailureStore : IMessageDurableStore {
+        private readonly IMessageDurableStore _inner;
+        private int _remainingFailures = 1;
+
+        public TransientInboxClaimFailureStore(IMessageDurableStore inner) => _inner = inner;
+
+        public int ClaimFailures { get; private set; }
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) =>
+            _inner.InitializeAsync(cancellationToken);
+
+        public Task<MessageDurableAcceptance> AcceptInboxAsync(
+            MessageDurableRecord record,
+            CancellationToken cancellationToken = default) =>
+            _inner.AcceptInboxAsync(record, cancellationToken);
+
+        public Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
+            string ownerId,
+            int maximumCount,
+            TimeSpan leaseDuration,
+            IReadOnlyCollection<string> payloadTypes,
+            CancellationToken cancellationToken = default) {
+            if (Interlocked.Exchange(ref _remainingFailures, 0) == 1) {
+                ClaimFailures++;
+                throw new InvalidOperationException("transient store outage");
+            }
+            return _inner.ClaimInboxAsync(
+                ownerId,
+                maximumCount,
+                leaseDuration,
+                payloadTypes,
+                cancellationToken);
+        }
+
+        public Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan leaseDuration,
+            CancellationToken cancellationToken = default) =>
+            _inner.RenewInboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
+
+        public Task<bool> CompleteInboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageOutboxBatch? outbox = null,
+            CancellationToken cancellationToken = default) =>
+            _inner.CompleteInboxAsync(recordId, leaseToken, outbox, cancellationToken);
+
+        public Task<MessageDurableFailureResult> FailInboxAsync(
+            string recordId,
+            string leaseToken,
+            MessageDurableFailureKind failureKind,
+            TimeSpan retryDelay,
+            int maximumAttempts,
+            CancellationToken cancellationToken = default) =>
+            _inner.FailInboxAsync(
+                recordId,
+                leaseToken,
+                failureKind,
+                retryDelay,
+                maximumAttempts,
+                cancellationToken);
 
         public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
             string ownerId,
