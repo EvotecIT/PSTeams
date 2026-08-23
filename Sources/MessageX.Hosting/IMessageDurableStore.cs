@@ -13,7 +13,7 @@ public interface IMessageDurableStore {
         MessageDurableRecord record,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Claims eligible inbox work for explicitly supported payload types using the store's authoritative clock.</summary>
+    /// <summary>Claims eligible inbox work for payload types matched with ordinal, case-sensitive equality and a strictly positive lease duration.</summary>
     Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
         string ownerId,
         int maximumCount,
@@ -21,7 +21,7 @@ public interface IMessageDurableStore {
         IReadOnlyCollection<string> payloadTypes,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Renews one active inbox lease using the store's authoritative clock.</summary>
+    /// <summary>Renews one active inbox lease using the store's authoritative clock and a strictly positive duration.</summary>
     Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
         string recordId,
         string leaseToken,
@@ -48,7 +48,7 @@ public interface IMessageDurableStore {
         int maximumAttempts,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Claims eligible outbound work for explicitly supported payload types using the store's authoritative clock.</summary>
+    /// <summary>Claims eligible outbound work for payload types matched with ordinal, case-sensitive equality and a strictly positive lease duration.</summary>
     Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
         string ownerId,
         int maximumCount,
@@ -56,7 +56,7 @@ public interface IMessageDurableStore {
         IReadOnlyCollection<string> payloadTypes,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Renews one active outbox lease using the store's authoritative clock.</summary>
+    /// <summary>Renews one active outbox lease using the store's authoritative clock and a strictly positive duration.</summary>
     Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
         string recordId,
         string leaseToken,

@@ -3,6 +3,16 @@ using MessageX.Hosting;
 namespace MessageX.Tests;
 
 public sealed class PersistenceContractTests {
+    [Fact]
+    public void DurableRouteKindNumericValuesRemainStable() {
+        Assert.Equal(0, (int)MessageRouteKind.Event);
+        Assert.Equal(1, (int)MessageRouteKind.Command);
+        Assert.Equal(2, (int)MessageRouteKind.Mention);
+        Assert.Equal(3, (int)MessageRouteKind.DirectMessage);
+        Assert.Equal(4, (int)MessageRouteKind.Action);
+        Assert.Equal(5, (int)MessageRouteKind.Submission);
+        Assert.Equal(6, (int)MessageRouteKind.Autocomplete);
+    }
     [Theory]
     [InlineData(MessageRouteKind.Event, MessageEventKind.ReactionChanged, null)]
     [InlineData(MessageRouteKind.Command, MessageEventKind.CommandInvoked, "status")]
