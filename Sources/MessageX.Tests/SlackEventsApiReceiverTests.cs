@@ -216,6 +216,10 @@ public sealed class SlackEventsApiReceiverTests {
             {"type":"event_callback","team_id":"T1","event_id":"Ev2","event":{"type":"message","subtype":1,"channel":"C1","ts":"1787416799.1"}}
             """;
         var malformedSubtype = Receive(malformedSubtypeJson);
+        const string unsafeTextJson = """
+            {"type":"event_callback","team_id":"T1","event_id":"Ev3","event":{"type":"message","user":"U1","channel":"C1","ts":"1787416799.1","text":"hello\u0000world"}}
+            """;
+        var unsafeText = Receive(unsafeTextJson);
 
         Assert.Equal(MessageReceiveFailureKind.Unauthorized, badSignature.FailureKind);
         Assert.Equal(401, badSignature.Acknowledgement.StatusCode);
@@ -225,6 +229,8 @@ public sealed class SlackEventsApiReceiverTests {
         Assert.Equal(400, badCoordinates.Acknowledgement.StatusCode);
         Assert.Equal(MessageReceiveFailureKind.Malformed, malformedSubtype.FailureKind);
         Assert.Equal(400, malformedSubtype.Acknowledgement.StatusCode);
+        Assert.Equal(MessageReceiveFailureKind.Malformed, unsafeText.FailureKind);
+        Assert.Equal(400, unsafeText.Acknowledgement.StatusCode);
     }
 
     private static MessageReceiveResult<SlackInboundEvent> Receive(

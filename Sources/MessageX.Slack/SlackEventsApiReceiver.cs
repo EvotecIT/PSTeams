@@ -318,7 +318,7 @@ public static class SlackEventsApiReceiver {
             return false;
         }
         value = property.GetString();
-        return value is null or { Length: <= 40000 };
+        return value is null || (value.Length <= 40000 && value.IndexOf('\0') < 0);
     }
 
     private static bool IsOptionalCoordinate(string? value) =>
