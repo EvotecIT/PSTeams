@@ -598,6 +598,36 @@ public sealed partial class DurableIngressTests {
     }
 
     [Fact]
+    public async Task PermanentlyUnmatchedRoutesReachTheBoundedDeadLetterState() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        using var provider = Services(
+            store,
+            includeCodec: true,
+            retryDelay: TimeSpan.Zero).BuildServiceProvider();
+        var response = ResponseContext();
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            response.Response,
+            Dispatch("unmatched-bounded"),
+            TestContext.Current.CancellationToken);
+        var workers = provider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in workers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        try {
+            await WaitUntilStatusAsync(
+                store,
+                "event-unmatched-bounded",
+                MessageDurableAcceptanceStatus.DeadLettered);
+        } finally {
+            for (var index = workers.Length - 1; index >= 0; index--) {
+                await workers[index].StopAsync(TestContext.Current.CancellationToken);
+            }
+        }
+    }
+
+    [Fact]
     public async Task DurableWorkerRetriesHandlerFailureWithoutLosingTheRecord() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -1090,7 +1120,16 @@ public sealed partial class DurableIngressTests {
 
     private static async Task WaitUntilCompletedAsync(
         IMessageDurableStore store,
-        string deduplicationKey) {
+        string deduplicationKey) =>
+        await WaitUntilStatusAsync(
+            store,
+            deduplicationKey,
+            MessageDurableAcceptanceStatus.AlreadyCompleted).ConfigureAwait(false);
+
+    private static async Task WaitUntilStatusAsync(
+        IMessageDurableStore store,
+        string deduplicationKey,
+        MessageDurableAcceptanceStatus expectedStatus) {
         var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(5);
         while (DateTimeOffset.UtcNow < timeoutAt) {
             var acceptance = await store.AcceptInboxAsync(
@@ -1103,12 +1142,12 @@ public sealed partial class DurableIngressTests {
                     "test.payload.v1",
                     Array.Empty<byte>()),
                 TestContext.Current.CancellationToken);
-            if (acceptance.Status == MessageDurableAcceptanceStatus.AlreadyCompleted) {
+            if (acceptance.Status == expectedStatus) {
                 return;
             }
             await Task.Delay(10, TestContext.Current.CancellationToken);
         }
-        throw new TimeoutException("Durable work did not reach completed state.");
+        throw new TimeoutException($"Durable work did not reach {expectedStatus} state.");
     }
 
     private sealed record TestPayload(string Text);

@@ -16,21 +16,27 @@ internal sealed class CoordinatedReleaseDurableStore : DelegatingMessageDurableS
 
     public void Resume() => _resume.TrySetResult(true);
 
-    public override async Task<bool> ReleaseInboxAsync(
+    public override async Task<MessageDurableFailureResult> FailInboxAsync(
         string recordId,
         string leaseToken,
+        MessageDurableFailureKind failureKind,
         TimeSpan retryDelay,
+        int maximumAttempts,
         CancellationToken cancellationToken = default) {
-        var released = await base.ReleaseInboxAsync(
+        var result = await base.FailInboxAsync(
             recordId,
             leaseToken,
+            failureKind,
             retryDelay,
+            maximumAttempts,
             cancellationToken).ConfigureAwait(false);
-        if (released && Interlocked.CompareExchange(ref _coordinated, 1, 0) == 0) {
+        if (failureKind == MessageDurableFailureKind.Transient &&
+            result.Status == MessageDurableFailureStatus.RetryScheduled &&
+            Interlocked.CompareExchange(ref _coordinated, 1, 0) == 0) {
             _released.TrySetResult(true);
             await _resume.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
-        return released;
+        return result;
     }
 }
 

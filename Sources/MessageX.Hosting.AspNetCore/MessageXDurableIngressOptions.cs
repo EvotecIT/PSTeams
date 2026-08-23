@@ -17,7 +17,10 @@ public sealed class MessageXDurableIngressOptions {
     /// <summary>Delay before retrying a failed handler.</summary>
     public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(30);
 
-    /// <summary>Maximum handler attempts before an inbox item is dead-lettered.</summary>
+    /// <summary>
+    /// Maximum processing attempts before an inbox item is dead-lettered, including bounded handoff attempts when
+    /// no worker has registered the retained route.
+    /// </summary>
     public int MaximumAttempts { get; set; } = 5;
 
     /// <summary>
