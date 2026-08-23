@@ -171,7 +171,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
             });
         static string RequestJson(string id) {
             const string template = """
-                {"id":"__ID__","application_id":"100000000000000002","type":4,"token":"token","user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
+                {"id":"__ID__","application_id":"100000000000000002","type":4,"token":"token","authorizing_integration_owners":{"0":"0"},"user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
                 """;
             return template.Replace("__ID__", id, StringComparison.Ordinal);
         }
@@ -182,12 +182,14 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         var firstDispatch = handler.HandleAsync(
             first,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            new DiscordEndpointConfiguration(
+                "application-a", DiscordPublicKey, "100000000000000002", "0"),
             TestContext.Current.CancellationToken);
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await handler.HandleAsync(
             overloaded,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            new DiscordEndpointConfiguration(
+                "application-a", DiscordPublicKey, "100000000000000002", "0"),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, overloaded.Response.StatusCode);
@@ -196,7 +198,8 @@ public sealed class ProviderAspNetCoreEndpointTests {
         await firstDispatch;
         await handler.HandleAsync(
             afterRelease,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            new DiscordEndpointConfiguration(
+                "application-a", DiscordPublicKey, "100000000000000002", "0"),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
@@ -218,14 +221,15 @@ public sealed class ProviderAspNetCoreEndpointTests {
                 }
                 return MessageHandlerResult.Respond(DiscordInteractionAcknowledgement.EmptyAutocomplete());
             });
-        const string firstJson = "{\"id\":\"100000000000000021\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
-        const string retryJson = "{\"id\":\"100000000000000024\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
+        const string firstJson = "{\"id\":\"100000000000000021\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"authorizing_integration_owners\":{\"0\":\"0\"},\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
+        const string retryJson = "{\"id\":\"100000000000000024\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"authorizing_integration_owners\":{\"0\":\"0\"},\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
         var handler = provider.GetRequiredService<DiscordHttpEndpointHandler>();
         var first = DiscordContext(firstJson);
         using var cancellation = new CancellationTokenSource();
         var firstDispatch = handler.HandleAsync(
             first,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            new DiscordEndpointConfiguration(
+                "application-a", DiscordPublicKey, "100000000000000022", "0"),
             cancellation.Token);
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
@@ -234,7 +238,8 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
         await handler.HandleAsync(
             retry,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            new DiscordEndpointConfiguration(
+                "application-a", DiscordPublicKey, "100000000000000022", "0"),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, retry.Response.StatusCode);

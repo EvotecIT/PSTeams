@@ -114,10 +114,17 @@ public static class TeamsBotApplicationExtensions {
         if (accepted != MessageIngressEnqueueStatus.Accepted) {
             throw new InvalidOperationException("The MessageX Teams ingress boundary is unavailable.");
         }
-        return await router.DispatchAsync(
-            dispatch.Route,
-            dispatch.Envelope,
-            cancellationToken).ConfigureAwait(false);
+        try {
+            return await router.DispatchAsync(
+                dispatch.Route,
+                dispatch.Envelope,
+                cancellationToken).ConfigureAwait(false);
+        } catch {
+            if (acceptance is IMessageIngressReservationRelease reservationRelease) {
+                reservationRelease.Release(result);
+            }
+            throw;
+        }
     }
 
     internal static string ResolveInstallation(

@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MessageX.Hosting.AspNetCore;
 
-internal sealed class DurableMessageIngressAcceptance : IMessageIngressAcceptance {
+internal sealed class DurableMessageIngressAcceptance :
+    IMessageIngressAcceptance,
+    IMessageIngressReservationRelease {
     private readonly IServiceProvider _services;
     private readonly IMessageDurableStore _store;
     private readonly MessageDurableStoreInitializer _initializer;
@@ -75,4 +77,7 @@ internal sealed class DurableMessageIngressAcceptance : IMessageIngressAcceptanc
             return MessageIngressEnqueueStatus.Unavailable;
         }
     }
+
+    public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) =>
+        _replayGuard.Release(result);
 }

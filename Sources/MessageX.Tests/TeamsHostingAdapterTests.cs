@@ -172,6 +172,47 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public async Task AdaptiveCardHandlerFailureReleasesReplayReservationForRetry() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<IMessageDurableStore>(store);
+        services.AddMessageXTeamsHosting();
+        services.AddMessageXDurableIngress();
+        using var provider = services.BuildServiceProvider();
+        var attempts = 0;
+        var router = provider.GetRequiredService<MessageRouter>();
+        router.OnAction<TeamsInboundActivity>("approve-request", (_, _) => {
+            if (Interlocked.Increment(ref attempts) == 1) {
+                throw new InvalidOperationException("transient adaptive-card handler failure");
+            }
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var dispatch = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request");
+        var acceptance = provider.GetRequiredService<IMessageIngressAcceptance>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+                dispatch,
+                acceptance,
+                router,
+                TestContext.Current.CancellationToken));
+        var retry = await TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            dispatch,
+            acceptance,
+            router,
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(retry);
+        Assert.Equal(2, Volatile.Read(ref attempts));
+    }
+
+    [Fact]
     public void AdaptiveCardInputsAreBoundedAndSurviveDurableRestoration() {
         var inputs = TeamsActivityMapper.NormalizeAdaptiveInputs(new Dictionary<string, object> {
             ["approved"] = true,

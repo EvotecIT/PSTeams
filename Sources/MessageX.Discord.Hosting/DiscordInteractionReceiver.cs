@@ -104,14 +104,18 @@ public static class DiscordInteractionReceiver {
             !TryOptional(root, "guild_locale", 64, out var guildLocale) ||
             !TryOptionalContext(root, out var context) ||
             !TryUserId(root, out var userId) ||
-            !TryInstallationOwner(root, context, expectedInstallationOwnerId, out var installationOwnerId) ||
+            !TryInstallationOwner(
+                root,
+                context,
+                expectedInstallationOwnerId,
+                out var installationOwnerId,
+                out var installationOwnerMatched) ||
             !TryNestedOptionalSnowflake(root, "message", "id", out var messageId)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
         if ((expectedApplicationId is not null &&
              !string.Equals(expectedApplicationId, applicationId, StringComparison.Ordinal)) ||
-            (expectedInstallationOwnerId is not null &&
-             !string.Equals(expectedInstallationOwnerId, installationOwnerId, StringComparison.Ordinal))) {
+            (expectedInstallationOwnerId is not null && !installationOwnerMatched)) {
             return Reject(403, MessageReceiveFailureKind.Unauthorized);
         }
 
@@ -258,8 +262,10 @@ public static class DiscordInteractionReceiver {
         JsonElement root,
         int? context,
         string? expectedOwnerId,
-        out string? ownerId) {
+        out string? ownerId,
+        out bool expectedOwnerMatched) {
         ownerId = null;
+        expectedOwnerMatched = expectedOwnerId is null;
         if (!root.TryGetProperty("authorizing_integration_owners", out var owners)) {
             return true;
         }
@@ -276,14 +282,26 @@ public static class DiscordInteractionReceiver {
             1 or 2 => userOwner,
             _ => null
         };
+        var contextualAuthorizationOwner = context switch {
+            0 => guildOwner,
+            1 or 2 => userOwner,
+            _ => null
+        };
         if (expectedOwnerId is not null) {
-            if (contextualOwner is not null) {
+            if (contextualAuthorizationOwner is not null) {
+                expectedOwnerMatched = string.Equals(
+                    contextualAuthorizationOwner,
+                    expectedOwnerId,
+                    StringComparison.Ordinal);
                 ownerId = contextualOwner;
                 return true;
             }
-            if (string.Equals(normalizedGuildOwner, expectedOwnerId, StringComparison.Ordinal) ||
+            if (string.Equals(guildOwner, expectedOwnerId, StringComparison.Ordinal) ||
                 string.Equals(userOwner, expectedOwnerId, StringComparison.Ordinal)) {
-                ownerId = expectedOwnerId;
+                expectedOwnerMatched = true;
+                ownerId = string.Equals(expectedOwnerId, "0", StringComparison.Ordinal)
+                    ? null
+                    : expectedOwnerId;
                 return true;
             }
             return true;

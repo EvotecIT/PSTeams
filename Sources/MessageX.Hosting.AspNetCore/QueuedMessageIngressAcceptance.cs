@@ -1,6 +1,8 @@
 namespace MessageX.Hosting.AspNetCore;
 
-internal sealed class QueuedMessageIngressAcceptance : IMessageIngressAcceptance {
+internal sealed class QueuedMessageIngressAcceptance :
+    IMessageIngressAcceptance,
+    IMessageIngressReservationRelease {
     private readonly IMessageIngressQueue _queue;
     private readonly MessageReplayGuard _replayGuard;
     private readonly TimeProvider _timeProvider;
@@ -32,4 +34,7 @@ internal sealed class QueuedMessageIngressAcceptance : IMessageIngressAcceptance
             _ => throw new InvalidOperationException("The replay guard returned an unsupported state.")
         });
     }
+
+    public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) =>
+        _replayGuard.Release(result);
 }
