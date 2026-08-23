@@ -79,6 +79,22 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
     }
 
+    [Theory]
+    [InlineData("C999", "1787418599.000100")]
+    [InlineData("C123", "1787418599.000200")]
+    public void BlockActionRejectsConflictingDuplicateMessageCoordinates(
+        string containerChannelId,
+        string containerMessageTimestamp) {
+        var payload = $$"""
+            {"type":"block_actions","team":{"id":"T123"},"user":{"id":"U123"},"channel":{"id":"C123"},"container":{"channel_id":{{JsonSerializer.Serialize(containerChannelId)}},"message_ts":{{JsonSerializer.Serialize(containerMessageTimestamp)}}},"message":{"ts":"1787418599.000100"},"actions":[{"type":"button","action_id":"approve"}]}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(MessageReceiveStatus.Rejected, result.Status);
+        Assert.Equal(MessageReceiveFailureKind.Malformed, result.FailureKind);
+    }
+
     [Fact]
     public void BlockActionStateFailsClosedWhenMalformedOrOversized() {
         const string malformed = """

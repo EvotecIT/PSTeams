@@ -15,6 +15,18 @@ public sealed class SlackInteractionEvent {
     }
 
     /// <summary>Creates a verified Slack interaction with both workspace and enterprise identity coordinates.</summary>
+    public SlackInteractionEvent(
+        SlackInteractionKind kind,
+        string name,
+        string? text,
+        SlackInteractionPayload? providerPayload,
+        string? workspaceId,
+        string? enterpriseId,
+        SlackTransientInteractionContext? transientContext = null)
+        : this(kind, name, text, providerPayload, workspaceId, enterpriseId, null, transientContext) {
+    }
+
+    /// <summary>Creates a verified Slack interaction with its independently verified sender identity.</summary>
     [JsonConstructor]
     public SlackInteractionEvent(
         SlackInteractionKind kind,
@@ -23,13 +35,23 @@ public sealed class SlackInteractionEvent {
         SlackInteractionPayload? providerPayload,
         string? workspaceId,
         string? enterpriseId,
-        SlackTransientInteractionContext? transientContext = null) {
+        string? userId,
+        SlackTransientInteractionContext? transientContext = null,
+        string? requestId = null,
+        string? channelId = null,
+        string? messageTimestamp = null,
+        string? threadTimestamp = null) {
         Kind = kind;
         Name = name;
         Text = text;
         ProviderPayload = providerPayload;
         WorkspaceId = workspaceId;
         EnterpriseId = enterpriseId;
+        UserId = userId;
+        RequestId = requestId;
+        ChannelId = channelId;
+        MessageTimestamp = messageTimestamp;
+        ThreadTimestamp = threadTimestamp;
         TransientContext = transientContext ?? SlackTransientInteractionContext.Unavailable;
     }
 
@@ -52,6 +74,21 @@ public sealed class SlackInteractionEvent {
 
     /// <summary>Slack Enterprise Grid identity when supplied by the verified request.</summary>
     public string? EnterpriseId { get; }
+
+    /// <summary>Invoking Slack user identity retained from the verified request.</summary>
+    public string? UserId { get; }
+
+    /// <summary>Stable identity derived from the verified Slack request signature.</summary>
+    public string? RequestId { get; }
+
+    /// <summary>Verified Slack conversation identity, when supplied.</summary>
+    public string? ChannelId { get; }
+
+    /// <summary>Verified Slack message timestamp, when supplied.</summary>
+    public string? MessageTimestamp { get; }
+
+    /// <summary>Verified Slack thread timestamp, when supplied.</summary>
+    public string? ThreadTimestamp { get; }
 
     /// <summary>Explicitly transient response and trigger capabilities.</summary>
     [JsonIgnore]

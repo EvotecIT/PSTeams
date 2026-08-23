@@ -27,12 +27,17 @@ public sealed class DiscordInboundInteraction {
             commandType,
             targetId,
             applicationId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             EmptyData,
             DiscordTransientInteractionContext.Unavailable) {
     }
 
     /// <summary>Creates a safe persisted Discord interaction projection with handler-useful provider data.</summary>
-    [JsonConstructor]
     public DiscordInboundInteraction(
         DiscordInteractionKind kind,
         string name,
@@ -53,6 +58,50 @@ public sealed class DiscordInboundInteraction {
             commandType,
             targetId,
             applicationId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            data,
+            DiscordTransientInteractionContext.Unavailable) {
+    }
+
+    /// <summary>Creates a safe persisted Discord interaction with its independently verified sender identity.</summary>
+    [JsonConstructor]
+    public DiscordInboundInteraction(
+        DiscordInteractionKind kind,
+        string name,
+        string? installationOwnerId,
+        string? locale,
+        string? guildLocale,
+        int? context,
+        DiscordApplicationCommandType? commandType,
+        string? targetId,
+        MessageDataValue data,
+        string? applicationId,
+        string? userId,
+        string? interactionId = null,
+        string? guildId = null,
+        string? channelId = null,
+        int? channelType = null,
+        string? messageId = null) : this(
+            kind,
+            name,
+            installationOwnerId,
+            locale,
+            guildLocale,
+            context,
+            commandType,
+            targetId,
+            applicationId,
+            userId,
+            interactionId,
+            guildId,
+            channelId,
+            channelType,
+            messageId,
             data,
             DiscordTransientInteractionContext.Unavailable) {
     }
@@ -67,6 +116,12 @@ public sealed class DiscordInboundInteraction {
         DiscordApplicationCommandType? commandType,
         string? targetId,
         string? applicationId,
+        string? userId,
+        string? interactionId,
+        string? guildId,
+        string? channelId,
+        int? channelType,
+        string? messageId,
         MessageDataValue data,
         DiscordTransientInteractionContext transientContext) {
         Kind = kind;
@@ -78,6 +133,12 @@ public sealed class DiscordInboundInteraction {
         CommandType = commandType;
         TargetId = targetId;
         ApplicationId = applicationId;
+        UserId = userId;
+        InteractionId = interactionId;
+        GuildId = guildId;
+        ChannelId = channelId;
+        ChannelType = channelType;
+        MessageId = messageId;
         Data = DiscordSafeInteractionData.Create(data);
         TransientContext = transientContext;
     }
@@ -108,6 +169,24 @@ public sealed class DiscordInboundInteraction {
 
     /// <summary>Non-secret Discord application identifier required for durable interaction dispatch.</summary>
     public string? ApplicationId { get; }
+
+    /// <summary>Invoking Discord user identity retained from the verified request.</summary>
+    public string? UserId { get; }
+
+    /// <summary>Verified Discord interaction identity.</summary>
+    public string? InteractionId { get; }
+
+    /// <summary>Verified Discord guild identity, when supplied.</summary>
+    public string? GuildId { get; }
+
+    /// <summary>Verified Discord channel identity, when supplied.</summary>
+    public string? ChannelId { get; }
+
+    /// <summary>Verified Discord channel type, when supplied.</summary>
+    public int? ChannelType { get; }
+
+    /// <summary>Verified provider message identity, when supplied.</summary>
+    public string? MessageId { get; }
 
     /// <summary>Safe provider-native interaction data, including bounded command options and modal inputs.</summary>
     public MessageDataValue Data { get; }

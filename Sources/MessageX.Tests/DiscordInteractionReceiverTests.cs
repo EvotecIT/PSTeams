@@ -210,6 +210,18 @@ public sealed class DiscordInteractionReceiverTests {
     }
 
     [Fact]
+    public void MessageCommandRejectsConflictingProviderMessageIdentity() {
+        const string json = """
+            {"id":"100000000000000071","application_id":"100000000000000072","type":2,"token":"t","channel_id":"100000000000000074","user":{"id":"100000000000000073"},"message":{"id":"100000000000000076"},"data":{"name":"inspect","type":3,"target_id":"100000000000000075"}}
+            """;
+
+        var result = Receive(json);
+
+        Assert.Equal(MessageReceiveStatus.Rejected, result.Status);
+        Assert.Equal(MessageReceiveFailureKind.Malformed, result.FailureKind);
+    }
+
+    [Fact]
     public void SafeInteractionProjectionRoundTripsWithoutTransientCapability() {
         const string json = """
             {"id":"100000000000000091","application_id":"100000000000000092","type":2,"token":"secret","user":{"id":"100000000000000093"},"data":{"name":"inspect","type":2,"target_id":"100000000000000094"}}

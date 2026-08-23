@@ -90,7 +90,10 @@ public static class SlackInteractionReceiver {
             null,
             teamId,
             enterpriseId,
-            new SlackTransientInteractionContext(triggerId, responseUrl));
+            userId,
+            new SlackTransientInteractionContext(triggerId, responseUrl),
+            CreateDeduplicationKey(request.InstallationId, signature),
+            channelId);
         return Dispatch(
             request,
             signature,
@@ -142,13 +145,19 @@ public static class SlackInteractionReceiver {
             SlackInteractionPayload providerPayload;
             if (string.Equals(type, "block_actions", StringComparison.Ordinal)) {
                 if (!TrySingleAction(root, out name, out var action) ||
-                    !TryNestedOptional(root, "container", "message_ts", 32, out messageTimestamp) ||
+                    !TryNestedOptional(root, "container", "message_ts", 32, out var containerMessageTimestamp) ||
                     !TryNestedOptional(root, "container", "channel_id", MaximumCoordinateLength, out var containerChannel) ||
+                    !TryNestedOptional(root, "message", "ts", 32, out var messageObjectTimestamp) ||
                     !TryNestedOptional(root, "message", "thread_ts", 32, out threadTimestamp) ||
-                    !TryReadStateValues(root, out var state)) {
+                    !TryReadStateValues(root, out var state) ||
+                    (channelId is not null && containerChannel is not null &&
+                     !string.Equals(channelId, containerChannel, StringComparison.Ordinal)) ||
+                    (containerMessageTimestamp is not null && messageObjectTimestamp is not null &&
+                     !string.Equals(containerMessageTimestamp, messageObjectTimestamp, StringComparison.Ordinal))) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 channelId ??= containerChannel;
+                messageTimestamp = containerMessageTimestamp ?? messageObjectTimestamp;
                 kind = SlackInteractionKind.BlockAction;
                 route = MessageRoute.ForAction(name);
                 providerPayload = new SlackInteractionPayload(new[] { action }, null, null, state);
@@ -191,7 +200,12 @@ public static class SlackInteractionReceiver {
                 providerPayload,
                 teamId,
                 enterpriseId,
-                new SlackTransientInteractionContext(triggerId, responseUrl));
+                userId,
+                new SlackTransientInteractionContext(triggerId, responseUrl),
+                CreateDeduplicationKey(request.InstallationId, signature),
+                channelId,
+                messageTimestamp,
+                threadTimestamp);
             return Dispatch(
                 request,
                 signature,
@@ -218,7 +232,8 @@ public static class SlackInteractionReceiver {
         string? channelId,
         string? messageTimestamp,
         string? threadTimestamp = null) {
-        var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signature);
+        var deduplicationKey = interaction.RequestId ??
+            CreateDeduplicationKey(request.InstallationId, signature);
         var envelope = new MessageEventEnvelope<SlackInteractionEvent>(
             MessageProviders.Slack,
             request.InstallationId,

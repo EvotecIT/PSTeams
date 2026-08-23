@@ -61,6 +61,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         var projection = new DiscordInteractionProjection
         {
             Metadata = metadata,
+            SenderId = envelope.Payload.UserId,
+            InteractionId = envelope.Payload.InteractionId,
+            GuildId = envelope.Payload.GuildId,
+            ChannelId = envelope.Payload.ChannelId,
+            ChannelType = envelope.Payload.ChannelType,
+            MessageId = envelope.Payload.MessageId,
             Kind = envelope.Payload.Kind,
             Name = envelope.Payload.Name,
             InstallationOwnerId = installationOwnerId,
@@ -72,6 +78,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             ApplicationId = applicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };
+        if (!SenderMatches(projection.Metadata, projection.SenderId) ||
+            !ReferenceCoordinatesMatch(projection, envelope.InstallationId, envelope.DeduplicationKey))
+        {
+            throw new MessageDurablePayloadException(
+                "The Discord interaction sender does not match its durable metadata.");
+        }
         var payload = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
         if (payload.Length > MaximumPayloadBytes)
         {
@@ -114,6 +126,8 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             if (projection.Metadata is null ||
                 !MetadataMatches(projection.Metadata) ||
+                !SenderMatches(projection.Metadata, projection.SenderId) ||
+                !ReferenceCoordinatesMatch(projection, record.InstallationId, record.DeduplicationKey) ||
                 !string.Equals(
                     record.DeduplicationKey,
                     DiscordInteractionIdentity.CreateDeduplicationKey(
@@ -148,6 +162,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 projection.CommandType,
                 targetId,
                 applicationId,
+                projection.SenderId,
+                projection.InteractionId,
+                projection.GuildId,
+                projection.ChannelId,
+                projection.ChannelType,
+                projection.MessageId,
                 MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
                 new DiscordTransientInteractionContext(applicationId, null, null));
             return projection.Metadata.Restore(record, payload);
@@ -276,6 +296,77 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         IsCanonicalSnowflake(metadata.ScopeId, required: true) &&
         IsCanonicalSnowflake(metadata.SenderId, required: true);
 
+    private static bool SenderMatches(MessageDurableEnvelopeMetadata metadata, string? senderId) =>
+        IsCanonicalSnowflake(senderId, required: true) &&
+        string.Equals(metadata.SenderId, senderId, StringComparison.Ordinal);
+
+    private static bool ReferenceCoordinatesMatch(
+        DiscordInteractionProjection projection,
+        string installationId,
+        string deduplicationKey) {
+        var metadata = projection.Metadata;
+        if (metadata is null ||
+            !IsCanonicalSnowflake(projection.InteractionId, required: true) ||
+            !IsCanonicalSnowflake(projection.GuildId, required: false) ||
+            !IsCanonicalSnowflake(projection.ChannelId, required: false) ||
+            !IsCanonicalSnowflake(projection.MessageId, required: false) ||
+            projection.ChannelType is < 0 or > 100 ||
+            !string.Equals(metadata.EventId, projection.InteractionId, StringComparison.Ordinal) ||
+            !string.Equals(
+                deduplicationKey,
+                DiscordInteractionIdentity.CreateDeduplicationKey(
+                    installationId,
+                    projection.InteractionId!),
+                StringComparison.Ordinal)) {
+            return false;
+        }
+        if (!DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
+            !TryNormalizeOwner(projection.InstallationOwnerId, out var installationOwnerId) ||
+            !string.Equals(
+                metadata.ScopeId,
+                projection.GuildId ?? installationOwnerId ?? applicationId,
+                StringComparison.Ordinal)) {
+            return false;
+        }
+        if (projection.ChannelId is null) {
+            return projection.ChannelType is null && projection.MessageId is null &&
+                metadata.Conversation is null && metadata.Message is null;
+        }
+        var isThread = projection.ChannelType is 10 or 11 or 12;
+        var conversationKind = isThread
+            ? MessageConversationKind.Thread
+            : projection.ChannelType is 1 or 3 || projection.Context is 1 or 2
+                ? MessageConversationKind.DirectMessage
+                : projection.GuildId is not null
+                    ? MessageConversationKind.Channel
+                    : MessageConversationKind.Unknown;
+        var threadId = isThread ? projection.ChannelId : null;
+        if (metadata.Conversation is null ||
+            !string.Equals(metadata.Conversation.ConversationId, projection.ChannelId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.Conversation.ThreadId, threadId, StringComparison.Ordinal) ||
+            metadata.Conversation.ConversationKind != conversationKind) {
+            return false;
+        }
+        if (!TryNormalizeTarget(projection.CommandType, projection.TargetId, out var targetId)) {
+            return false;
+        }
+        if (projection.CommandType == DiscordApplicationCommandType.Message &&
+            !string.Equals(projection.MessageId, targetId, StringComparison.Ordinal)) {
+            return false;
+        }
+        var effectiveMessageId = projection.CommandType == DiscordApplicationCommandType.Message
+            ? targetId
+            : projection.MessageId;
+        return effectiveMessageId is null
+            ? metadata.Message is null
+            : metadata.Message is not null &&
+              string.Equals(metadata.Message.ConversationId, projection.ChannelId, StringComparison.Ordinal) &&
+              string.Equals(metadata.Message.ThreadId, threadId, StringComparison.Ordinal) &&
+              metadata.Message.ConversationKind == conversationKind &&
+              string.Equals(metadata.Message.MessageId, effectiveMessageId, StringComparison.Ordinal) &&
+              metadata.Message.Timestamp is null;
+    }
+
     private static bool IsCanonicalSnowflake(string? value, bool required) {
         if (value is null) {
             return !required;
@@ -288,6 +379,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
 internal sealed class DiscordInteractionProjection
 {
     public MessageDurableEnvelopeMetadata? Metadata { get; set; }
+    public string? SenderId { get; set; }
+    public string? InteractionId { get; set; }
+    public string? GuildId { get; set; }
+    public string? ChannelId { get; set; }
+    public int? ChannelType { get; set; }
+    public string? MessageId { get; set; }
     public DiscordInteractionKind Kind { get; set; }
     public string? Name { get; set; }
     public string? InstallationOwnerId { get; set; }

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using MessageX.Core;
 using MessageX.Hosting;
 using MessageX.Hosting.AspNetCore;
@@ -405,6 +406,57 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public void DurableCodecRejectsConflictingSenderAndNullAttachmentsAsPayloadFailures() {
+        var dispatch = TeamsActivityMapper.MapMessage(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt);
+        var codec = new TeamsInboundActivityDurableCodec();
+        var valid = codec.Encode(dispatch.Route, dispatch.Envelope);
+
+        var senderProjection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        senderProjection["metadata"]!["senderId"] = "aad-user-2";
+        var senderRecord = CopyWithPayload(valid, senderProjection);
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(senderRecord));
+
+        var eventProjection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        eventProjection["metadata"]!["eventId"] = "activity-2";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, eventProjection)));
+
+        var referenceProjection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        referenceProjection["metadata"]!["conversation"]!["conversationId"] = "conversation-2";
+        referenceProjection["metadata"]!["message"]!["conversationId"] = "conversation-2";
+        referenceProjection["metadata"]!["message"]!["messageId"] = "activity-2";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, referenceProjection)));
+
+        var whitespaceSenderProjection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        whitespaceSenderProjection["metadata"]!["senderId"] = " ";
+        whitespaceSenderProjection["senderId"] = " ";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, whitespaceSenderProjection)));
+
+        var attachmentProjection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        attachmentProjection["attachments"] = new JsonArray((JsonNode?)null);
+        var attachmentRecord = CopyWithPayload(valid, attachmentProjection);
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(attachmentRecord));
+
+        dispatch.Envelope.SenderId = "aad-user-2";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Encode(dispatch.Route, dispatch.Envelope));
+
+        var changedDeduplication = new MessageDurableRecord(
+            valid.Provider,
+            valid.InstallationId,
+            "different-deduplication-key",
+            valid.Route,
+            valid.ReceivedAt,
+            valid.PayloadType,
+            valid.CopyPayload());
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(changedDeduplication));
+    }
+
+    [Fact]
     public void TransientSdkActivityIsExcludedFromDefaultPersistence() {
         var dispatch = TeamsActivityMapper.MapMessage(
             Message("personal"),
@@ -619,6 +671,17 @@ public sealed class TeamsHostingAdapterTests {
             "install-a",
             ReceivedAt));
     }
+
+    private static MessageDurableRecord CopyWithPayload(
+        MessageDurableRecord record,
+        JsonObject projection) => new(
+            record.Provider,
+            record.InstallationId,
+            record.DeduplicationKey,
+            record.Route,
+            record.ReceivedAt,
+            record.PayloadType,
+            Encoding.UTF8.GetBytes(projection.ToJsonString()));
 
     private static MessageActivity Message(
         string conversationType,

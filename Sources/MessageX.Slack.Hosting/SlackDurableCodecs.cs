@@ -91,9 +91,15 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
         if (envelope is null) throw new ArgumentNullException(nameof(envelope));
         var name = SlackDurableCodecValidation.InteractionName(envelope.Payload.Kind, envelope.Payload.Name);
         var providerPayload = SlackDurableCodecValidation.NormalizeInteraction(envelope.Payload.ProviderPayload);
+        var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
         var projection = new SlackInteractionProjection
         {
-            Metadata = MessageDurableEnvelopeMetadata.Capture(envelope),
+            Metadata = metadata,
+            SenderId = SlackDurableCodecValidation.Required(envelope.Payload.UserId, 256),
+            RequestId = SlackDurableCodecValidation.Required(envelope.Payload.RequestId, 256),
+            ChannelId = SlackDurableCodecValidation.Optional(envelope.Payload.ChannelId, 256),
+            MessageTimestamp = SlackDurableCodecValidation.Optional(envelope.Payload.MessageTimestamp, 256),
+            ThreadTimestamp = SlackDurableCodecValidation.Optional(envelope.Payload.ThreadTimestamp, 256),
             Kind = envelope.Payload.Kind,
             Name = name,
             Text = SlackDurableCodecValidation.OptionalText(envelope.Payload.Text, 40000),
@@ -113,7 +119,12 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
                 projection.WorkspaceId,
                 projection.EnterpriseId,
                 envelope.Payload.Kind,
-                providerPayload))
+                providerPayload,
+                projection.SenderId,
+                projection.RequestId,
+                projection.ChannelId,
+                projection.MessageTimestamp,
+                projection.ThreadTimestamp))
         {
             throw new MessageDurablePayloadException("The Slack interaction does not match its durable route.");
         }
@@ -141,7 +152,12 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
                      projection.WorkspaceId,
                      projection.EnterpriseId,
                      projection.Kind,
-                     providerPayload))
+                     providerPayload,
+                     projection.SenderId,
+                     projection.RequestId,
+                     projection.ChannelId,
+                     projection.MessageTimestamp,
+                     projection.ThreadTimestamp))
             {
                 throw new MessageDurablePayloadException("The Slack interaction durable payload is incomplete.");
             }
@@ -149,7 +165,12 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
                 SlackDurableCodecValidation.OptionalText(projection.Text, 40000), providerPayload,
                 SlackDurableCodecValidation.Optional(projection.WorkspaceId, 256),
                 SlackDurableCodecValidation.Optional(projection.EnterpriseId, 256),
-                SlackTransientInteractionContext.Unavailable);
+                SlackDurableCodecValidation.Required(projection.SenderId, 256),
+                SlackTransientInteractionContext.Unavailable,
+                SlackDurableCodecValidation.Required(projection.RequestId, 256),
+                SlackDurableCodecValidation.Optional(projection.ChannelId, 256),
+                SlackDurableCodecValidation.Optional(projection.MessageTimestamp, 256),
+                SlackDurableCodecValidation.Optional(projection.ThreadTimestamp, 256));
             return projection.Metadata.Restore(record, payload);
         }
         catch (MessageDurablePayloadException)
@@ -344,25 +365,51 @@ internal static class SlackDurableCodecValidation
         string? workspaceId,
         string? enterpriseId,
         SlackInteractionKind kind,
-        SlackInteractionPayload? providerPayload) {
+        SlackInteractionPayload? providerPayload,
+        string? senderId,
+        string? requestId,
+        string? channelId,
+        string? messageTimestamp,
+        string? threadTimestamp) {
         if (!string.Equals(metadata.EventId, deduplicationKey, StringComparison.Ordinal) ||
-            !string.Equals(metadata.ScopeId, workspaceId ?? enterpriseId, StringComparison.Ordinal)) {
+            !string.Equals(metadata.EventId, Required(requestId, 256), StringComparison.Ordinal) ||
+            !string.Equals(metadata.ScopeId, workspaceId ?? enterpriseId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.SenderId, Required(senderId, 256), StringComparison.Ordinal)) {
             return false;
         }
-        if (kind != SlackInteractionKind.Shortcut) {
-            return true;
+        channelId = Optional(channelId, 256);
+        messageTimestamp = Optional(messageTimestamp, 256);
+        threadTimestamp = Optional(threadTimestamp, 256);
+        if (channelId is null) {
+            return messageTimestamp is null && threadTimestamp is null &&
+                metadata.Conversation is null && metadata.Message is null;
         }
-        if (providerPayload?.Message is null) {
-            return metadata.Message is null;
+        var conversationKind = threadTimestamp is not null
+            ? MessageConversationKind.Thread
+            : channelId.StartsWith("C", StringComparison.Ordinal)
+                ? MessageConversationKind.Channel
+                : channelId.StartsWith("D", StringComparison.Ordinal)
+                    ? MessageConversationKind.DirectMessage
+                    : MessageConversationKind.Unknown;
+        if (metadata.Conversation is null ||
+            !string.Equals(metadata.Conversation.ConversationId, channelId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.Conversation.ThreadId, threadTimestamp, StringComparison.Ordinal) ||
+            metadata.Conversation.ConversationKind != conversationKind) {
+            return false;
         }
-        var timestamp = SlackMessageValidator.ParseTimestamp(providerPayload.Message.Timestamp);
-        return timestamp is not null &&
-            metadata.Message is not null &&
-            string.Equals(
-                metadata.Message.MessageId,
-                providerPayload.Message.Timestamp,
-                StringComparison.Ordinal) &&
-            metadata.Message.Timestamp == timestamp;
+        var timestamp = SlackMessageValidator.ParseTimestamp(messageTimestamp);
+        if (messageTimestamp is null) {
+            if (metadata.Message is not null) return false;
+        } else if (timestamp is null || metadata.Message is null ||
+                   !string.Equals(metadata.Message.ConversationId, channelId, StringComparison.Ordinal) ||
+                   !string.Equals(metadata.Message.ThreadId, threadTimestamp, StringComparison.Ordinal) ||
+                   metadata.Message.ConversationKind != conversationKind ||
+                   !string.Equals(metadata.Message.MessageId, messageTimestamp, StringComparison.Ordinal) ||
+                   metadata.Message.Timestamp != timestamp) {
+            return false;
+        }
+        return kind != SlackInteractionKind.Shortcut ||
+            string.Equals(providerPayload?.Message?.Timestamp, messageTimestamp, StringComparison.Ordinal);
     }
 
     private static MessageConversationKind ConversationKind(SlackEventPayload providerEvent) {
@@ -452,6 +499,11 @@ internal sealed class SlackEventProjection
 internal sealed class SlackInteractionProjection
 {
     public MessageDurableEnvelopeMetadata? Metadata { get; set; }
+    public string? SenderId { get; set; }
+    public string? RequestId { get; set; }
+    public string? ChannelId { get; set; }
+    public string? MessageTimestamp { get; set; }
+    public string? ThreadTimestamp { get; set; }
     public SlackInteractionKind Kind { get; set; }
     public string? Name { get; set; }
     public string? Text { get; set; }

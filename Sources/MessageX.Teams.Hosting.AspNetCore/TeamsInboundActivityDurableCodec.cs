@@ -27,9 +27,17 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         ArgumentNullException.ThrowIfNull(route);
         ArgumentNullException.ThrowIfNull(envelope);
         var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
-        Validate(envelope.Payload, route, metadata);
+        Validate(envelope.Payload, route, metadata, envelope.InstallationId, envelope.DeduplicationKey);
         var projection = new TeamsActivityProjection {
             Metadata = metadata,
+            SenderId = envelope.Payload.SenderId,
+            ActivityId = envelope.Payload.ActivityId,
+            ConversationId = envelope.Payload.ConversationId,
+            ConversationKind = envelope.Payload.ConversationKind,
+            ThreadId = envelope.Payload.ThreadId,
+            MessageId = envelope.Payload.MessageId,
+            TimestampText = envelope.Payload.TimestampText,
+            EventTime = envelope.Payload.EventTime,
             Kind = envelope.Payload.Kind,
             Text = envelope.Payload.Text,
             ActionName = envelope.Payload.ActionName,
@@ -42,6 +50,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             InputData = new Dictionary<string, string?>(envelope.Payload.InputData, StringComparer.Ordinal),
             Attachments = NormalizeAttachments(envelope.Payload.Attachments)
         };
+        ValidateSender(metadata, projection.SenderId);
         var serialized = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
         if (serialized.Length > MaximumPayloadBytes) {
             throw new MessageDurablePayloadException("The complete Teams durable projection exceeds 1 MiB.");
@@ -75,6 +84,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         if (projection.Metadata is null) {
             throw new MessageDurablePayloadException("The Teams durable payload has no safe envelope metadata.");
         }
+        ValidateSender(projection.Metadata, projection.SenderId);
         var payload = new TeamsInboundActivity(
             projection.Kind,
             null,
@@ -84,18 +94,28 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             projection.TeamId,
             projection.ChannelId,
             projection.Locale,
+            projection.SenderId,
+            projection.ActivityId,
+            projection.ConversationId,
+            projection.ConversationKind,
+            projection.ThreadId,
+            projection.MessageId,
+            projection.TimestampText,
+            projection.EventTime,
             projection.ReactionsAdded ?? Array.Empty<string>(),
             projection.ReactionsRemoved ?? Array.Empty<string>(),
             projection.InputData,
             NormalizeAttachments(projection.Attachments));
-        Validate(payload, record.Route, projection.Metadata);
+        Validate(payload, record.Route, projection.Metadata, record.InstallationId, record.DeduplicationKey);
         return projection.Metadata.Restore(record, payload);
     }
 
     private static void Validate(
         TeamsInboundActivity payload,
         MessageRoute route,
-        MessageDurableEnvelopeMetadata metadata) {
+        MessageDurableEnvelopeMetadata metadata,
+        string installationId,
+        string deduplicationKey) {
         if (!Enum.IsDefined(typeof(TeamsInboundActivityKind), payload.Kind) ||
             !IsText(payload.Text, 32 * 1024) ||
             !IsCoordinate(payload.ActionName) ||
@@ -108,6 +128,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             !AreInputsSafe(payload.InputData) ||
             !AreAttachmentsSafe(payload.Attachments) ||
             !string.Equals(payload.TenantId, metadata.ScopeId, StringComparison.Ordinal) ||
+            !IdentityCoordinatesMatch(payload, metadata, installationId, deduplicationKey) ||
             !RouteMatches(payload, route)) {
             throw new MessageDurablePayloadException("The Teams durable payload is unsafe or does not match its route.");
         }
@@ -157,18 +178,75 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         if (attachments.Count > 32) {
             throw new MessageDurablePayloadException("Teams durable attachments exceed the supported shape.");
         }
-        return attachments.Select(attachment => new TeamsInboundAttachment(
-            attachment.ContentType,
-            attachment.Name,
-            attachment.Content is null
-                ? null
-                : MessageDurableJsonProjection.CreateSafeClone(
-                    attachment.Content,
-                    ForbiddenAttachmentProperties))).ToArray();
+        return attachments.Select(attachment => {
+            if (attachment is null) {
+                throw new MessageDurablePayloadException(
+                    "A Teams durable attachment cannot be null.");
+            }
+            return new TeamsInboundAttachment(
+                attachment.ContentType,
+                attachment.Name,
+                attachment.Content is null
+                    ? null
+                    : MessageDurableJsonProjection.CreateSafeClone(
+                        attachment.Content,
+                        ForbiddenAttachmentProperties));
+        }).ToArray();
+    }
+
+    private static void ValidateSender(MessageDurableEnvelopeMetadata metadata, string? senderId) {
+        if (!IsCanonicalRequiredCoordinate(senderId) ||
+            !string.Equals(metadata.SenderId, senderId, StringComparison.Ordinal)) {
+            throw new MessageDurablePayloadException(
+                "The Teams durable sender does not match its envelope metadata.");
+        }
+    }
+
+    private static bool IdentityCoordinatesMatch(
+        TeamsInboundActivity payload,
+        MessageDurableEnvelopeMetadata metadata,
+        string installationId,
+        string deduplicationKey) {
+        if (!IsCanonicalRequiredCoordinate(payload.SenderId) ||
+            !IsCanonicalRequiredCoordinate(payload.ActivityId) ||
+            !IsCanonicalRequiredCoordinate(payload.ConversationId) ||
+            !IsCanonicalRequiredCoordinate(payload.MessageId) ||
+            !IsCanonicalOptionalCoordinate(payload.ThreadId) ||
+            !Enum.IsDefined(typeof(MessageConversationKind), payload.ConversationKind) ||
+            !string.Equals(metadata.SenderId, payload.SenderId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.EventId, payload.ActivityId, StringComparison.Ordinal) ||
+            !string.Equals(
+                deduplicationKey,
+                TeamsActivityMapper.CreateDeduplicationKey(
+                    installationId,
+                    payload.Kind,
+                    payload.ActivityId!,
+                    payload.TimestampText),
+                StringComparison.Ordinal) ||
+            metadata.EventTime != payload.EventTime ||
+            metadata.Conversation is null ||
+            !string.Equals(metadata.Conversation.ConversationId, payload.ConversationId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.Conversation.ThreadId, payload.ThreadId, StringComparison.Ordinal) ||
+            metadata.Conversation.ConversationKind != payload.ConversationKind ||
+            metadata.Message is null ||
+            !string.Equals(metadata.Message.ConversationId, payload.ConversationId, StringComparison.Ordinal) ||
+            !string.Equals(metadata.Message.ThreadId, payload.ThreadId, StringComparison.Ordinal) ||
+            metadata.Message.ConversationKind != payload.ConversationKind ||
+            !string.Equals(metadata.Message.MessageId, payload.MessageId, StringComparison.Ordinal)) {
+            return false;
+        }
+        return metadata.Message.Timestamp ==
+            (payload.Kind == TeamsInboundActivityKind.ReactionChanged ? null : payload.EventTime);
     }
 
     private static bool IsRequiredCoordinate(string? value) =>
         IsCoordinate(value) && !string.IsNullOrWhiteSpace(value);
+
+    private static bool IsCanonicalRequiredCoordinate(string? value) =>
+        IsRequiredCoordinate(value) && string.Equals(value, value!.Trim(), StringComparison.Ordinal);
+
+    private static bool IsCanonicalOptionalCoordinate(string? value) =>
+        value is null || IsCanonicalRequiredCoordinate(value);
 
     private static bool IsCoordinate(string? value) =>
         value is null || value.Length <= 256 && !value.Any(char.IsControl);
@@ -178,6 +256,14 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
 
     private sealed class TeamsActivityProjection {
         public MessageDurableEnvelopeMetadata? Metadata { get; set; }
+        public string? SenderId { get; set; }
+        public string? ActivityId { get; set; }
+        public string? ConversationId { get; set; }
+        public MessageConversationKind ConversationKind { get; set; }
+        public string? ThreadId { get; set; }
+        public string? MessageId { get; set; }
+        public string? TimestampText { get; set; }
+        public DateTimeOffset? EventTime { get; set; }
         public TeamsInboundActivityKind Kind { get; set; }
         public string? Text { get; set; }
         public string? ActionName { get; set; }

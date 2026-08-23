@@ -157,6 +157,13 @@ public static class DiscordInteractionReceiver {
             default:
                 return Reject(400, MessageReceiveFailureKind.Unsupported);
         }
+        if (commandType == DiscordApplicationCommandType.Message) {
+            if (messageId is not null &&
+                !string.Equals(messageId, targetId, StringComparison.Ordinal)) {
+                return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+            messageId = targetId;
+        }
 
         var scopeId = guildId ?? installationOwnerId ?? applicationId;
         var transientContext = new DiscordTransientInteractionContext(
@@ -173,6 +180,12 @@ public static class DiscordInteractionReceiver {
             commandType,
             targetId,
             applicationId,
+            userId,
+            interactionId,
+            guildId,
+            channelId,
+            channelType,
+            messageId,
             MessageDurableJsonProjection.CreateSafeClone(
                 MessageDataValue.ParseJson(data.GetRawText()),
                 ForbiddenPersistedProperties),

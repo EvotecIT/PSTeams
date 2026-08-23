@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MessageX.Core;
 using Microsoft.Teams.Apps.Schema;
 
 namespace MessageX.Teams.Hosting.AspNetCore;
@@ -14,6 +15,14 @@ public sealed class TeamsInboundActivity {
         string? teamId,
         string? channelId,
         string? locale,
+        string? senderId,
+        string? activityId,
+        string? conversationId,
+        MessageConversationKind conversationKind,
+        string? threadId,
+        string? messageId,
+        string? timestampText,
+        DateTimeOffset? eventTime,
         IReadOnlyList<string> reactionsAdded,
         IReadOnlyList<string> reactionsRemoved,
         IReadOnlyDictionary<string, string?>? inputData = null,
@@ -26,6 +35,14 @@ public sealed class TeamsInboundActivity {
         TeamId = teamId;
         ChannelId = channelId;
         Locale = locale;
+        SenderId = senderId;
+        ActivityId = activityId;
+        ConversationId = conversationId;
+        ConversationKind = conversationKind;
+        ThreadId = threadId;
+        MessageId = messageId;
+        TimestampText = timestampText;
+        EventTime = eventTime;
         ReactionsAdded = reactionsAdded;
         ReactionsRemoved = reactionsRemoved;
         InputData = inputData is null
@@ -54,6 +71,17 @@ public sealed class TeamsInboundActivity {
 
     /// <summary>Activity locale, when supplied.</summary>
     public string? Locale { get; }
+
+    /// <summary>Invoking Teams identity retained from the verified activity.</summary>
+    public string? SenderId { get; }
+
+    internal string? ActivityId { get; }
+    internal string? ConversationId { get; }
+    internal MessageConversationKind ConversationKind { get; }
+    internal string? ThreadId { get; }
+    internal string? MessageId { get; }
+    internal string? TimestampText { get; }
+    internal DateTimeOffset? EventTime { get; }
 
     /// <summary>Reaction types added by this activity.</summary>
     public IReadOnlyList<string> ReactionsAdded { get; }

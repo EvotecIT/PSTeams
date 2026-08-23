@@ -204,7 +204,7 @@ internal static class TeamsActivityMapper {
             "activity.Id");
         var conversationId = NormalizeRequired(activity.Conversation?.Id, "activity.Conversation.Id");
         var tenantId = NormalizeTenantId(activity);
-        var senderId = NormalizeOptional(
+        var senderId = NormalizeRequired(
             activity.From?.AadObjectId ?? activity.From?.Id,
             "senderId");
         var replyToId = NormalizeOptional(
@@ -238,6 +238,14 @@ internal static class TeamsActivityMapper {
             teamId,
             channelId,
             locale,
+            senderId,
+            activityId,
+            conversationId,
+            conversationKind,
+            conversationKind == MessageConversationKind.Thread ? replyToId : null,
+            messageId,
+            timestampText,
+            timestamp,
             reactionsAdded,
             reactionsRemoved,
             inputData,
@@ -426,7 +434,7 @@ internal static class TeamsActivityMapper {
             ? timestamp
             : null;
 
-    private static string CreateDeduplicationKey(
+    internal static string CreateDeduplicationKey(
         string installationId,
         TeamsInboundActivityKind kind,
         string activityId,

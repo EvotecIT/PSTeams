@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using MessageX.Discord;
 using MessageX.Discord.Hosting.AspNetCore;
 using MessageX.Hosting;
@@ -419,6 +420,53 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackInteractionCodecRejectsSenderMetadataThatConflictsWithVerifiedPayload()
+    {
+        const string body = "command=%2Fstatus&user_id=U123&team_id=T123&channel_id=C123";
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var projection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        projection["metadata"]!["senderId"] = "U999";
+        var tampered = CopyWithPayload(valid, Encoding.UTF8.GetBytes(projection.ToJsonString()));
+
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+        receive.Envelope!.SenderId = "U999";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Encode(receive.Route!, receive.Envelope));
+    }
+
+    [Fact]
+    public void SlackInteractionCodecBindsVerifiedConversationAndMessageCoordinates()
+    {
+        const string json = """
+            {"type":"message_action","callback_id":"inspect","team":{"id":"T123"},"user":{"id":"U123"},"channel":{"id":"C123"},"message":{"ts":"1787418599.000200","text":"selected"}}
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+
+        var changedConversation = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        changedConversation["metadata"]!["conversation"]!["conversationId"] = "C999";
+        changedConversation["metadata"]!["message"]!["conversationId"] = "C999";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, Encoding.UTF8.GetBytes(changedConversation.ToJsonString()))));
+
+        var changedMessage = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        changedMessage["metadata"]!["message"]!["messageId"] = "1787418599.000201";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, Encoding.UTF8.GetBytes(changedMessage.ToJsonString()))));
+    }
+
+    [Fact]
     public void SlackMessageShortcutCodecRejectsConflictingSelectedMessageTimestamp()
     {
         const string json = """
@@ -579,6 +627,62 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void DiscordCodecRejectsSenderMetadataThatConflictsWithVerifiedPayload()
+    {
+        const string json = """
+            {"id":"100000000000000101","application_id":"100000000000000102","type":2,"token":"interaction-secret","channel_id":"100000000000000103","user":{"id":"100000000000000104"},"data":{"name":"status","type":1}}
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var projection = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        projection["metadata"]!["senderId"] = "100000000000000199";
+        var tampered = CopyWithPayload(valid, Encoding.UTF8.GetBytes(projection.ToJsonString()));
+
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+        receive.Envelope!.SenderId = "100000000000000199";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Encode(receive.Route!, receive.Envelope));
+    }
+
+    [Fact]
+    public void DiscordCodecBindsVerifiedScopeConversationAndMessageCoordinates()
+    {
+        const string json = """
+            {"id":"100000000000000101","application_id":"100000000000000102","type":2,"token":"interaction-secret","guild_id":"100000000000000103","channel_id":"100000000000000104","member":{"user":{"id":"100000000000000105"}},"data":{"name":"inspect","type":3,"target_id":"100000000000000106"}}
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+
+        var changedReferences = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        changedReferences["metadata"]!["conversation"]!["conversationId"] = "100000000000000199";
+        changedReferences["metadata"]!["message"]!["conversationId"] = "100000000000000199";
+        changedReferences["metadata"]!["message"]!["messageId"] = "100000000000000198";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, Encoding.UTF8.GetBytes(changedReferences.ToJsonString()))));
+
+        var changedScope = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        changedScope["metadata"]!["scopeId"] = "100000000000000197";
+        changedScope["metadata"]!["conversation"]!["scopeId"] = "100000000000000197";
+        changedScope["metadata"]!["message"]!["scopeId"] = "100000000000000197";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, Encoding.UTF8.GetBytes(changedScope.ToJsonString()))));
+
+        var changedProviderMessage = JsonNode.Parse(valid.CopyPayload())!.AsObject();
+        changedProviderMessage["messageId"] = "100000000000000196";
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(
+            CopyWithPayload(valid, Encoding.UTF8.GetBytes(changedProviderMessage.ToJsonString()))));
+    }
+
+    [Fact]
     public void ProviderEndpointRegistrationIncludesOnlyItsOwnDurableCodecs()
     {
         var slack = new ServiceCollection().AddMessageXSlackAspNetCore().BuildServiceProvider();
@@ -621,7 +725,8 @@ public sealed class ProviderDurableCodecTests
         {
             InstallationId = receive.Envelope.InstallationId,
             ScopeId = receive.Envelope.ScopeId,
-            ConversationId = "C123"
+            ConversationId = "C123",
+            ConversationKind = MessageConversationKind.Channel
         };
         var valid = codec.Encode(receive.Route!, receive.Envelope);
         var changed = Encoding.UTF8.GetString(valid.CopyPayload()).Replace(
@@ -648,6 +753,15 @@ public sealed class ProviderDurableCodecTests
         contentType,
         Encoding.UTF8.GetBytes(body),
         receivedAt ?? ReceivedAt);
+
+    private static MessageDurableRecord CopyWithPayload(MessageDurableRecord record, byte[] payload) => new(
+        record.Provider,
+        record.InstallationId,
+        record.DeduplicationKey,
+        record.Route,
+        record.ReceivedAt,
+        record.PayloadType,
+        payload);
 
     private static string SlackSign(string body)
     {
