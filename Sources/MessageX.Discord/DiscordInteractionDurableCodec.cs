@@ -89,19 +89,19 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             if (projection.Metadata is null ||
                 !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
                 !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
-                !IsSafeOptional(projection.InstallationOwnerId, 256) ||
+                !TryNormalizeOwner(projection.InstallationOwnerId, out var installationOwnerId) ||
                 !IsSafeOptional(projection.Locale, 64) ||
                 !IsSafeOptional(projection.GuildLocale, 64) ||
                 projection.Context is < 0 or > 2 ||
                 projection.Data.ValueKind != JsonValueKind.Object ||
-                !DataMatches(projection.Kind, projection.Name!, projection.Data))
+                !DataMatches(projection.Kind, projection.Name!, projection.CommandType, projection.Data))
             {
                 throw new MessageDurablePayloadException("The Discord interaction durable payload is incomplete.");
             }
             var payload = new DiscordInboundInteraction(
                 projection.Kind,
                 projection.Name!,
-                projection.InstallationOwnerId,
+                installationOwnerId,
                 projection.Locale,
                 projection.GuildLocale,
                 projection.Context,
@@ -158,9 +158,26 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     private static bool IsSafeOptional(string? value, int maximumLength) =>
         value is null || (value.Length <= maximumLength && !value.Any(char.IsControl));
 
+    private static bool TryNormalizeOwner(string? value, out string? normalized) {
+        normalized = null;
+        if (value is null) {
+            return true;
+        }
+        if (string.Equals(value, "0", StringComparison.Ordinal)) {
+            normalized = value;
+            return true;
+        }
+        if (!DiscordSnowflake.TryNormalize(value, out var snowflake)) {
+            return false;
+        }
+        normalized = snowflake;
+        return true;
+    }
+
     private static bool DataMatches(
         DiscordInteractionKind kind,
         string name,
+        DiscordApplicationCommandType? commandType,
         JsonElement data)
     {
         var propertyName = kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
@@ -176,7 +193,17 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             return false;
         }
-        return string.Equals(candidate.Trim(), name, StringComparison.Ordinal);
+        if (!string.Equals(candidate.Trim(), name, StringComparison.Ordinal)) {
+            return false;
+        }
+        if (kind is DiscordInteractionKind.ApplicationCommand or DiscordInteractionKind.Autocomplete) {
+            return commandType.HasValue &&
+                data.TryGetProperty("type", out var type) &&
+                type.ValueKind == JsonValueKind.Number &&
+                type.TryGetInt32(out var value) &&
+                value == (int)commandType.Value;
+        }
+        return true;
     }
 }
 

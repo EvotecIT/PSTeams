@@ -278,6 +278,38 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void DiscordCodecRejectsTamperedCommandTypeAndInstallationOwner()
+    {
+        const string json = """
+            {
+              "id":"100000000000000001","application_id":"100000000000000002","type":2,
+              "token":"interaction-secret","channel_id":"100000000000000004",
+              "user":{"id":"100000000000000005"},
+              "authorizing_integration_owners":{"1":"100000000000000006"},
+              "data":{"name":"status","type":1}
+            }
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var stored = Encoding.UTF8.GetString(valid.CopyPayload());
+
+        foreach (var changed in new[] {
+                     stored.Replace("\"type\":1", "\"type\":2", StringComparison.Ordinal),
+                     stored.Replace("100000000000000006", "tenant-a", StringComparison.Ordinal)
+                 }) {
+            var tampered = new MessageDurableRecord(valid.Provider, valid.InstallationId,
+                valid.DeduplicationKey, valid.Route, valid.ReceivedAt, valid.PayloadType,
+                Encoding.UTF8.GetBytes(changed));
+            Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+        }
+    }
+
+    [Fact]
     public void ProviderEndpointRegistrationIncludesOnlyItsOwnDurableCodecs()
     {
         var slack = new ServiceCollection().AddMessageXSlackAspNetCore().BuildServiceProvider();
