@@ -275,6 +275,13 @@ public sealed class DurableLeaseFinalizationTests {
             return _inner.RenewInboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
         }
 
+        public Task<bool> ReleaseInboxAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan retryDelay,
+            CancellationToken cancellationToken = default) =>
+            _inner.ReleaseInboxAsync(recordId, leaseToken, retryDelay, cancellationToken);
+
         public Task<bool> CompleteInboxAsync(
             string recordId,
             string leaseToken,
@@ -338,6 +345,12 @@ public sealed class DurableLeaseFinalizationTests {
                 () => _inner.FailOutboxAsync(
                     recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken),
                 cancellationToken);
+
+        public Task<int> PurgeTerminalAsync(
+            DateTimeOffset completedBefore,
+            int maximumCount,
+            CancellationToken cancellationToken = default) =>
+            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
 
         private async Task<T> ObserveTerminalAsync<T>(
             TerminalKind kind,

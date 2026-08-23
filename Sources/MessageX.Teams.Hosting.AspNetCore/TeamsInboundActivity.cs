@@ -16,7 +16,8 @@ public sealed class TeamsInboundActivity {
         string? locale,
         IReadOnlyList<string> reactionsAdded,
         IReadOnlyList<string> reactionsRemoved,
-        IReadOnlyDictionary<string, string?>? inputData = null) {
+        IReadOnlyDictionary<string, string?>? inputData = null,
+        IReadOnlyList<TeamsInboundAttachment>? attachments = null) {
         Kind = kind;
         Activity = activity;
         Text = text;
@@ -30,6 +31,7 @@ public sealed class TeamsInboundActivity {
         InputData = inputData is null
             ? new Dictionary<string, string?>(StringComparer.Ordinal)
             : new Dictionary<string, string?>(inputData, StringComparer.Ordinal);
+        Attachments = attachments?.ToArray() ?? Array.Empty<TeamsInboundAttachment>();
     }
 
     /// <summary>Adapted activity shape.</summary>
@@ -61,6 +63,9 @@ public sealed class TeamsInboundActivity {
 
     /// <summary>Bounded scalar Adaptive Card input values, keyed by the submitted input identifier.</summary>
     public IReadOnlyDictionary<string, string?> InputData { get; }
+
+    /// <summary>Capability-free attachment metadata and bounded content retained for durable handlers.</summary>
+    public IReadOnlyList<TeamsInboundAttachment> Attachments { get; }
 
     /// <summary>
     /// Verified Microsoft SDK activity for synchronous handler use. It is null after durable restoration and intentionally excluded from persistence.

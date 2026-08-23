@@ -60,6 +60,24 @@ public sealed partial class SqliteMessageDurableStore {
             await transaction.ExecuteNonQueryAsync(
                 "CREATE INDEX IF NOT EXISTS ix_messagex_outbox_available ON messagex_outbox(status, available_at, lease_expires_at);",
                 cancellationToken: token).ConfigureAwait(false);
+            await transaction.ExecuteNonQueryAsync(
+                "CREATE INDEX IF NOT EXISTS ix_messagex_inbox_terminal ON messagex_inbox(status, completed_at);",
+                cancellationToken: token).ConfigureAwait(false);
+            await transaction.ExecuteNonQueryAsync(
+                "CREATE INDEX IF NOT EXISTS ix_messagex_outbox_terminal ON messagex_outbox(status, completed_at);",
+                cancellationToken: token).ConfigureAwait(false);
+            await transaction.ExecuteNonQueryAsync(
+                "UPDATE messagex_inbox SET completed_at = available_at WHERE status = @dead_lettered AND completed_at IS NULL;",
+                new Dictionary<string, object?> {
+                    ["dead_lettered"] = (int)MessageDurableStatus.DeadLettered
+                },
+                token).ConfigureAwait(false);
+            await transaction.ExecuteNonQueryAsync(
+                "UPDATE messagex_outbox SET completed_at = available_at WHERE status = @dead_lettered AND completed_at IS NULL;",
+                new Dictionary<string, object?> {
+                    ["dead_lettered"] = (int)MessageDurableStatus.DeadLettered
+                },
+                token).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
     }
 }

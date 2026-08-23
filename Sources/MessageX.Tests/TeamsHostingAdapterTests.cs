@@ -6,6 +6,7 @@ using MessageX.Hosting.AspNetCore;
 using MessageX.Persistence.DbaClientX;
 using MessageX.Teams.Hosting.AspNetCore;
 using Microsoft.Teams.Apps;
+using Microsoft.Teams.Apps.Schema;
 using Microsoft.Teams.Core.Schema;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -333,6 +334,39 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal("ready", restored.Payload.InputData["note"]);
         Assert.Throws<ArgumentException>(() => TeamsActivityMapper.NormalizeAdaptiveInputs(
             new Dictionary<string, object> { ["nested"] = new { unsafeValue = true } }));
+    }
+
+    [Fact]
+    public void MessageAttachmentsSurviveDurableRestorationWithoutProviderCapabilities() {
+        var activity = Message("channel");
+        activity.Attachments = new List<TeamsAttachment> { new() {
+            ContentType = AttachmentContentTypes.AdaptiveCard,
+            Name = "approval-card",
+            ContentUrl = new Uri("https://capability.example/secret"),
+            Content = new {
+                type = "AdaptiveCard",
+                body = new[] { new { type = "TextBlock", text = "Approve request" } },
+                token = "nested-secret",
+                url = "https://capability.example/action"
+            }
+        } };
+        var dispatch = TeamsActivityMapper.MapMessage(
+            activity,
+            "tenant-installation",
+            ReceivedAt);
+        var codec = new TeamsInboundActivityDurableCodec();
+
+        var record = codec.Encode(dispatch.Route, dispatch.Envelope);
+        var stored = Encoding.UTF8.GetString(record.CopyPayload());
+        var decoded = codec.Decode(record);
+        var attachment = Assert.Single(decoded.Payload.Attachments);
+
+        Assert.Equal("approval-card", attachment.Name);
+        Assert.Equal("Approve request", attachment.Content?.GetProperty("body")[0]
+            .GetProperty("text").GetString());
+        Assert.DoesNotContain("nested-secret", stored, StringComparison.Ordinal);
+        Assert.DoesNotContain("capability.example", stored, StringComparison.Ordinal);
+        Assert.Null(decoded.Payload.Activity);
     }
 
     [Fact]

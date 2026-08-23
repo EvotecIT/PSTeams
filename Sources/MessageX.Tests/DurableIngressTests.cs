@@ -368,6 +368,53 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task RouteUnmatchedWorkerLeavesWorkForACapableRollingDeploymentPeer() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        using var olderProvider = Services(
+            store,
+            includeCodec: true,
+            retryDelay: TimeSpan.Zero).BuildServiceProvider();
+        var response = ResponseContext();
+        await olderProvider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            response.Response,
+            Dispatch("rolling-route"),
+            TestContext.Current.CancellationToken);
+        var olderWorkers = olderProvider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in olderWorkers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+        await WaitUntilAsync(() => olderProvider
+            .GetRequiredService<IMessageDurableIngressHealth>()
+            .GetHealthSnapshot().Claimed > 0);
+
+        using var newerProvider = Services(
+            store,
+            includeCodec: true,
+            retryDelay: TimeSpan.Zero).BuildServiceProvider();
+        var handled = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        newerProvider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (context, _) => {
+            handled.TrySetResult(context.Envelope.Payload.Text);
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var newerWorkers = newerProvider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in newerWorkers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        Assert.Equal("rolling-route", await handled.Task.WaitAsync(
+            TimeSpan.FromSeconds(5),
+            TestContext.Current.CancellationToken));
+        await WaitUntilCompletedAsync(store, "event-rolling-route");
+        for (var index = newerWorkers.Length - 1; index >= 0; index--) {
+            await newerWorkers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+        for (var index = olderWorkers.Length - 1; index >= 0; index--) {
+            await olderWorkers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task DurableWorkerRetriesHandlerFailureWithoutLosingTheRecord() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -902,6 +949,17 @@ public sealed class DurableIngressTests {
         throw new TimeoutException("Durable work did not reach completed state.");
     }
 
+    private static async Task WaitUntilAsync(Func<bool> predicate) {
+        var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (DateTimeOffset.UtcNow < timeoutAt) {
+            if (predicate()) {
+                return;
+            }
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+        throw new TimeoutException("The durable worker did not reach the expected state.");
+    }
+
     private sealed record TestPayload(string Text);
 
     private sealed class ReservationOwningAcceptance :
@@ -1156,6 +1214,13 @@ public sealed class DurableIngressTests {
             return Task.FromResult<MessageLeaseRenewal?>(null);
         }
 
+        public Task<bool> ReleaseInboxAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan retryDelay,
+            CancellationToken cancellationToken = default) =>
+            _inner.ReleaseInboxAsync(recordId, leaseToken, retryDelay, cancellationToken);
+
         public Task<bool> CompleteInboxAsync(
             string recordId,
             string leaseToken,
@@ -1217,6 +1282,12 @@ public sealed class DurableIngressTests {
                 retryDelay,
                 maximumAttempts,
                 cancellationToken);
+
+        public Task<int> PurgeTerminalAsync(
+            DateTimeOffset completedBefore,
+            int maximumCount,
+            CancellationToken cancellationToken = default) =>
+            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
     }
 
     private sealed class TransientClaimFailureStore : IMessageDurableStore {
@@ -1266,6 +1337,13 @@ public sealed class DurableIngressTests {
             TimeSpan leaseDuration,
             CancellationToken cancellationToken = default) =>
             _inner.RenewInboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
+
+        public Task<bool> ReleaseInboxAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan retryDelay,
+            CancellationToken cancellationToken = default) =>
+            _inner.ReleaseInboxAsync(recordId, leaseToken, retryDelay, cancellationToken);
 
         public Task<bool> CompleteInboxAsync(
             string recordId,
@@ -1329,6 +1407,12 @@ public sealed class DurableIngressTests {
                 retryDelay,
                 maximumAttempts,
                 cancellationToken);
+
+        public Task<int> PurgeTerminalAsync(
+            DateTimeOffset completedBefore,
+            int maximumCount,
+            CancellationToken cancellationToken = default) =>
+            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
     }
 
     private sealed class TemporaryDatabase : IDisposable {

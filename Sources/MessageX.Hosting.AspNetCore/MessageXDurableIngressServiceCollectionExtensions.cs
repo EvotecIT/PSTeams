@@ -29,6 +29,7 @@ public static class MessageXDurableIngressServiceCollectionExtensions {
         services.AddSingleton<IMessageIngressAcceptance, DurableMessageIngressAcceptance>();
         services.AddHostedService<MessageDurableIngressWorker>();
         services.AddHostedService<MessageDurableOutboxWorker>();
+        services.AddHostedService<MessageDurableCleanupWorker>();
         return services;
     }
 

@@ -19,6 +19,17 @@ internal sealed class MessageXDurableIngressOptionsValidator : IValidateOptions<
         if (options.MaximumAttempts is < 1 or > 100) {
             return ValidateOptionsResult.Fail("MaximumAttempts must be between 1 and 100.");
         }
+        if (options.TerminalRetention < TimeSpan.FromHours(1) ||
+            options.TerminalRetention > TimeSpan.FromDays(365)) {
+            return ValidateOptionsResult.Fail("TerminalRetention must be between one hour and 365 days.");
+        }
+        if (options.CleanupInterval < TimeSpan.FromMinutes(1) ||
+            options.CleanupInterval > TimeSpan.FromDays(1)) {
+            return ValidateOptionsResult.Fail("CleanupInterval must be between one minute and one day.");
+        }
+        if (options.CleanupBatchSize is < 1 or > 10_000) {
+            return ValidateOptionsResult.Fail("CleanupBatchSize must be between 1 and 10000.");
+        }
         return ValidateOptionsResult.Success;
     }
 }

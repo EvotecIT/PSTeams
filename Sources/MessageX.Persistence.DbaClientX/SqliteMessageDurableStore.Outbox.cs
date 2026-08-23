@@ -31,9 +31,9 @@ public sealed partial class SqliteMessageDurableStore {
             for (var index = 0; index < supportedPayloadTypes.Length; index++) {
                 parameters[$"payload_type_{index}"] = supportedPayloadTypes[index];
             }
-            var candidates = await transaction.QueryAsListAsync(
+            var storedCandidates = await transaction.QueryAsListAsync(
                 $"""
-                SELECT record_id, provider, installation_id, deduplication_key,
+                SELECT rowid, record_id, provider, installation_id, deduplication_key,
                        operation, payload_type, payload, available_at, attempt_count
                 FROM messagex_outbox
                 WHERE ((status = @pending AND available_at <= @now)
@@ -42,11 +42,22 @@ public sealed partial class SqliteMessageDurableStore {
                 ORDER BY available_at, record_id
                 LIMIT @maximum_count;
                 """,
-                static row => ReadOutboxCandidate(row),
+                static row => ReadStoredOutboxCandidate(row),
                 parameters,
                 cancellationToken: token).ConfigureAwait(false);
-            var leases = new List<MessageOutboxLease>(candidates.Count);
-            foreach (var candidate in candidates) {
+            var leases = new List<MessageOutboxLease>(storedCandidates.Count);
+            foreach (var storedCandidate in storedCandidates) {
+                OutboxCandidate candidate;
+                try {
+                    candidate = storedCandidate.Materialize();
+                } catch (Exception exception) when (IsStoredCandidateException(exception)) {
+                    await DeadLetterMalformedOutboxAsync(
+                        transaction,
+                        storedCandidate.RowId,
+                        nowText,
+                        token).ConfigureAwait(false);
+                    continue;
+                }
                 var leaseToken = NewId();
                 var updated = await transaction.ExecuteNonQueryAsync(
                     """
@@ -172,16 +183,100 @@ public sealed partial class SqliteMessageDurableStore {
             cancellationToken).ConfigureAwait(false);
     }
 
-    private static OutboxCandidate ReadOutboxCandidate(IDataRecord row) {
-        var record = MessageOutboxRecord.FromStoredCoordinates(
-            row.GetString(1),
-            row.GetString(2),
-            row.GetString(3),
-            row.GetString(4),
-            row.GetString(5),
-            ReadBytes(row, 6),
-            ReadTimestamp(row, 7));
-        return new OutboxCandidate(row.GetString(0), record, row.GetInt32(8));
+    private static StoredOutboxCandidate ReadStoredOutboxCandidate(IDataRecord row) => new(
+        row.GetInt64(0),
+        row.GetValue(1),
+        row.GetValue(2),
+        row.GetValue(3),
+        row.GetValue(4),
+        row.GetValue(5),
+        row.GetValue(6),
+        row.GetValue(7),
+        row.GetValue(8),
+        row.GetValue(9));
+
+    private static async Task DeadLetterMalformedOutboxAsync(
+        SQLiteAsyncSession transaction,
+        long rowId,
+        string now,
+        CancellationToken cancellationToken) {
+        await transaction.ExecuteNonQueryAsync(
+            """
+            UPDATE messagex_outbox
+            SET status = @dead_lettered, completed_at = @completed_at,
+                available_at = @completed_at, failure_kind = @failure_kind,
+                lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL
+            WHERE rowid = @row_id
+              AND ((status = @pending AND available_at <= @completed_at)
+                OR (status = @leased AND lease_expires_at <= @completed_at));
+            """,
+            new Dictionary<string, object?> {
+                ["dead_lettered"] = (int)MessageDurableStatus.DeadLettered,
+                ["completed_at"] = now,
+                ["failure_kind"] = (int)MessageDurableFailureKind.Permanent,
+                ["row_id"] = rowId,
+                ["pending"] = (int)MessageDurableStatus.Pending,
+                ["leased"] = (int)MessageDurableStatus.Leased
+            },
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed class StoredOutboxCandidate {
+        private readonly object _recordId;
+        private readonly object _provider;
+        private readonly object _installationId;
+        private readonly object _deduplicationKey;
+        private readonly object _operation;
+        private readonly object _payloadType;
+        private readonly object _payload;
+        private readonly object _availableAt;
+        private readonly object _attemptCount;
+
+        public StoredOutboxCandidate(
+            long rowId,
+            object recordId,
+            object provider,
+            object installationId,
+            object deduplicationKey,
+            object operation,
+            object payloadType,
+            object payload,
+            object availableAt,
+            object attemptCount) {
+            RowId = rowId;
+            _recordId = recordId;
+            _provider = provider;
+            _installationId = installationId;
+            _deduplicationKey = deduplicationKey;
+            _operation = operation;
+            _payloadType = payloadType;
+            _payload = payload;
+            _availableAt = availableAt;
+            _attemptCount = attemptCount;
+        }
+
+        public long RowId { get; }
+
+        public OutboxCandidate Materialize() {
+            var recordId = _recordId is string storedRecordId
+                ? RequiredOpaque(storedRecordId, "recordId")
+                : throw new InvalidCastException("The durable outbox record identifier is not text.");
+            var record = MessageOutboxRecord.FromStoredCoordinates(
+                Convert.ToString(_provider, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_installationId, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_deduplicationKey, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_operation, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_payloadType, System.Globalization.CultureInfo.InvariantCulture)!,
+                _payload as byte[] ?? throw new InvalidCastException("The durable outbox payload is not a BLOB."),
+                DateTimeOffset.Parse(
+                    Convert.ToString(_availableAt, System.Globalization.CultureInfo.InvariantCulture)!,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime());
+            return new OutboxCandidate(
+                recordId,
+                record,
+                Convert.ToInt32(_attemptCount, System.Globalization.CultureInfo.InvariantCulture));
+        }
     }
 
     private sealed class OutboxCandidate {

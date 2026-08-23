@@ -1,5 +1,6 @@
 using MessageX.Hosting;
 using MessageX.Persistence.DbaClientX;
+using DBAClientX;
 
 namespace MessageX.Tests;
 
@@ -460,6 +461,212 @@ public sealed class SqliteMessageDurableStoreTests {
             3));
     }
 
+    [Fact]
+    public async Task ReleaseReturnsUnmatchedWorkWithoutConsumingAnAttempt() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-release"));
+        var first = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+
+        Assert.True(await store.ReleaseInboxAsync(
+            first.RecordId,
+            first.LeaseToken,
+            TimeSpan.Zero,
+            BaseTime));
+        var second = Assert.Single(await store.ClaimInboxAsync(
+            "worker-b", 1, TimeSpan.FromMinutes(1), BaseTime));
+
+        Assert.Equal(1, first.AttemptCount);
+        Assert.Equal(1, second.AttemptCount);
+    }
+
+    [Fact]
+    public async Task MalformedInboxCoordinatesAreDeadLetteredWithoutBlockingValidWork() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        var malformed = Record("installation-a", "event-malformed-route");
+        var malformedTimestamp = Record("installation-a", "event-malformed-timestamp");
+        var malformedIdentifier = Record("installation-a", "event-malformed-identifier");
+        var valid = Record("installation-a", "event-valid-behind-malformed");
+        await store.AcceptInboxAsync(malformed);
+        await store.AcceptInboxAsync(malformedTimestamp);
+        await store.AcceptInboxAsync(malformedIdentifier);
+        await store.AcceptInboxAsync(valid);
+        using (var client = new SQLite()) {
+            await using var session = await client.OpenSessionAsync(
+                database.Path,
+                TestContext.Current.CancellationToken);
+            await session.ExecuteNonQueryAsync(
+                "UPDATE messagex_inbox SET route_kind = 999 WHERE deduplication_key = @key;",
+                new Dictionary<string, object?> { ["key"] = malformed.DeduplicationKey },
+                TestContext.Current.CancellationToken);
+            await session.ExecuteNonQueryAsync(
+                "UPDATE messagex_inbox SET received_at = 'not-a-timestamp' WHERE deduplication_key = @key;",
+                new Dictionary<string, object?> { ["key"] = malformedTimestamp.DeduplicationKey },
+                TestContext.Current.CancellationToken);
+            await session.ExecuteNonQueryAsync(
+                "UPDATE messagex_inbox SET record_id = X'00FF' WHERE deduplication_key = @key;",
+                new Dictionary<string, object?> { ["key"] = malformedIdentifier.DeduplicationKey },
+                TestContext.Current.CancellationToken);
+        }
+
+        var leases = await store.ClaimInboxAsync(
+            "worker-a", 4, TimeSpan.FromMinutes(1), BaseTime);
+
+        Assert.Equal(valid.DeduplicationKey, Assert.Single(leases).Record.DeduplicationKey);
+        Assert.Equal(
+            MessageDurableAcceptanceStatus.DeadLettered,
+            (await store.AcceptInboxAsync(malformed)).Status);
+        Assert.Equal(
+            MessageDurableAcceptanceStatus.DeadLettered,
+            (await store.AcceptInboxAsync(malformedTimestamp)).Status);
+        using var statusClient = new SQLite();
+        await using var statusSession = await statusClient.OpenSessionAsync(
+            database.Path,
+            TestContext.Current.CancellationToken);
+        var identifierStatuses = await statusSession.QueryAsListAsync(
+            "SELECT status FROM messagex_inbox WHERE deduplication_key = @key;",
+            static row => (MessageDurableStatus)row.GetInt32(0),
+            new Dictionary<string, object?> { ["key"] = malformedIdentifier.DeduplicationKey },
+            cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(MessageDurableStatus.DeadLettered, Assert.Single(identifierStatuses));
+    }
+
+    [Fact]
+    public async Task MalformedOutboxRowsAreDeadLetteredWithoutBlockingValidDelivery() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        var parent = Record("installation-a", "event-outbox-poison-parent");
+        await store.AcceptInboxAsync(parent);
+        var parentLease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.True(await store.CompleteInboxAsync(
+            parentLease.RecordId,
+            parentLease.LeaseToken,
+            BaseTime,
+            new[] {
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "send-malformed",
+                    "send-message",
+                    "discord.send.v1",
+                    new byte[] { 1 },
+                    BaseTime),
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "send-valid",
+                    "send-message",
+                    "discord.send.v1",
+                    new byte[] { 2 },
+                    BaseTime),
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "send-malformed-identifier",
+                    "send-message",
+                    "discord.send.v1",
+                    new byte[] { 3 },
+                    BaseTime)
+            }));
+        using (var client = new SQLite()) {
+            await using var session = await client.OpenSessionAsync(
+                database.Path,
+                TestContext.Current.CancellationToken);
+            await session.ExecuteNonQueryAsync(
+                "UPDATE messagex_outbox SET payload = 'not-a-blob' WHERE deduplication_key = @key;",
+                new Dictionary<string, object?> { ["key"] = "send-malformed" },
+                TestContext.Current.CancellationToken);
+            await session.ExecuteNonQueryAsync(
+                "UPDATE messagex_outbox SET record_id = X'01FF' WHERE deduplication_key = @key;",
+                new Dictionary<string, object?> { ["key"] = "send-malformed-identifier" },
+                TestContext.Current.CancellationToken);
+        }
+
+        var deliveries = await store.ClaimOutboxAsync(
+            "sender-a", 3, TimeSpan.FromMinutes(1), BaseTime);
+
+        Assert.Equal("send-valid", Assert.Single(deliveries).Record.DeduplicationKey);
+        using var statusClient = new SQLite();
+        await using var statusSession = await statusClient.OpenSessionAsync(
+            database.Path,
+            TestContext.Current.CancellationToken);
+        var statuses = await statusSession.QueryAsListAsync(
+            "SELECT deduplication_key, status FROM messagex_outbox WHERE deduplication_key IN (@payload_key, @identifier_key) ORDER BY deduplication_key;",
+            static row => new { Key = row.GetString(0), Status = (MessageDurableStatus)row.GetInt32(1) },
+            new Dictionary<string, object?> {
+                ["payload_key"] = "send-malformed",
+                ["identifier_key"] = "send-malformed-identifier"
+            },
+            cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(2, statuses.Count);
+        Assert.All(statuses, status => Assert.Equal(MessageDurableStatus.DeadLettered, status.Status));
+    }
+
+    [Fact]
+    public async Task PurgeRemovesExpiredTerminalRowsButPreservesLiveAndReferencedWork() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+
+        var completed = Record("installation-a", "event-terminal-completed");
+        await store.AcceptInboxAsync(completed);
+        var completedLease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-complete", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.True(await store.CompleteInboxAsync(
+            completedLease.RecordId,
+            completedLease.LeaseToken,
+            BaseTime));
+
+        var deadLettered = Record("installation-a", "event-terminal-dead");
+        await store.AcceptInboxAsync(deadLettered);
+        var deadLease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-dead", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.Equal(MessageDurableFailureStatus.DeadLettered, (await store.FailInboxAsync(
+            deadLease.RecordId,
+            deadLease.LeaseToken,
+            MessageDurableFailureKind.Permanent,
+            BaseTime,
+            TimeSpan.Zero,
+            3)).Status);
+
+        var retained = Record("installation-a", "event-retained-outbox");
+        await store.AcceptInboxAsync(retained);
+        var retainedLease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-retained", 1, TimeSpan.FromMinutes(1), BaseTime));
+        Assert.True(await store.CompleteInboxAsync(
+            retainedLease.RecordId,
+            retainedLease.LeaseToken,
+            BaseTime,
+            new[] {
+                new MessageOutboxRecord(
+                    MessageProviders.Discord,
+                    "installation-a",
+                    "retained-send",
+                    "send-message",
+                    "discord.send.v1",
+                    Array.Empty<byte>(),
+                    BaseTime)
+            }));
+
+        var live = Record("installation-a", "event-live-pending");
+        await store.AcceptInboxAsync(live);
+
+        Assert.Equal(2, await store.PurgeTerminalAsync(BaseTime.AddHours(1), 100));
+
+        Assert.Equal(MessageDurableAcceptanceStatus.Accepted, (await store.AcceptInboxAsync(completed)).Status);
+        Assert.Equal(MessageDurableAcceptanceStatus.Accepted, (await store.AcceptInboxAsync(deadLettered)).Status);
+        Assert.Equal(MessageDurableAcceptanceStatus.AlreadyPending, (await store.AcceptInboxAsync(live)).Status);
+        Assert.Equal(MessageDurableAcceptanceStatus.AlreadyCompleted, (await store.AcceptInboxAsync(retained)).Status);
+        Assert.Single(await store.ClaimOutboxAsync(
+            "sender-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+    }
+
     private static MessageDurableRecord Record(
         string installationId,
         string deduplicationKey,
@@ -549,6 +756,19 @@ public sealed class SqliteMessageDurableStoreTests {
                 TestContext.Current.CancellationToken);
         }
 
+        public Task<bool> ReleaseInboxAsync(
+            string recordId,
+            string leaseToken,
+            TimeSpan retryDelay,
+            DateTimeOffset now) {
+            _timeProvider.Set(now);
+            return _store.ReleaseInboxAsync(
+                recordId,
+                leaseToken,
+                retryDelay,
+                TestContext.Current.CancellationToken);
+        }
+
         public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
@@ -603,6 +823,12 @@ public sealed class SqliteMessageDurableStoreTests {
                 maximumAttempts,
                 TestContext.Current.CancellationToken);
         }
+
+        public Task<int> PurgeTerminalAsync(DateTimeOffset completedBefore, int maximumCount) =>
+            _store.PurgeTerminalAsync(
+                completedBefore,
+                maximumCount,
+                TestContext.Current.CancellationToken);
 
         public void Dispose() => _store.Dispose();
     }

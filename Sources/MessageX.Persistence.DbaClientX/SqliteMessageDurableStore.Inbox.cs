@@ -93,9 +93,9 @@ public sealed partial class SqliteMessageDurableStore {
             for (var index = 0; index < supportedPayloadTypes.Length; index++) {
                 parameters[$"payload_type_{index}"] = supportedPayloadTypes[index];
             }
-            var candidates = await transaction.QueryAsListAsync(
+            var storedCandidates = await transaction.QueryAsListAsync(
                 $"""
-                SELECT record_id, provider, installation_id, deduplication_key,
+                SELECT rowid, record_id, provider, installation_id, deduplication_key,
                        route_kind, event_kind, route_name, route_qualifier,
                        received_at, payload_type, payload, attempt_count
                 FROM messagex_inbox
@@ -105,11 +105,22 @@ public sealed partial class SqliteMessageDurableStore {
                 ORDER BY available_at, received_at, record_id
                 LIMIT @maximum_count;
                 """,
-                static row => ReadInboxCandidate(row),
+                static row => ReadStoredInboxCandidate(row),
                 parameters,
                 cancellationToken: token).ConfigureAwait(false);
-            var leases = new List<MessageDurableLease>(candidates.Count);
-            foreach (var candidate in candidates) {
+            var leases = new List<MessageDurableLease>(storedCandidates.Count);
+            foreach (var storedCandidate in storedCandidates) {
+                InboxCandidate candidate;
+                try {
+                    candidate = storedCandidate.Materialize();
+                } catch (Exception exception) when (IsStoredCandidateException(exception)) {
+                    await DeadLetterMalformedInboxAsync(
+                        transaction,
+                        storedCandidate.RowId,
+                        nowText,
+                        token).ConfigureAwait(false);
+                    continue;
+                }
                 var leaseToken = NewId();
                 var updated = await transaction.ExecuteNonQueryAsync(
                     """
@@ -155,6 +166,41 @@ public sealed partial class SqliteMessageDurableStore {
             leaseToken,
             leaseDuration,
             cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<bool> ReleaseInboxAsync(
+        string recordId,
+        string leaseToken,
+        TimeSpan retryDelay,
+        CancellationToken cancellationToken = default) {
+        recordId = RequiredOpaque(recordId, nameof(recordId));
+        leaseToken = RequiredOpaque(leaseToken, nameof(leaseToken));
+        ValidateDelay(retryDelay, nameof(retryDelay));
+        await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
+        return await session.RunInTransactionAsync(async (transaction, token) => {
+            var now = StoreNow();
+            var updated = await transaction.ExecuteNonQueryAsync(
+                """
+                UPDATE messagex_inbox
+                SET status = @pending, available_at = @available_at, failure_kind = @failure_kind,
+                    attempt_count = CASE WHEN attempt_count > 0 THEN attempt_count - 1 ELSE 0 END,
+                    lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL
+                WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token
+                  AND lease_expires_at > @now;
+                """,
+                new Dictionary<string, object?> {
+                    ["pending"] = (int)MessageDurableStatus.Pending,
+                    ["available_at"] = Timestamp(now.Add(retryDelay)),
+                    ["failure_kind"] = (int)MessageDurableFailureKind.None,
+                    ["record_id"] = recordId,
+                    ["leased"] = (int)MessageDurableStatus.Leased,
+                    ["lease_token"] = leaseToken,
+                    ["now"] = Timestamp(now)
+                },
+                token).ConfigureAwait(false);
+            return updated == 1;
+        }, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <inheritdoc />
     public async Task<bool> CompleteInboxAsync(
@@ -210,21 +256,125 @@ public sealed partial class SqliteMessageDurableStore {
             maximumAttempts,
             cancellationToken);
 
-    private static InboxCandidate ReadInboxCandidate(IDataRecord row) {
-        var route = MessageRoute.FromDurableCoordinates(
-            (MessageRouteKind)row.GetInt32(4),
-            (MessageEventKind)row.GetInt32(5),
-            row.IsDBNull(6) ? null : row.GetString(6),
-            row.IsDBNull(7) ? null : row.GetString(7));
-        var record = MessageDurableRecord.FromStoredCoordinates(
-            row.GetString(1),
-            row.GetString(2),
-            row.GetString(3),
-            route,
-            ReadTimestamp(row, 8),
-            row.GetString(9),
-            ReadBytes(row, 10));
-        return new InboxCandidate(row.GetString(0), record, row.GetInt32(11));
+    private static StoredInboxCandidate ReadStoredInboxCandidate(IDataRecord row) => new(
+        row.GetInt64(0),
+        row.GetValue(1),
+        row.GetValue(2),
+        row.GetValue(3),
+        row.GetValue(4),
+        row.GetValue(5),
+        row.GetValue(6),
+        row.IsDBNull(7) ? null : row.GetValue(7),
+        row.IsDBNull(8) ? null : row.GetValue(8),
+        row.GetValue(9),
+        row.GetValue(10),
+        row.GetValue(11),
+        row.GetValue(12));
+
+    private static bool IsStoredCandidateException(Exception exception) =>
+        exception is ArgumentException or FormatException or InvalidCastException or
+        InvalidOperationException or OverflowException;
+
+    private static async Task DeadLetterMalformedInboxAsync(
+        SQLiteAsyncSession transaction,
+        long rowId,
+        string now,
+        CancellationToken cancellationToken) {
+        await transaction.ExecuteNonQueryAsync(
+            """
+            UPDATE messagex_inbox
+            SET status = @dead_lettered, completed_at = @completed_at,
+                available_at = @completed_at, failure_kind = @failure_kind,
+                lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL
+            WHERE rowid = @row_id
+              AND ((status = @pending AND available_at <= @completed_at)
+                OR (status = @leased AND lease_expires_at <= @completed_at));
+            """,
+            new Dictionary<string, object?> {
+                ["dead_lettered"] = (int)MessageDurableStatus.DeadLettered,
+                ["completed_at"] = now,
+                ["failure_kind"] = (int)MessageDurableFailureKind.Permanent,
+                ["row_id"] = rowId,
+                ["pending"] = (int)MessageDurableStatus.Pending,
+                ["leased"] = (int)MessageDurableStatus.Leased
+            },
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed class StoredInboxCandidate {
+        private readonly object _recordId;
+        private readonly object _provider;
+        private readonly object _installationId;
+        private readonly object _deduplicationKey;
+        private readonly object _routeKind;
+        private readonly object _eventKind;
+        private readonly object? _routeName;
+        private readonly object? _routeQualifier;
+        private readonly object _receivedAt;
+        private readonly object _payloadType;
+        private readonly object _payload;
+        private readonly object _attemptCount;
+
+        public StoredInboxCandidate(
+            long rowId,
+            object recordId,
+            object provider,
+            object installationId,
+            object deduplicationKey,
+            object routeKind,
+            object eventKind,
+            object? routeName,
+            object? routeQualifier,
+            object receivedAt,
+            object payloadType,
+            object payload,
+            object attemptCount) {
+            RowId = rowId;
+            _recordId = recordId;
+            _provider = provider;
+            _installationId = installationId;
+            _deduplicationKey = deduplicationKey;
+            _routeKind = routeKind;
+            _eventKind = eventKind;
+            _routeName = routeName;
+            _routeQualifier = routeQualifier;
+            _receivedAt = receivedAt;
+            _payloadType = payloadType;
+            _payload = payload;
+            _attemptCount = attemptCount;
+        }
+
+        public long RowId { get; }
+
+        public InboxCandidate Materialize() {
+            var recordId = _recordId is string storedRecordId
+                ? RequiredOpaque(storedRecordId, "recordId")
+                : throw new InvalidCastException("The durable inbox record identifier is not text.");
+            var route = MessageRoute.FromDurableCoordinates(
+                (MessageRouteKind)Convert.ToInt32(_routeKind, System.Globalization.CultureInfo.InvariantCulture),
+                (MessageEventKind)Convert.ToInt32(_eventKind, System.Globalization.CultureInfo.InvariantCulture),
+                _routeName is null
+                    ? null
+                    : Convert.ToString(_routeName, System.Globalization.CultureInfo.InvariantCulture),
+                _routeQualifier is null
+                    ? null
+                    : Convert.ToString(_routeQualifier, System.Globalization.CultureInfo.InvariantCulture));
+            var record = MessageDurableRecord.FromStoredCoordinates(
+                Convert.ToString(_provider, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_installationId, System.Globalization.CultureInfo.InvariantCulture)!,
+                Convert.ToString(_deduplicationKey, System.Globalization.CultureInfo.InvariantCulture)!,
+                route,
+                DateTimeOffset.Parse(
+                    Convert.ToString(_receivedAt, System.Globalization.CultureInfo.InvariantCulture)!,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime(),
+                Convert.ToString(_payloadType, System.Globalization.CultureInfo.InvariantCulture)!,
+                _payload as byte[] ?? throw new InvalidCastException("The durable inbox payload is not a BLOB."));
+            return new InboxCandidate(
+                recordId,
+                record,
+                Convert.ToInt32(_attemptCount, System.Globalization.CultureInfo.InvariantCulture));
+        }
     }
 
     private sealed class InboxCandidate {

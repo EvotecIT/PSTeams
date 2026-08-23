@@ -33,6 +33,10 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         {
             throw new ArgumentNullException(nameof(envelope));
         }
+        if (!DiscordSnowflake.TryNormalize(envelope.Payload.ApplicationId, out var applicationId)) {
+            throw new MessageDurablePayloadException(
+                "The Discord durable projection requires a canonical application identifier.");
+        }
         var projection = new DiscordInteractionProjection
         {
             Metadata = MessageDurableEnvelopeMetadata.Capture(envelope),
@@ -44,7 +48,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             Context = envelope.Payload.Context,
             CommandType = envelope.Payload.CommandType,
             TargetId = envelope.Payload.TargetId,
-            ApplicationId = envelope.Payload.TransientContext.ApplicationId,
+            ApplicationId = applicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };
         var payload = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
@@ -115,6 +119,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 projection.Context,
                 projection.CommandType,
                 targetId,
+                applicationId,
                 MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
                 new DiscordTransientInteractionContext(applicationId, null, null));
             return projection.Metadata.Restore(record, payload);

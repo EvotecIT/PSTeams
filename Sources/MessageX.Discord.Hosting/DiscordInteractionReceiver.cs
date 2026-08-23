@@ -186,6 +186,7 @@ public static class DiscordInteractionReceiver {
             context,
             commandType,
             targetId,
+            applicationId,
             MessageDurableJsonProjection.CreateSafeClone(data, ForbiddenPersistedProperties),
             transientContext);
         var deduplicationKey = CreateDeduplicationKey(request.InstallationId, signatureHex);

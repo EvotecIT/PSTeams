@@ -14,7 +14,8 @@ public sealed class DiscordInboundInteraction {
         string? guildLocale,
         int? context,
         DiscordApplicationCommandType? commandType,
-        string? targetId) : this(
+        string? targetId,
+        string? applicationId = null) : this(
             kind,
             name,
             installationOwnerId,
@@ -23,6 +24,7 @@ public sealed class DiscordInboundInteraction {
             context,
             commandType,
             targetId,
+            applicationId,
             EmptyData,
             DiscordTransientInteractionContext.Unavailable) {
     }
@@ -38,7 +40,8 @@ public sealed class DiscordInboundInteraction {
         int? context,
         DiscordApplicationCommandType? commandType,
         string? targetId,
-        JsonElement data) : this(
+        JsonElement data,
+        string? applicationId = null) : this(
             kind,
             name,
             installationOwnerId,
@@ -47,6 +50,7 @@ public sealed class DiscordInboundInteraction {
             context,
             commandType,
             targetId,
+            applicationId,
             data,
             DiscordTransientInteractionContext.Unavailable) {
     }
@@ -60,6 +64,7 @@ public sealed class DiscordInboundInteraction {
         int? context,
         DiscordApplicationCommandType? commandType,
         string? targetId,
+        string? applicationId,
         JsonElement data,
         DiscordTransientInteractionContext transientContext) {
         Kind = kind;
@@ -70,6 +75,7 @@ public sealed class DiscordInboundInteraction {
         Context = context;
         CommandType = commandType;
         TargetId = targetId;
+        ApplicationId = applicationId;
         Data = DiscordSafeInteractionData.Create(data);
         TransientContext = transientContext;
     }
@@ -97,6 +103,9 @@ public sealed class DiscordInboundInteraction {
 
     /// <summary>Target user or message identifier for a Discord context command.</summary>
     public string? TargetId { get; }
+
+    /// <summary>Non-secret Discord application identifier required for durable interaction dispatch.</summary>
+    public string? ApplicationId { get; }
 
     /// <summary>Safe provider-native interaction data, including bounded command options and modal inputs.</summary>
     public JsonElement Data { get; }

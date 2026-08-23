@@ -17,4 +17,14 @@ Use a provider endpoint package to verify Slack or Discord requests and enqueue 
 
 The default ingress is intentionally volatile but suppresses accepted provider deduplication coordinates for a bounded retention window. It fails closed when that replay cache is full. A host that needs provider success only after durable acceptance can register an `IMessageDurableStore`, call `AddMessageXDurableIngress`, and register one `IMessageDurableCodec<TProviderPayload>` for every accepted payload type. The codec is the security boundary that persists a bounded safe projection and reconstructs it after restart; transient tokens, response URLs, signing material, raw requests, and SDK contexts must not enter that projection.
 
-Durable workers renew every claimed lease while a handler is running, cancel cooperative handlers when ownership is lost, commit handler-produced `MessageOutboxRecord` instances with inbox completion, and deliver them through registered `IMessageOutboxHandler` owners. Missing codecs or unavailable storage return HTTP 503 before a provider success acknowledgement is written.
+```csharp
+builder.Services.AddMessageXDurableIngress(options => {
+    options.TerminalRetention = TimeSpan.FromDays(7);
+    options.CleanupInterval = TimeSpan.FromHours(1);
+    options.CleanupBatchSize = 1000;
+});
+```
+
+Terminal cleanup removes completed and dead-lettered records only after `TerminalRetention`; pending, leased, and inbox records with retained outbound work are preserved. The retention period is also the durable deduplication window, so size it for provider retry behavior and the operator-inspection period required for dead letters.
+
+Durable workers renew every claimed lease while a handler is running, release route-unmatched records for another capable worker, cancel cooperative handlers when ownership is lost, commit handler-produced `MessageOutboxRecord` instances with inbox completion, and deliver them through registered `IMessageOutboxHandler` owners. Missing codecs or unavailable storage return HTTP 503 before a provider success acknowledgement is written.

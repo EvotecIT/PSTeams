@@ -41,6 +41,7 @@ public sealed partial class SqliteMessageDurableStore {
                 $"""
                 UPDATE {table}
                 SET status = @status, available_at = @available_at, failure_kind = @failure_kind,
+                    completed_at = @completed_at,
                     lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL
                 WHERE record_id = @record_id AND status = @leased AND lease_token = @lease_token
                   AND lease_expires_at > @now;
@@ -48,6 +49,7 @@ public sealed partial class SqliteMessageDurableStore {
                 new Dictionary<string, object?> {
                     ["status"] = (int)status,
                     ["available_at"] = Timestamp(now.ToUniversalTime().Add(retryDelay)),
+                    ["completed_at"] = deadLetter ? nowText : null,
                     ["failure_kind"] = (int)failureKind,
                     ["record_id"] = recordId,
                     ["leased"] = (int)MessageDurableStatus.Leased,

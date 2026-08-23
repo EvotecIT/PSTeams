@@ -16,6 +16,12 @@ internal static class TeamsActivityMapper {
     private const int MaximumTextLength = 32 * 1024;
     private const int MaximumAdaptiveInputs = 64;
     private const int MaximumAdaptiveInputValueLength = 4096;
+    private const int MaximumAttachments = 32;
+    private static readonly string[] ForbiddenAttachmentProperties = {
+        "token", "access_token", "accessToken", "refresh_token", "refreshToken",
+        "authorization", "client_secret", "clientSecret", "serviceUrl", "contentUrl",
+        "thumbnailUrl", "url"
+    };
 
     public static string MapInstallationId(string installationId) =>
         NormalizeRequired(installationId, nameof(installationId));
@@ -234,7 +240,8 @@ internal static class TeamsActivityMapper {
             locale,
             reactionsAdded,
             reactionsRemoved,
-            inputData);
+            inputData,
+            MapAttachments(activity));
         var envelope = new MessageEventEnvelope<TeamsInboundActivity>(
             MessageProviders.Teams,
             safeInstallationId,
@@ -345,6 +352,26 @@ internal static class TeamsActivityMapper {
                 .Where(reaction => reaction is not null)
                 .Cast<string>()
                 .ToArray();
+
+    private static IReadOnlyList<TeamsInboundAttachment> MapAttachments(TeamsActivity activity) {
+        if (activity is not MessageActivity message || message.Attachments is not { Count: > 0 } attachments) {
+            return Array.Empty<TeamsInboundAttachment>();
+        }
+        if (attachments.Count > MaximumAttachments) {
+            throw new ArgumentException("Teams message attachments exceed the supported shape.", nameof(activity));
+        }
+        return attachments.Select(attachment => {
+            JsonElement? content = attachment.Content is null
+                ? null
+                : MessageDurableJsonProjection.CreateSafeClone(
+                    JsonSerializer.SerializeToElement(attachment.Content),
+                    ForbiddenAttachmentProperties);
+            return new TeamsInboundAttachment(
+                NormalizeOptional(attachment.ContentType?.ToString(), "attachment.ContentType"),
+                NormalizeOptional(attachment.Name, "attachment.Name"),
+                content);
+        }).ToArray();
+    }
 
     internal static IReadOnlyDictionary<string, string?> NormalizeAdaptiveInputs(
         IReadOnlyDictionary<string, object>? values) {

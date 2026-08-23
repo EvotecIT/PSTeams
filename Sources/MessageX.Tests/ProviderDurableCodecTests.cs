@@ -171,7 +171,68 @@ public sealed class ProviderDurableCodecTests
         Assert.Equal("server-1", decoded.Payload.Data.GetProperty("options")[0].GetProperty("value").GetString());
         Assert.False(decoded.Payload.TransientContext.CanFollowUp);
         Assert.Null(decoded.Payload.TransientContext.Token);
+        Assert.Equal("100000000000000002", decoded.Payload.ApplicationId);
         Assert.Equal("100000000000000004", decoded.Conversation?.ConversationId);
+    }
+
+    [Fact]
+    public void DiscordCodecUsesPersistedApplicationIdentityAndRejectsMissingIdentity()
+    {
+        using var dataDocument = JsonDocument.Parse("""{"name":"status","type":1}""");
+        var payload = new DiscordInboundInteraction(
+            DiscordInteractionKind.ApplicationCommand,
+            "status",
+            null,
+            "en-US",
+            null,
+            0,
+            DiscordApplicationCommandType.ChatInput,
+            null,
+            dataDocument.RootElement,
+            "100000000000000002");
+        var rehydrated = JsonSerializer.Deserialize<DiscordInboundInteraction>(
+            JsonSerializer.Serialize(payload));
+        var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
+            MessageProviders.Discord,
+            "installation-a",
+            "discord-persisted-application",
+            MessageEventKind.CommandInvoked,
+            ReceivedAt,
+            Assert.IsType<DiscordInboundInteraction>(rehydrated)) {
+            EventId = "100000000000000001",
+            ScopeId = "100000000000000003",
+            SenderId = "100000000000000004"
+        };
+        var codec = new DiscordInteractionDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(MessageRoute.ForCommand("status", "1"), envelope));
+
+        Assert.Equal("100000000000000002", decoded.Payload.ApplicationId);
+        Assert.Equal("100000000000000002", decoded.Payload.TransientContext.ApplicationId);
+
+        var missing = new DiscordInboundInteraction(
+            DiscordInteractionKind.ApplicationCommand,
+            "status",
+            null,
+            null,
+            null,
+            0,
+            DiscordApplicationCommandType.ChatInput,
+            null,
+            dataDocument.RootElement);
+        var missingEnvelope = new MessageEventEnvelope<DiscordInboundInteraction>(
+            MessageProviders.Discord,
+            "installation-a",
+            "discord-missing-application",
+            MessageEventKind.CommandInvoked,
+            ReceivedAt,
+            missing) {
+            EventId = "100000000000000001",
+            ScopeId = "100000000000000003",
+            SenderId = "100000000000000004"
+        };
+        Assert.Throws<MessageDurablePayloadException>(() =>
+            codec.Encode(MessageRoute.ForCommand("status", "1"), missingEnvelope));
     }
 
     [Fact]

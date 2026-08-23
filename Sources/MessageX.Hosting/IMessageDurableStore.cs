@@ -32,6 +32,16 @@ public interface IMessageDurableStore {
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Releases one owned inbox item without consuming a handler attempt and defers it for another worker.
+    /// Use this when the claiming worker cannot route the record. The delay cannot be negative.
+    /// </summary>
+    Task<bool> ReleaseInboxAsync(
+        string recordId,
+        string leaseToken,
+        TimeSpan retryDelay,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Completes one owned inbox item and commits any outbound work in the same transaction. Outbox deduplication
     /// coordinates are unique across the store, not only within one completion batch.
     /// </summary>
@@ -91,5 +101,14 @@ public interface IMessageDurableStore {
         MessageDurableFailureKind failureKind,
         TimeSpan retryDelay,
         int maximumAttempts,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes bounded batches of completed or dead-lettered inbox and outbox records older than the supplied
+    /// retention boundary. Pending, leased, and inbox records with retained outbound work must remain untouched.
+    /// </summary>
+    Task<int> PurgeTerminalAsync(
+        DateTimeOffset completedBefore,
+        int maximumCount,
         CancellationToken cancellationToken = default);
 }

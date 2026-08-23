@@ -185,6 +185,12 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         }
     }
 
+    private static void ValidateDelay(TimeSpan delay, string parameterName) {
+        if (delay < TimeSpan.Zero || delay > TimeSpan.FromDays(7)) {
+            throw new ArgumentOutOfRangeException(parameterName);
+        }
+    }
+
     private sealed class StoredState {
         public StoredState(string recordId, MessageDurableStatus status) {
             RecordId = recordId;

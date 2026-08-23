@@ -120,6 +120,22 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             }
             return;
         }
+        if (!result.RouteMatched) {
+            bool released;
+            try {
+                released = await _store.ReleaseInboxAsync(
+                    lease.RecordId,
+                    lease.LeaseToken,
+                    _options.RetryDelay,
+                    stoppingToken).ConfigureAwait(false);
+            } finally {
+                await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
+            }
+            if (!released) {
+                _health.LeaseLost(_timeProvider.GetUtcNow());
+            }
+            return;
+        }
         var completedAt = _timeProvider.GetUtcNow();
         bool completed;
         try {

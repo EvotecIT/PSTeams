@@ -6,7 +6,13 @@ namespace MessageX.Teams.Hosting.AspNetCore;
 
 /// <summary>Persists the safe MessageX projection of an authenticated Microsoft Teams activity.</summary>
 public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<TeamsInboundActivity> {
+    private const int MaximumPayloadBytes = 1024 * 1024;
     private const string Discriminator = "teams.activity.v1";
+    private static readonly string[] ForbiddenAttachmentProperties = {
+        "token", "access_token", "accessToken", "refresh_token", "refreshToken",
+        "authorization", "client_secret", "clientSecret", "serviceUrl", "contentUrl",
+        "thumbnailUrl", "url"
+    };
     private static readonly JsonSerializerOptions SerializerOptions = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
@@ -33,8 +39,13 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             Locale = envelope.Payload.Locale,
             ReactionsAdded = envelope.Payload.ReactionsAdded.ToArray(),
             ReactionsRemoved = envelope.Payload.ReactionsRemoved.ToArray(),
-            InputData = new Dictionary<string, string?>(envelope.Payload.InputData, StringComparer.Ordinal)
+            InputData = new Dictionary<string, string?>(envelope.Payload.InputData, StringComparer.Ordinal),
+            Attachments = NormalizeAttachments(envelope.Payload.Attachments)
         };
+        var serialized = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
+        if (serialized.Length > MaximumPayloadBytes) {
+            throw new MessageDurablePayloadException("The complete Teams durable projection exceeds 1 MiB.");
+        }
         return new MessageDurableRecord(
             envelope.Provider,
             envelope.InstallationId,
@@ -42,7 +53,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             route,
             envelope.ReceivedAt,
             Discriminator,
-            JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions));
+            serialized);
     }
 
     /// <inheritdoc />
@@ -75,7 +86,8 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             projection.Locale,
             projection.ReactionsAdded ?? Array.Empty<string>(),
             projection.ReactionsRemoved ?? Array.Empty<string>(),
-            projection.InputData);
+            projection.InputData,
+            NormalizeAttachments(projection.Attachments));
         Validate(payload, record.Route, projection.Metadata);
         return projection.Metadata.Restore(record, payload);
     }
@@ -94,6 +106,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             !AreCoordinates(payload.ReactionsAdded) ||
             !AreCoordinates(payload.ReactionsRemoved) ||
             !AreInputsSafe(payload.InputData) ||
+            !AreAttachmentsSafe(payload.Attachments) ||
             !string.Equals(payload.TenantId, metadata.ScopeId, StringComparison.Ordinal) ||
             !RouteMatches(payload, route)) {
             throw new MessageDurablePayloadException("The Teams durable payload is unsafe or does not match its route.");
@@ -129,6 +142,32 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             IsRequiredCoordinate(pair.Key) &&
             (pair.Value is null || pair.Value.Length <= 4096 && pair.Value.IndexOf('\0') < 0));
 
+    private static bool AreAttachmentsSafe(IReadOnlyList<TeamsInboundAttachment>? values) =>
+        values is not null &&
+        values.Count <= 32 &&
+        values.All(static attachment =>
+            IsCoordinate(attachment.ContentType) &&
+            IsCoordinate(attachment.Name) &&
+            (attachment.Content is not { } content || content.ValueKind != JsonValueKind.Undefined));
+
+    private static TeamsInboundAttachment[] NormalizeAttachments(
+        IReadOnlyList<TeamsInboundAttachment>? attachments) {
+        if (attachments is null || attachments.Count == 0) {
+            return Array.Empty<TeamsInboundAttachment>();
+        }
+        if (attachments.Count > 32) {
+            throw new MessageDurablePayloadException("Teams durable attachments exceed the supported shape.");
+        }
+        return attachments.Select(attachment => new TeamsInboundAttachment(
+            attachment.ContentType,
+            attachment.Name,
+            attachment.Content is null
+                ? null
+                : MessageDurableJsonProjection.CreateSafeClone(
+                    attachment.Content.Value,
+                    ForbiddenAttachmentProperties))).ToArray();
+    }
+
     private static bool IsRequiredCoordinate(string? value) =>
         IsCoordinate(value) && !string.IsNullOrWhiteSpace(value);
 
@@ -150,5 +189,6 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         public string[]? ReactionsAdded { get; set; }
         public string[]? ReactionsRemoved { get; set; }
         public Dictionary<string, string?>? InputData { get; set; }
+        public TeamsInboundAttachment[]? Attachments { get; set; }
     }
 }
