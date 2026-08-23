@@ -156,6 +156,92 @@ public sealed class ProviderAspNetCoreEndpointTests {
     }
 
     [Fact]
+    public async Task DiscordSynchronousDispatchReturnsRetryableOverloadAndReleasesItsSlot() {
+        using var provider = DiscordServices(capacity: 1, synchronousCapacity: 1).BuildServiceProvider();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var dispatchCount = 0;
+        provider.GetRequiredService<MessageRouter>().OnAutocomplete<DiscordInboundInteraction>(
+            "search",
+            async (_, cancellationToken) => {
+                Interlocked.Increment(ref dispatchCount);
+                entered.TrySetResult(true);
+                await release.Task.WaitAsync(cancellationToken);
+                return MessageHandlerResult.Respond(DiscordInteractionAcknowledgement.EmptyAutocomplete());
+            });
+        static string RequestJson(string id) {
+            const string template = """
+                {"id":"__ID__","application_id":"100000000000000002","type":4,"token":"token","user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
+                """;
+            return template.Replace("__ID__", id, StringComparison.Ordinal);
+        }
+        var handler = provider.GetRequiredService<DiscordHttpEndpointHandler>();
+        var first = DiscordContext(RequestJson("100000000000000011"));
+        var overloaded = DiscordContext(RequestJson("100000000000000012"));
+        var afterRelease = DiscordContext(RequestJson("100000000000000013"));
+
+        var firstDispatch = handler.HandleAsync(
+            first,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await handler.HandleAsync(
+            overloaded,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, overloaded.Response.StatusCode);
+        Assert.Equal("1", overloaded.Response.Headers.RetryAfter.ToString());
+        release.TrySetResult(true);
+        await firstDispatch;
+        await handler.HandleAsync(
+            afterRelease,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, afterRelease.Response.StatusCode);
+        Assert.Equal(2, Volatile.Read(ref dispatchCount));
+    }
+
+    [Fact]
+    public async Task CanceledSynchronousDispatchReleasesItsCapacitySlot() {
+        using var provider = DiscordServices(capacity: 1, synchronousCapacity: 1).BuildServiceProvider();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var call = 0;
+        provider.GetRequiredService<MessageRouter>().OnAutocomplete<DiscordInboundInteraction>(
+            "search",
+            async (_, cancellationToken) => {
+                if (Interlocked.Increment(ref call) == 1) {
+                    entered.TrySetResult(true);
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                return MessageHandlerResult.Respond(DiscordInteractionAcknowledgement.EmptyAutocomplete());
+            });
+        const string firstJson = "{\"id\":\"100000000000000021\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
+        const string retryJson = "{\"id\":\"100000000000000024\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
+        var handler = provider.GetRequiredService<DiscordHttpEndpointHandler>();
+        var first = DiscordContext(firstJson);
+        using var cancellation = new CancellationTokenSource();
+        var firstDispatch = handler.HandleAsync(
+            first,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            cancellation.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstDispatch);
+        var retry = DiscordContext(retryJson);
+
+        await handler.HandleAsync(
+            retry,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, retry.Response.StatusCode);
+        Assert.Equal(2, Volatile.Read(ref call));
+    }
+
+    [Fact]
     public async Task ProviderEndpointsRejectOversizedContentTypeMetadata() {
         using var slackProvider = SlackServices(capacity: 1).BuildServiceProvider();
         using var discordProvider = DiscordServices(capacity: 1).BuildServiceProvider();
@@ -199,10 +285,15 @@ public sealed class ProviderAspNetCoreEndpointTests {
         return services;
     }
 
-    private static ServiceCollection DiscordServices(int capacity) {
+    private static ServiceCollection DiscordServices(int capacity, int? synchronousCapacity = null) {
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FixedTimeProvider(DiscordReceivedAt));
-        services.AddMessageXHostingAspNetCore(options => options.QueueCapacity = capacity);
+        services.AddMessageXHostingAspNetCore(options => {
+            options.QueueCapacity = capacity;
+            if (synchronousCapacity.HasValue) {
+                options.SynchronousDispatchCapacity = synchronousCapacity.Value;
+            }
+        });
         services.AddMessageXDiscordAspNetCore();
         return services;
     }

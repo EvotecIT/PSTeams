@@ -259,6 +259,24 @@ public sealed class AspNetCoreHostingTests {
             invalidProvider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
     }
 
+    [Fact]
+    public void SynchronousDispatchCapacityIsValidatedIndependently() {
+        var services = new ServiceCollection();
+        services.AddMessageXHostingAspNetCore(options => options.SynchronousDispatchCapacity = 2);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Equal(
+            2,
+            provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>()
+                .Value.SynchronousDispatchCapacity);
+
+        var invalidServices = new ServiceCollection();
+        invalidServices.AddMessageXHostingAspNetCore(options => options.SynchronousDispatchCapacity = 0);
+        using var invalidProvider = invalidServices.BuildServiceProvider();
+        Assert.Throws<OptionsValidationException>(() =>
+            invalidProvider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
+    }
+
     private static MessageInboundRequestReader Reader(int maximumBodyBytes) => new(
         Options.Create(new MessageXHostingAspNetCoreOptions {
             MaximumRequestBodyBytes = maximumBodyBytes

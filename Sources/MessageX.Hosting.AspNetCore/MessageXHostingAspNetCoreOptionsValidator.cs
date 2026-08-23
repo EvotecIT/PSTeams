@@ -15,6 +15,12 @@ internal sealed class MessageXHostingAspNetCoreOptionsValidator : IValidateOptio
             return ValidateOptionsResult.Fail(
                 $"{nameof(options.QueueCapacity)} must be between 1 and {MaximumAllowedQueueCapacity}.");
         }
+        if (options.SynchronousDispatchCapacity is < 1 or >
+            MessageXHostingAspNetCoreOptions.MaximumSynchronousDispatchCapacity) {
+            return ValidateOptionsResult.Fail(
+                $"{nameof(options.SynchronousDispatchCapacity)} must be between 1 and " +
+                $"{MessageXHostingAspNetCoreOptions.MaximumSynchronousDispatchCapacity}.");
+        }
         if (options.ReplayCapacity is < 1 or > MessageXHostingAspNetCoreOptions.MaximumReplayCapacity) {
             return ValidateOptionsResult.Fail(
                 $"{nameof(options.ReplayCapacity)} must be between 1 and " +

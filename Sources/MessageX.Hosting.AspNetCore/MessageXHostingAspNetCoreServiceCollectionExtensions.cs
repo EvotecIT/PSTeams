@@ -28,6 +28,10 @@ public static class MessageXHostingAspNetCoreServiceCollectionExtensions {
             var value = provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value;
             return new MessageReplayGuard(value.ReplayCapacity, value.ReplayRetention);
         });
+        services.TryAddSingleton(provider => {
+            var value = provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value;
+            return new MessageSynchronousDispatchGate(value.SynchronousDispatchCapacity);
+        });
         services.TryAddSingleton<MessageReceiveResultProcessor>();
         services.TryAddSingleton<MessageIngressQueue>();
         services.TryAddSingleton<IMessageIngressQueue>(provider =>

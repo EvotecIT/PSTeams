@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MessageX.Hosting.AspNetCore;
 
@@ -9,6 +10,7 @@ public sealed class MessageReceiveResultProcessor {
     private readonly MessageReplayGuard _replayGuard;
     private readonly MessageRouter _router;
     private readonly TimeProvider _timeProvider;
+    private readonly MessageSynchronousDispatchGate _synchronousDispatchGate;
 
     /// <summary>Creates a receive-result processor.</summary>
     public MessageReceiveResultProcessor(
@@ -16,12 +18,32 @@ public sealed class MessageReceiveResultProcessor {
         MessageAcknowledgementWriter writer,
         MessageReplayGuard replayGuard,
         MessageRouter router,
-        TimeProvider timeProvider) {
+        TimeProvider timeProvider) : this(
+            queue,
+            writer,
+            replayGuard,
+            router,
+            timeProvider,
+            new MessageSynchronousDispatchGate(
+                MessageXHostingAspNetCoreOptions.DefaultSynchronousDispatchCapacity)) {
+    }
+
+    /// <summary>Creates a receive-result processor with an explicit host-wide synchronous dispatch gate.</summary>
+    [ActivatorUtilitiesConstructor]
+    public MessageReceiveResultProcessor(
+        IMessageIngressQueue queue,
+        MessageAcknowledgementWriter writer,
+        MessageReplayGuard replayGuard,
+        MessageRouter router,
+        TimeProvider timeProvider,
+        MessageSynchronousDispatchGate synchronousDispatchGate) {
         _queue = queue ?? throw new ArgumentNullException(nameof(queue));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _router = router ?? throw new ArgumentNullException(nameof(router));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        _synchronousDispatchGate = synchronousDispatchGate ??
+            throw new ArgumentNullException(nameof(synchronousDispatchGate));
     }
 
     /// <summary>Writes an acknowledgement after any dispatch-ready envelope is accepted.</summary>
@@ -52,6 +74,16 @@ public sealed class MessageReceiveResultProcessor {
                 return;
             }
             if (result.RequiresSynchronousDispatch) {
+                using var slot = _synchronousDispatchGate.TryEnter();
+                if (slot is null) {
+                    _replayGuard.Release(result);
+                    response.Headers.RetryAfter = "1";
+                    await _writer.WriteAsync(
+                        response,
+                        MessageAcknowledgement.Empty(StatusCodes.Status503ServiceUnavailable),
+                        cancellationToken).ConfigureAwait(false);
+                    return;
+                }
                 await ProcessSynchronousAsync(response, result, cancellationToken).ConfigureAwait(false);
                 return;
             }

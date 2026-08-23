@@ -63,6 +63,22 @@ public sealed class MessageReplayGuard {
         }
     }
 
+    /// <summary>Releases a reservation when accepted synchronous work cannot begin.</summary>
+    public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
+        ArgumentNullException.ThrowIfNull(result);
+        if (result.Envelope is null) {
+            return;
+        }
+        var key = string.Join(
+            "\n",
+            result.Envelope.Provider,
+            result.Envelope.InstallationId,
+            result.Envelope.DeduplicationKey);
+        lock (_sync) {
+            _accepted.Remove(key);
+        }
+    }
+
     private void Prune(DateTimeOffset now) {
         while (_expirations.Count > 0 && _expirations.Peek().ExpiresAt <= now) {
             var expired = _expirations.Dequeue();

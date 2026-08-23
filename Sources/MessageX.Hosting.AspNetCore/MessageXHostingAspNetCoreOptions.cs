@@ -8,6 +8,12 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// <summary>Default number of verified envelopes accepted for background dispatch.</summary>
     public const int DefaultQueueCapacity = 256;
 
+    /// <summary>Default number of provider requests allowed to wait for synchronous handler responses.</summary>
+    public const int DefaultSynchronousDispatchCapacity = 64;
+
+    /// <summary>Largest configurable synchronous dispatch set.</summary>
+    public const int MaximumSynchronousDispatchCapacity = 65536;
+
     /// <summary>Default number of accepted deduplication coordinates retained in memory.</summary>
     public const int DefaultReplayCapacity = 65536;
 
@@ -25,6 +31,9 @@ public sealed class MessageXHostingAspNetCoreOptions {
 
     /// <summary>Maximum number of verified envelopes waiting for background dispatch.</summary>
     public int QueueCapacity { get; set; } = DefaultQueueCapacity;
+
+    /// <summary>Maximum concurrent verified requests whose acknowledgement requires synchronous dispatch.</summary>
+    public int SynchronousDispatchCapacity { get; set; } = DefaultSynchronousDispatchCapacity;
 
     /// <summary>
     /// Maximum accepted deduplication coordinates retained by in-memory ingress. Size this for the
