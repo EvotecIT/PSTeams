@@ -245,7 +245,7 @@ public sealed class DiscordInteractionReceiverTests {
     public void PublicInteractionProjectionOwnsAndSanitizesProviderData() {
         DiscordInboundInteraction interaction;
         using (var document = JsonDocument.Parse(
-                   "{\"name\":\"status\",\"options\":[{\"value\":\"server-1\",\"token\":\"nested-secret\"}]}")) {
+                   "{\"name\":\"status\",\"options\":[{\"value\":\"server-1\",\"token\":\"nested-secret\"}],\"resolved\":{\"attachments\":{\"1\":{\"filename\":\"proof.txt\",\"url\":\"https://cdn.example/secret\",\"proxy_url\":\"https://proxy.example/secret\"}}}}")) {
             interaction = new DiscordInboundInteraction(
                 DiscordInteractionKind.ApplicationCommand,
                 "status",
@@ -260,6 +260,10 @@ public sealed class DiscordInteractionReceiverTests {
 
         Assert.Equal("server-1", interaction.Data.GetProperty("options")[0].GetProperty("value").GetString());
         Assert.False(interaction.Data.GetProperty("options")[0].TryGetProperty("token", out _));
+        var attachment = interaction.Data.GetProperty("resolved").GetProperty("attachments").GetProperty("1");
+        Assert.Equal("proof.txt", attachment.GetProperty("filename").GetString());
+        Assert.False(attachment.TryGetProperty("url", out _));
+        Assert.False(attachment.TryGetProperty("proxy_url", out _));
         Assert.DoesNotContain("nested-secret", JsonSerializer.Serialize(interaction), StringComparison.Ordinal);
     }
 

@@ -157,13 +157,12 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
     private async Task<bool> RenewUntilCanceledAsync(
         MessageDurableLease lease,
         CancellationToken cancellationToken) {
-        var leaseExpiresAt = lease.LeaseExpiresAt;
+        var renewalDelay = MessageLeaseRenewalSchedule.GetDelay(
+            _options.LeaseDuration,
+            lease.LeaseDuration);
         try {
             while (true) {
-                var delay = GetRenewalDelay(leaseExpiresAt);
-                if (delay > TimeSpan.Zero) {
-                    await Task.Delay(delay, _timeProvider, cancellationToken).ConfigureAwait(false);
-                }
+                await Task.Delay(renewalDelay, _timeProvider, cancellationToken).ConfigureAwait(false);
                 var renewed = await _store.RenewInboxLeaseAsync(
                     lease.RecordId,
                     lease.LeaseToken,
@@ -172,7 +171,9 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                 if (renewed is null) {
                     return false;
                 }
-                leaseExpiresAt = renewed.LeaseExpiresAt;
+                renewalDelay = MessageLeaseRenewalSchedule.GetDelay(
+                    _options.LeaseDuration,
+                    renewed.LeaseDuration);
                 _health.LeaseRenewed();
             }
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
@@ -208,16 +209,6 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             leases.AddRange(claimed);
         }
         return leases;
-    }
-
-    private TimeSpan GetRenewalDelay(DateTimeOffset leaseExpiresAt) {
-        var remaining = leaseExpiresAt - _timeProvider.GetUtcNow();
-        if (remaining <= TimeSpan.FromMilliseconds(100)) {
-            return TimeSpan.Zero;
-        }
-        var configuredInterval = TimeSpan.FromTicks(_options.LeaseDuration.Ticks / 3);
-        var expiryInterval = TimeSpan.FromTicks(remaining.Ticks / 3);
-        return configuredInterval <= expiryInterval ? configuredInterval : expiryInterval;
     }
 
     private async Task FailAndRecordAsync(

@@ -9,9 +9,12 @@ internal static class DiscordSafeInteractionData {
     private static readonly HashSet<string> ForbiddenProperties = new(
         new[] {
             "token", "access_token", "refresh_token", "oauth_token", "bot_token",
-            "interaction_token", "authorization", "client_secret", "public_key", "signature"
+            "interaction_token", "authorization", "client_secret", "public_key", "signature",
+            "url", "proxy_url"
         },
         StringComparer.OrdinalIgnoreCase);
+
+    internal static IEnumerable<string> ForbiddenPropertyNames => ForbiddenProperties;
 
     public static MessageDataValue Create(MessageDataValue value) {
         if (value is null) {

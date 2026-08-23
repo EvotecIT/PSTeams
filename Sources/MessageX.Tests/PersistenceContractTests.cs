@@ -135,9 +135,11 @@ public sealed class PersistenceContractTests {
             "lease-1",
             new DateTimeOffset(2026, 8, 22, 19, 5, 0, TimeSpan.Zero),
             1,
-            record);
+            record,
+            TimeSpan.FromMinutes(1));
 
         Assert.Equal(1, lease.AttemptCount);
+        Assert.Equal(TimeSpan.FromMinutes(1), lease.LeaseDuration);
         Assert.Same(record, lease.Record);
         Assert.Throws<ArgumentOutOfRangeException>(() => new MessageDurableLease(
             "record-1",
@@ -157,6 +159,16 @@ public sealed class PersistenceContractTests {
             DateTimeOffset.UtcNow,
             1,
             OutboxRecord()));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MessageDurableLease(
+            "record-1",
+            "lease-1",
+            DateTimeOffset.UtcNow,
+            1,
+            record,
+            TimeSpan.Zero));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MessageLeaseRenewal(
+            DateTimeOffset.UtcNow,
+            TimeSpan.Zero));
         Assert.Throws<ArgumentException>(() => new MessageDurableAcceptance(
             " record-1",
             MessageDurableAcceptanceStatus.Accepted));

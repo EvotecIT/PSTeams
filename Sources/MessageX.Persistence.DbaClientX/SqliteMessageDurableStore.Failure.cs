@@ -100,7 +100,7 @@ public sealed partial class SqliteMessageDurableStore {
                     ["now"] = Timestamp(now)
                 },
                 token).ConfigureAwait(false);
-            return updated == 1 ? new MessageLeaseRenewal(renewedUntil) : null;
+            return updated == 1 ? new MessageLeaseRenewal(renewedUntil, leaseDuration) : null;
         }, cancellationToken).ConfigureAwait(false);
     }
 }

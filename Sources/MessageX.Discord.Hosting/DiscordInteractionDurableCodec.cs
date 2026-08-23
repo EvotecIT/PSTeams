@@ -12,11 +12,6 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
-    private static readonly string[] ForbiddenProperties = {
-        "token", "access_token", "refresh_token", "oauth_token", "bot_token",
-        "interaction_token", "authorization", "client_secret", "public_key", "signature"
-    };
-
     /// <inheritdoc />
     public string PayloadType => Discriminator;
 
@@ -80,7 +75,9 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             CommandType = envelope.Payload.CommandType,
             TargetId = targetId,
             ApplicationId = applicationId,
-            Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
+            Data = MessageDurableJsonProjection.CreateSafeClone(
+                envelope.Payload.Data,
+                DiscordSafeInteractionData.ForbiddenPropertyNames)
         };
         if (!SenderMatches(projection.Metadata, projection.SenderId) ||
             !ReferenceCoordinatesMatch(projection, envelope.InstallationId, envelope.DeduplicationKey))
@@ -172,7 +169,9 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 projection.ChannelId,
                 projection.ChannelType,
                 projection.MessageId,
-                MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
+                MessageDurableJsonProjection.CreateSafeClone(
+                    projection.Data,
+                    DiscordSafeInteractionData.ForbiddenPropertyNames),
                 new DiscordTransientInteractionContext(applicationId, null, null));
             return projection.Metadata.Restore(record, payload);
         }

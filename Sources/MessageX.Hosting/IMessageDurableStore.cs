@@ -16,6 +16,8 @@ public interface IMessageDurableStore {
     /// <summary>
     /// Atomically and exclusively claims eligible inbox work. Concurrent claimers cannot receive the same active
     /// record. Payload types use ordinal, case-sensitive equality and the lease duration must be strictly positive.
+    /// Stores should return the effective relative duration on each lease so workers can schedule renewal without
+    /// comparing the store's authoritative clock with the host clock.
     /// </summary>
     Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
         string ownerId,
@@ -24,7 +26,10 @@ public interface IMessageDurableStore {
         IReadOnlyCollection<string> payloadTypes,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Renews one active inbox lease using the store's authoritative clock and a strictly positive duration.</summary>
+    /// <summary>
+    /// Renews one active inbox lease using the store's authoritative clock and a strictly positive duration. Stores
+    /// should return the effective relative duration so workers can schedule the next renewal on the host clock.
+    /// </summary>
     Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
         string recordId,
         string leaseToken,
@@ -68,6 +73,8 @@ public interface IMessageDurableStore {
     /// <summary>
     /// Atomically and exclusively claims eligible outbound work. Concurrent claimers cannot receive the same active
     /// record. Payload types use ordinal, case-sensitive equality and the lease duration must be strictly positive.
+    /// Stores should return the effective relative duration on each lease so workers can schedule renewal without
+    /// comparing the store's authoritative clock with the host clock.
     /// </summary>
     Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
         string ownerId,
@@ -76,7 +83,10 @@ public interface IMessageDurableStore {
         IReadOnlyCollection<string> payloadTypes,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Renews one active outbox lease using the store's authoritative clock and a strictly positive duration.</summary>
+    /// <summary>
+    /// Renews one active outbox lease using the store's authoritative clock and a strictly positive duration. Stores
+    /// should return the effective relative duration so workers can schedule the next renewal on the host clock.
+    /// </summary>
     Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
         string recordId,
         string leaseToken,

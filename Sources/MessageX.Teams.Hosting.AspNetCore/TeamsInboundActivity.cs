@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using MessageX.Core;
 using Microsoft.Teams.Apps.Schema;
 
@@ -95,9 +94,5 @@ public sealed class TeamsInboundActivity {
     /// <summary>Capability-free attachment metadata and bounded content retained for durable handlers.</summary>
     public IReadOnlyList<TeamsInboundAttachment> Attachments { get; }
 
-    /// <summary>
-    /// Verified Microsoft SDK activity for synchronous handler use. It is null after durable restoration and intentionally excluded from persistence.
-    /// </summary>
-    [JsonIgnore]
-    public TeamsActivity? Activity { get; }
+    internal TeamsActivity? Activity { get; }
 }

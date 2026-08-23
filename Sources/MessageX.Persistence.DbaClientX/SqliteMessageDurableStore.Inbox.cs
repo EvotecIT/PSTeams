@@ -147,7 +147,8 @@ public sealed partial class SqliteMessageDurableStore {
                         leaseToken,
                         leaseExpires,
                         candidate.AttemptCount + 1,
-                        candidate.Record));
+                        candidate.Record,
+                        leaseDuration));
                 }
             }
             return (IReadOnlyList<MessageDurableLease>)leases;

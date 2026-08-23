@@ -8,10 +8,6 @@ public static class DiscordInteractionReceiver {
     private const int MaximumBodyBytes = 1024 * 1024;
     private const int MaximumTokenLength = 2048;
     private static readonly TimeSpan DefaultReplayWindow = TimeSpan.FromMinutes(5);
-    private static readonly string[] ForbiddenPersistedProperties = {
-        "token", "access_token", "refresh_token", "oauth_token", "bot_token",
-        "interaction_token", "authorization", "client_secret", "public_key", "signature"
-    };
     private static readonly TimeSpan InteractionTokenLifetime = TimeSpan.FromMinutes(15);
 
     /// <summary>Receives one Discord interaction request from exact raw HTTP bytes.</summary>
@@ -188,7 +184,7 @@ public static class DiscordInteractionReceiver {
             messageId,
             MessageDurableJsonProjection.CreateSafeClone(
                 MessageDataValue.ParseJson(data.GetRawText()),
-                ForbiddenPersistedProperties),
+                DiscordSafeInteractionData.ForbiddenPropertyNames),
             transientContext);
         var deduplicationKey = DiscordInteractionIdentity.CreateDeduplicationKey(
             request.InstallationId,

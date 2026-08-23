@@ -37,6 +37,19 @@ public sealed class PublicApiContractTests {
         Assert.Empty(leaks);
     }
 
+    [Fact]
+    public void TeamsInboundModelDoesNotExposeProviderSdkTypes() {
+        var leaks = PublicSignatures(typeof(TeamsInboundActivity))
+            .Where(signature => signature.Type.Assembly.GetName().Name?.StartsWith(
+                "Microsoft.Teams.",
+                StringComparison.Ordinal) == true)
+            .Select(signature => signature.Name + " -> " + signature.Type.FullName)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Empty(leaks);
+    }
+
     private static IEnumerable<(string Name, Type Type)> PublicSignatures(Type type) {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance |
                                    BindingFlags.Static | BindingFlags.DeclaredOnly;

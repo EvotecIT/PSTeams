@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace MessageX.Tests;
 
-public sealed class DurableIngressTests {
+public sealed partial class DurableIngressTests {
     private static readonly DateTimeOffset FixedNow =
         new(2026, 8, 22, 19, 30, 0, TimeSpan.Zero);
 
@@ -754,42 +754,6 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
-    public async Task RenewalUsesStoreReportedLeaseExpiryInsteadOfConfiguredDuration() {
-        using var database = new TemporaryDatabase();
-        using var innerStore = new SqliteMessageDurableStore(database.Path);
-        var losingStore = new LeaseLosingStore(innerStore, TimeSpan.FromMilliseconds(100));
-        using var provider = Services(
-            losingStore,
-            includeCodec: true,
-            timeProvider: TimeProvider.System,
-            leaseDuration: TimeSpan.FromSeconds(30)).BuildServiceProvider();
-        var canceled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", async (_, token) => {
-            try {
-                await Task.Delay(Timeout.InfiniteTimeSpan, token);
-            } catch (OperationCanceledException) when (token.IsCancellationRequested) {
-                canceled.TrySetResult(true);
-                throw;
-            }
-            return MessageHandlerResult.Completed();
-        });
-        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
-            ResponseContext().Response,
-            Dispatch("short-reported-lease"),
-            TestContext.Current.CancellationToken);
-        var workers = provider.GetServices<IHostedService>().ToArray();
-        foreach (var worker in workers) {
-            await worker.StartAsync(TestContext.Current.CancellationToken);
-        }
-
-        await canceled.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
-        Assert.True(losingStore.RenewInboxCalls > 0);
-        for (var index = workers.Length - 1; index >= 0; index--) {
-            await workers[index].StopAsync(TestContext.Current.CancellationToken);
-        }
-    }
-
-    [Fact]
     public async Task EveryOutboxBatchLeaseStartsBeforeASynchronousHandlerCanBlock() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -1367,141 +1331,6 @@ public sealed class DurableIngressTests {
             ReadOnlyMemory<byte> buffer,
             CancellationToken cancellationToken = default) =>
             ValueTask.FromException(new IOException("simulated acknowledgement write failure"));
-    }
-
-    private sealed class LeaseLosingStore : IMessageDurableStore {
-        private readonly IMessageDurableStore _inner;
-
-        private readonly TimeSpan? _reportedLeaseLifetime;
-
-        public LeaseLosingStore(
-            IMessageDurableStore inner,
-            TimeSpan? reportedLeaseLifetime = null) {
-            _inner = inner;
-            _reportedLeaseLifetime = reportedLeaseLifetime;
-        }
-
-        public int RenewInboxCalls { get; private set; }
-
-        public int CompleteInboxCalls { get; private set; }
-
-        public int FailInboxCalls { get; private set; }
-
-        public Task InitializeAsync(CancellationToken cancellationToken = default) =>
-            _inner.InitializeAsync(cancellationToken);
-
-        public Task<MessageDurableAcceptance> AcceptInboxAsync(
-            MessageDurableRecord record,
-            CancellationToken cancellationToken = default) =>
-            _inner.AcceptInboxAsync(record, cancellationToken);
-
-        public async Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
-            string ownerId,
-            int maximumCount,
-            TimeSpan leaseDuration,
-            IReadOnlyCollection<string> payloadTypes,
-            CancellationToken cancellationToken = default) {
-            var leases = await _inner.ClaimInboxAsync(
-                ownerId,
-                maximumCount,
-                leaseDuration,
-                payloadTypes,
-                cancellationToken);
-            if (_reportedLeaseLifetime is null) {
-                return leases;
-            }
-            var reportedExpiry = DateTimeOffset.UtcNow.Add(_reportedLeaseLifetime.Value);
-            return leases.Select(lease => new MessageDurableLease(
-                lease.RecordId,
-                lease.LeaseToken,
-                reportedExpiry,
-                lease.AttemptCount,
-                lease.Record)).ToArray();
-        }
-
-        public Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
-            string recordId,
-            string leaseToken,
-            TimeSpan leaseDuration,
-            CancellationToken cancellationToken = default) {
-            RenewInboxCalls++;
-            return Task.FromResult<MessageLeaseRenewal?>(null);
-        }
-
-        public Task<bool> ReleaseInboxAsync(
-            string recordId,
-            string leaseToken,
-            TimeSpan retryDelay,
-            CancellationToken cancellationToken = default) =>
-            _inner.ReleaseInboxAsync(recordId, leaseToken, retryDelay, cancellationToken);
-
-        public Task<bool> CompleteInboxAsync(
-            string recordId,
-            string leaseToken,
-            MessageOutboxBatch? outbox = null,
-            CancellationToken cancellationToken = default) {
-            CompleteInboxCalls++;
-            return _inner.CompleteInboxAsync(recordId, leaseToken, outbox, cancellationToken);
-        }
-
-        public Task<MessageDurableFailureResult> FailInboxAsync(
-            string recordId,
-            string leaseToken,
-            MessageDurableFailureKind failureKind,
-            TimeSpan retryDelay,
-            int maximumAttempts,
-            CancellationToken cancellationToken = default) {
-            FailInboxCalls++;
-            return _inner.FailInboxAsync(
-                recordId,
-                leaseToken,
-                failureKind,
-                retryDelay,
-                maximumAttempts,
-                cancellationToken);
-        }
-
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
-            string ownerId,
-            int maximumCount,
-            TimeSpan leaseDuration,
-            IReadOnlyCollection<string> payloadTypes,
-            CancellationToken cancellationToken = default) =>
-            _inner.ClaimOutboxAsync(ownerId, maximumCount, leaseDuration, payloadTypes, cancellationToken);
-
-        public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
-            string recordId,
-            string leaseToken,
-            TimeSpan leaseDuration,
-            CancellationToken cancellationToken = default) =>
-            _inner.RenewOutboxLeaseAsync(recordId, leaseToken, leaseDuration, cancellationToken);
-
-        public Task<bool> CompleteOutboxAsync(
-            string recordId,
-            string leaseToken,
-            CancellationToken cancellationToken = default) =>
-            _inner.CompleteOutboxAsync(recordId, leaseToken, cancellationToken);
-
-        public Task<MessageDurableFailureResult> FailOutboxAsync(
-            string recordId,
-            string leaseToken,
-            MessageDurableFailureKind failureKind,
-            TimeSpan retryDelay,
-            int maximumAttempts,
-            CancellationToken cancellationToken = default) =>
-            _inner.FailOutboxAsync(
-                recordId,
-                leaseToken,
-                failureKind,
-                retryDelay,
-                maximumAttempts,
-                cancellationToken);
-
-        public Task<int> PurgeTerminalAsync(
-            DateTimeOffset completedBefore,
-            int maximumCount,
-            CancellationToken cancellationToken = default) =>
-            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
     }
 
     private sealed class TransientClaimFailureStore : IMessageDurableStore {

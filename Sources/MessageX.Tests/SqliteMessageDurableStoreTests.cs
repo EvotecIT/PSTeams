@@ -25,6 +25,7 @@ public sealed class SqliteMessageDurableStoreTests {
         Assert.Equal(accepted.RecordId, duplicate.RecordId);
         var lease = Assert.Single(leases);
         Assert.Equal(1, lease.AttemptCount);
+        Assert.Equal(TimeSpan.FromMinutes(1), lease.LeaseDuration);
         Assert.Equal(source.Provider, lease.Record.Provider);
         Assert.Equal(source.InstallationId, lease.Record.InstallationId);
         Assert.Equal(source.DeduplicationKey, lease.Record.DeduplicationKey);
@@ -345,6 +346,7 @@ public sealed class SqliteMessageDurableStoreTests {
 
         Assert.NotNull(renewal);
         Assert.Equal(BaseTime.AddSeconds(90), renewal.LeaseExpiresAt);
+        Assert.Equal(TimeSpan.FromMinutes(1), renewal.LeaseDuration);
         Assert.True(await store.CompleteInboxAsync(
             renewedInbox.RecordId,
             renewedInbox.LeaseToken,
@@ -418,6 +420,7 @@ public sealed class SqliteMessageDurableStoreTests {
             BaseTime.AddSeconds(30));
 
         Assert.NotNull(renewal);
+        Assert.Equal(TimeSpan.FromMinutes(1), renewal.LeaseDuration);
         Assert.True(await store.CompleteOutboxAsync(
             renewedOutbox.RecordId,
             renewedOutbox.LeaseToken,

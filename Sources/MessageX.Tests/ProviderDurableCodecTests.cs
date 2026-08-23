@@ -152,7 +152,7 @@ public sealed class ProviderDurableCodecTests
               "id":"100000000000000001","application_id":"100000000000000002","type":2,
               "token":"interaction-secret","guild_id":"100000000000000003","channel_id":"100000000000000004",
               "member":{"user":{"id":"100000000000000005"}},
-              "data":{"name":"status","type":1,"options":[{"name":"target","value":"server-1","token":"nested-secret"}]}
+              "data":{"name":"status","type":1,"options":[{"name":"target","value":"server-1","token":"nested-secret"}],"resolved":{"attachments":{"100000000000000006":{"id":"100000000000000006","filename":"proof.txt","url":"https://cdn.discord.example/signed","proxy_url":"https://proxy.discord.example/signed"}}}}
             }
             """;
         var signature = DiscordSign(DiscordTimestamp, json);
@@ -169,7 +169,14 @@ public sealed class ProviderDurableCodecTests
 
         Assert.DoesNotContain("interaction-secret", stored, StringComparison.Ordinal);
         Assert.DoesNotContain("nested-secret", stored, StringComparison.Ordinal);
+        Assert.DoesNotContain("cdn.discord.example", stored, StringComparison.Ordinal);
+        Assert.DoesNotContain("proxy.discord.example", stored, StringComparison.Ordinal);
         Assert.Equal("server-1", decoded.Payload.Data.GetProperty("options")[0].GetProperty("value").GetString());
+        var attachment = decoded.Payload.Data.GetProperty("resolved").GetProperty("attachments")
+            .GetProperty("100000000000000006");
+        Assert.Equal("proof.txt", attachment.GetProperty("filename").GetString());
+        Assert.False(attachment.TryGetProperty("url", out _));
+        Assert.False(attachment.TryGetProperty("proxy_url", out _));
         Assert.False(decoded.Payload.TransientContext.CanFollowUp);
         Assert.Null(decoded.Payload.TransientContext.Token);
         Assert.Equal("100000000000000002", decoded.Payload.ApplicationId);
