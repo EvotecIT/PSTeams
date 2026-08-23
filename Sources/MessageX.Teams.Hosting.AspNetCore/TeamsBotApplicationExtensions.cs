@@ -1,5 +1,7 @@
 using MessageX.Hosting;
 using Microsoft.Teams.Apps;
+using System.Text;
+using System.Text.Json;
 
 namespace MessageX.Teams.Hosting.AspNetCore;
 
@@ -54,7 +56,7 @@ public static class TeamsBotApplicationExtensions {
             router,
             cancellationToken));
         application.OnAdaptiveCardAction(async (context, cancellationToken) => {
-            await DispatchAsync(
+            var result = await DispatchAsync(
                 TeamsActivityMapper.MapAdaptiveCardAction(
                     context.Activity,
                     installationId,
@@ -62,7 +64,7 @@ public static class TeamsBotApplicationExtensions {
                     TeamsVerifiedActivityScope.Current),
                 router,
                 cancellationToken).ConfigureAwait(false);
-            return InvokeResponse.Ok();
+            return CreateInvokeResponse(result.HandlerResult?.Acknowledgement);
         });
 
         var sdkActivityHandler = application.OnActivity ??
@@ -76,13 +78,30 @@ public static class TeamsBotApplicationExtensions {
         return application;
     }
 
-    private static async Task DispatchAsync(
+    private static async Task<MessageDispatchResult> DispatchAsync(
         TeamsInboundDispatch dispatch,
         MessageRouter router,
         CancellationToken cancellationToken) {
-        _ = await router.DispatchAsync(
+        return await router.DispatchAsync(
             dispatch.Route,
             dispatch.Envelope,
             cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static InvokeResponse CreateInvokeResponse(MessageAcknowledgement? acknowledgement) {
+        if (acknowledgement is null) {
+            return InvokeResponse.Ok();
+        }
+        object? body = null;
+        var bytes = acknowledgement.CopyBody();
+        if (bytes.Length > 0) {
+            if (acknowledgement.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) == true) {
+                using var document = JsonDocument.Parse(bytes);
+                body = document.RootElement.Clone();
+            } else {
+                body = Encoding.UTF8.GetString(bytes);
+            }
+        }
+        return new InvokeResponse(acknowledgement.StatusCode, body);
     }
 }

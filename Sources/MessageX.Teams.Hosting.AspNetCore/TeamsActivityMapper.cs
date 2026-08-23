@@ -23,6 +23,10 @@ internal static class TeamsActivityMapper {
         CoreActivity? verifiedSource = null) {
         ArgumentNullException.ThrowIfNull(activity);
         var conversationKind = GetConversationKind(activity, verifiedSource);
+        var isDirectMessage = GetConversationKind(
+            activity,
+            verifiedSource,
+            useReplyAsThread: false) == MessageConversationKind.DirectMessage;
         var recipientId = activity.Recipient?.Id;
         var isMention = recipientId is not null && activity
             .GetMentions()
@@ -33,7 +37,7 @@ internal static class TeamsActivityMapper {
 
         MessageRoute route;
         MessageEventKind eventKind;
-        if (conversationKind == MessageConversationKind.DirectMessage) {
+        if (isDirectMessage) {
             route = MessageRoute.ForDirectMessage();
             eventKind = MessageEventKind.MessageReceived;
         } else if (isMention) {
@@ -70,7 +74,7 @@ internal static class TeamsActivityMapper {
             TeamsInboundActivityKind.MessageUpdated,
             MessageEventKind.MessageChanged,
             MessageRoute.ForEvent(MessageEventKind.MessageChanged),
-            activity.TextWithoutMentions,
+            RemoveRecipientMention(activity, activity.Recipient?.Id),
             null,
             Array.Empty<string>(),
             Array.Empty<string>(),
@@ -236,7 +240,7 @@ internal static class TeamsActivityMapper {
                 ConversationId = conversationId,
                 ConversationKind = conversationKind,
                 ThreadId = conversationKind == MessageConversationKind.Thread ? replyToId : null,
-                Timestamp = timestamp
+                Timestamp = activityKind == TeamsInboundActivityKind.ReactionChanged ? null : timestamp
             }
         };
         return new TeamsInboundDispatch(route, envelope);
@@ -265,6 +269,20 @@ internal static class TeamsActivityMapper {
     }
 
     private static string? RemoveRecipientMention(MessageActivity activity, string? recipientId) {
+        var text = activity.Text;
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(recipientId)) {
+            return text?.Trim();
+        }
+        foreach (var mention in activity.GetMentions()) {
+            if (string.Equals(mention.Mentioned?.Id, recipientId, StringComparison.Ordinal) &&
+                !string.IsNullOrEmpty(mention.Text)) {
+                text = text.Replace(mention.Text, string.Empty, StringComparison.Ordinal);
+            }
+        }
+        return text.Trim();
+    }
+
+    private static string? RemoveRecipientMention(MessageUpdateActivity activity, string? recipientId) {
         var text = activity.Text;
         if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(recipientId)) {
             return text?.Trim();

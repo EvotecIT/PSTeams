@@ -57,6 +57,18 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public void PersonalChatReplyUsesDirectMessageRouteWhilePreservingReplyShape() {
+        var dispatch = TeamsActivityMapper.MapMessage(
+            Message("personal", "quoted-message"),
+            "tenant-installation",
+            ReceivedAt);
+
+        Assert.Equal(MessageRouteKind.DirectMessage, dispatch.Route.Kind);
+        Assert.Equal(MessageConversationKind.Thread, dispatch.Envelope.Conversation?.ConversationKind);
+        Assert.Equal("quoted-message", dispatch.Envelope.Conversation?.ThreadId);
+    }
+
+    [Fact]
     public void UpdateDeleteAndReactionUseTruthfulEventRoutes() {
         var update = TeamsActivityMapper.MapMessageUpdate(
             MessageUpdateActivity.FromActivity(Core("messageUpdate", "\"text\":\"changed\"")),
@@ -83,6 +95,8 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal(TeamsInboundActivityKind.MessageDeleted, delete.Envelope.Payload.Kind);
         Assert.Equal(MessageEventKind.ReactionChanged, reaction.Envelope.Kind);
         Assert.Equal("target-message", reaction.Envelope.Message?.MessageId);
+        Assert.Null(reaction.Envelope.Message?.Timestamp);
+        Assert.NotNull(reaction.Envelope.EventTime);
         Assert.Equal(MessageConversationKind.Channel, reaction.Envelope.Conversation?.ConversationKind);
         Assert.Null(reaction.Envelope.Conversation?.ThreadId);
         Assert.Equal(["like"], reaction.Envelope.Payload.ReactionsAdded);
@@ -101,6 +115,20 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal("approve-request", dispatch.Route.Name);
         Assert.Equal(MessageEventKind.ActionInvoked, dispatch.Envelope.Kind);
         Assert.Equal("approve-request", dispatch.Envelope.Payload.ActionName);
+    }
+
+    [Fact]
+    public void AdaptiveCardHandlerAcknowledgementMapsToMicrosoftInvokeResponse() {
+        var acknowledgement = new MessageAcknowledgement(
+            202,
+            "application/json",
+            System.Text.Encoding.UTF8.GetBytes("{\"accepted\":true}"));
+
+        var response = TeamsBotApplicationExtensions.CreateInvokeResponse(acknowledgement);
+
+        Assert.Equal(202, response.Status);
+        var body = Assert.IsType<JsonElement>(response.Body);
+        Assert.True(body.GetProperty("accepted").GetBoolean());
     }
 
     [Fact]
@@ -152,6 +180,22 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal(MessageRouteKind.Mention, dispatch.Route.Kind);
         Assert.Equal(MessageEventKind.AppMentioned, dispatch.Envelope.Kind);
         Assert.Equal("ask <at>Ada</at> for help", dispatch.Envelope.Payload.Text);
+    }
+
+    [Fact]
+    public void EditedMessageRemovesOnlyTheBotMention() {
+        var source = Core(
+            "messageUpdate",
+            "\"text\":\"<at>MessageX</at> ask <at>Ada</at>\",\"entities\":[{\"type\":\"mention\",\"mentioned\":{\"id\":\"bot-1\"},\"text\":\"<at>MessageX</at>\"},{\"type\":\"mention\",\"mentioned\":{\"id\":\"user-2\"},\"text\":\"<at>Ada</at>\"}]");
+        var activity = MessageUpdateActivity.FromActivity(source);
+
+        var dispatch = TeamsActivityMapper.MapMessageUpdate(
+            activity,
+            "install-a",
+            ReceivedAt,
+            source);
+
+        Assert.Equal("ask <at>Ada</at>", dispatch.Envelope.Payload.Text);
     }
 
     [Fact]
