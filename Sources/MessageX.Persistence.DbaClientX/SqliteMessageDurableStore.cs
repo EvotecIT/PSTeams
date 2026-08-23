@@ -92,7 +92,16 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
     private static string NormalizeDatabasePath(string databasePath) {
         var normalized = databasePath.Trim();
         if (normalized.StartsWith("file:", StringComparison.OrdinalIgnoreCase)) {
-            return normalized;
+            var suffixIndex = normalized.IndexOfAny(new[] { '?', '#' }, "file:".Length);
+            var pathEnd = suffixIndex >= 0 ? suffixIndex : normalized.Length;
+            var path = normalized.Substring("file:".Length, pathEnd - "file:".Length);
+            if (path.Length == 0) {
+                throw new ArgumentException("A SQLite file URI requires a database path.", nameof(databasePath));
+            }
+            if (!Path.IsPathRooted(path)) {
+                path = Path.GetFullPath(path);
+            }
+            return "file:" + path + normalized.Substring(pathEnd);
         }
         return Path.GetFullPath(normalized);
     }
@@ -154,7 +163,8 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
         MessageDurableFailureKind failureKind,
         TimeSpan retryDelay,
         int maximumAttempts) {
-        if (failureKind == MessageDurableFailureKind.None) {
+        if (failureKind == MessageDurableFailureKind.None ||
+            !Enum.IsDefined(typeof(MessageDurableFailureKind), failureKind)) {
             throw new ArgumentOutOfRangeException(nameof(failureKind));
         }
         if (retryDelay < TimeSpan.Zero || retryDelay > TimeSpan.FromDays(7)) {

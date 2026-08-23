@@ -109,7 +109,7 @@ public sealed class SqliteMessageDurableStoreTests {
         Assert.Equal(MessageDurableFailureStatus.RetryScheduled, (await store.FailInboxAsync(
             first.RecordId,
             first.LeaseToken,
-            MessageDurableFailureKind.Transient,
+            MessageDurableFailureKind.Handler,
             BaseTime,
             TimeSpan.FromMinutes(5),
             2)).Status);
@@ -379,6 +379,38 @@ public sealed class SqliteMessageDurableStoreTests {
     [InlineData("file:messagex?mode=memory&cache=shared")]
     public void InMemoryDatabasePathsAreRejected(string databasePath) {
         Assert.Throws<ArgumentException>(() => new SqliteMessageDurableStore(databasePath));
+    }
+
+    [Fact]
+    public void RelativeFileUriIsResolvedOnceAndRetainsItsQuery() {
+        using var store = new SqliteMessageDurableStore("file:messagex-relative.db?mode=rwc&cache=private");
+        var field = typeof(SqliteMessageDurableStore).GetField(
+            "_databasePath",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        var normalized = Assert.IsType<string>(field?.GetValue(store));
+
+        Assert.Equal(
+            "file:" + Path.GetFullPath("messagex-relative.db") + "?mode=rwc&cache=private",
+            normalized);
+    }
+
+    [Fact]
+    public async Task UndefinedFailureKindsAreRejected() {
+        using var database = new TemporaryDatabase();
+        using var store = new TestStore(database.Path);
+        await store.InitializeAsync();
+        await store.AcceptInboxAsync(Record("installation-a", "event-invalid-failure"));
+        var lease = Assert.Single(await store.ClaimInboxAsync(
+            "worker-a", 1, TimeSpan.FromMinutes(1), BaseTime));
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => store.FailInboxAsync(
+            lease.RecordId,
+            lease.LeaseToken,
+            (MessageDurableFailureKind)99,
+            BaseTime,
+            TimeSpan.Zero,
+            3));
     }
 
     private static MessageDurableRecord Record(
