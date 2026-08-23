@@ -37,6 +37,40 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task SynchronousDispatchUsesReplayProtectionWithoutCreatingDeferredDurableWork() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        using var provider = Services(store, includeCodec: true).BuildServiceProvider();
+        var dispatchCount = 0;
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (_, _) => {
+            Interlocked.Increment(ref dispatchCount);
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var result = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("synchronous"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+        var processor = provider.GetRequiredService<MessageReceiveResultProcessor>();
+        var first = ResponseContext();
+        var duplicate = ResponseContext();
+
+        await processor.ProcessAsync(first.Response, result, TestContext.Current.CancellationToken);
+        await processor.ProcessAsync(duplicate.Response, result, TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, first.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
+        Assert.Equal(1, Volatile.Read(ref dispatchCount));
+        await store.InitializeAsync(TestContext.Current.CancellationToken);
+        Assert.Empty(await store.ClaimInboxAsync(
+            "test-reader",
+            1,
+            TimeSpan.FromMinutes(1),
+            new[] { "test.payload.v1" },
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task MissingOrCoordinateChangingCodecFailsBeforeProviderSuccess() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
