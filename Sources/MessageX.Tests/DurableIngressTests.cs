@@ -100,6 +100,82 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task SynchronousCapacityReleasesTheConfiguredAcceptanceReservation() {
+        var acceptance = new ReservationOwningAcceptance();
+        var gate = new MessageSynchronousDispatchGate(1);
+        var router = new MessageRouter();
+        var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        router.OnCommand<TestPayload>("status", async (_, cancellationToken) => {
+            started.TrySetResult(true);
+            await release.Task.WaitAsync(cancellationToken);
+            return MessageHandlerResult.Completed();
+        });
+        var processor = new MessageReceiveResultProcessor(
+            acceptance,
+            new MessageAcknowledgementWriter(),
+            router,
+            new MessageReplayGuard(1, TimeSpan.FromMinutes(1)),
+            gate);
+        var firstResponse = ResponseContext();
+        var first = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("custom-reservation-first"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+        var secondResponse = ResponseContext();
+        var second = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("custom-reservation-second"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+
+        var firstDispatch = processor.ProcessAsync(
+            firstResponse.Response,
+            first,
+            TestContext.Current.CancellationToken);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await processor.ProcessAsync(
+            secondResponse.Response,
+            second,
+            TestContext.Current.CancellationToken);
+        release.TrySetResult(true);
+        await firstDispatch;
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, secondResponse.Response.StatusCode);
+        Assert.Equal(1, acceptance.ReleaseCount);
+    }
+
+    [Fact]
+    public async Task SynchronousFailureReleasesTheConfiguredAcceptanceReservation() {
+        var acceptance = new ReservationOwningAcceptance();
+        var router = new MessageRouter();
+        router.OnCommand<TestPayload>("status", (_, _) =>
+            throw new InvalidOperationException("handler failure"));
+        var processor = new MessageReceiveResultProcessor(
+            acceptance,
+            new MessageAcknowledgementWriter(),
+            router,
+            new MessageReplayGuard(1, TimeSpan.FromMinutes(1)),
+            new MessageSynchronousDispatchGate(1));
+        var response = ResponseContext();
+        var result = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("custom-reservation-failure"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+
+        await processor.ProcessAsync(
+            response.Response,
+            result,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status500InternalServerError, response.Response.StatusCode);
+        Assert.Equal(1, acceptance.ReleaseCount);
+    }
+
+    [Fact]
     public async Task AcknowledgementWriteFailureDoesNotReleaseSuccessfulSynchronousDispatch() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -827,6 +903,24 @@ public sealed class DurableIngressTests {
     }
 
     private sealed record TestPayload(string Text);
+
+    private sealed class ReservationOwningAcceptance :
+        IMessageIngressAcceptance,
+        IMessageIngressReservationRelease {
+        public int ReleaseCount { get; private set; }
+
+        public ValueTask<MessageIngressEnqueueStatus> AcceptAsync<TProviderPayload>(
+            MessageReceiveResult<TProviderPayload> result,
+            CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(MessageIngressEnqueueStatus.Accepted);
+        }
+
+        public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
+            ArgumentNullException.ThrowIfNull(result);
+            ReleaseCount++;
+        }
+    }
 
     private sealed class TestOutboxHandler : IMessageOutboxHandler {
         public string PayloadType => "test.outbox.v1";

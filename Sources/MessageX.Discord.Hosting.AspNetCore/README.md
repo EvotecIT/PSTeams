@@ -15,4 +15,4 @@ app.MapMessageXDiscordInteractions("/messagex/discord/interactions", discord);
 
 Map separate endpoint configuration for each installation. Signed payload application and authorizing-owner identity must match that route before acknowledgement. Discord owns the Ed25519 public key; interaction tokens remain transient provider payload state and never enter MessageX references or health state.
 
-Commands/components are currently deferred and autocomplete is acknowledged with an empty result before asynchronous dispatch. Durable follow-up responses require the still-pending secure interaction-capability owner; tokens are never stored in durable envelopes.
+Commands and components use deferred acknowledgements before asynchronous dispatch. Autocomplete is dispatched inline so its handler can return typed choices in the initial response; the empty choice list is only the fallback acknowledgement. Durable follow-up responses require the still-pending secure interaction-capability owner; tokens are never stored in durable envelopes.

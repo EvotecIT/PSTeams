@@ -326,7 +326,8 @@ public static class SlackInteractionReceiver {
                     action.Type,
                     action.Value,
                     action.SelectedValues,
-                    fileIds));
+                    fileIds,
+                    action.RichTextValue));
             }
         }
         values = normalized.ToArray();
@@ -362,7 +363,8 @@ public static class SlackInteractionReceiver {
         if (!TryRequired(action, "type", 64, out var type) ||
             !TryOptional(action, "block_id", 128, out var blockId) ||
             !TryOptionalText(action, "value", 40000, out var scalarValue) ||
-            !TryReadSelectedValues(action, out var selectedValues)) {
+            !TryReadSelectedValues(action, out var selectedValues) ||
+            !SlackRichTextProjection.TryRead(action, "rich_text_value", out var richTextValue)) {
             return false;
         }
         value = new SlackActionInput(
@@ -370,7 +372,8 @@ public static class SlackInteractionReceiver {
             type,
             blockIdOverride ?? blockId,
             scalarValue,
-            selectedValues);
+            selectedValues,
+            richTextValue);
         return true;
     }
 

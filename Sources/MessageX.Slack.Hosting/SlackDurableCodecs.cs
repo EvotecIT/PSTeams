@@ -420,7 +420,8 @@ internal static class SlackDurableCodecValidation
         }
         return new SlackActionInput(Required(value.ActionId, 255), Required(value.Type, 64), Optional(value.BlockId, 128),
             OptionalText(value.Value, 40000), value.SelectedValues.Select(item => OptionalText(item, 40000)
-                ?? throw new MessageDurablePayloadException("A Slack selected value is required.")).ToArray());
+                ?? throw new MessageDurablePayloadException("A Slack selected value is required.")).ToArray(),
+            SlackRichTextProjection.Normalize(value.RichTextValue));
     }
 
     private static SlackViewStateInput NormalizeViewValue(SlackViewStateInput? value)
@@ -433,7 +434,8 @@ internal static class SlackDurableCodecValidation
             Required(value.Type, 64), OptionalText(value.Value, 40000),
             value.SelectedValues.Select(item => OptionalText(item, 40000)
                 ?? throw new MessageDurablePayloadException("A Slack selected value is required.")).ToArray(),
-            value.FileIds.Select(item => Required(item, 256)).ToArray());
+            value.FileIds.Select(item => Required(item, 256)).ToArray(),
+            SlackRichTextProjection.Normalize(value.RichTextValue));
     }
 }
 

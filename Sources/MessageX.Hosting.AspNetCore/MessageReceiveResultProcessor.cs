@@ -8,7 +8,6 @@ public sealed class MessageReceiveResultProcessor {
     private readonly IMessageIngressAcceptance _acceptance;
     private readonly MessageAcknowledgementWriter _writer;
     private readonly MessageRouter _router;
-    private readonly MessageReplayGuard _replayGuard;
     private readonly MessageSynchronousDispatchGate _synchronousDispatchGate;
 
     /// <summary>Creates a receive-result processor.</summary>
@@ -36,7 +35,7 @@ public sealed class MessageReceiveResultProcessor {
         _acceptance = acceptance ?? throw new ArgumentNullException(nameof(acceptance));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _router = router ?? throw new ArgumentNullException(nameof(router));
-        _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
+        ArgumentNullException.ThrowIfNull(replayGuard);
         _synchronousDispatchGate = synchronousDispatchGate ??
             throw new ArgumentNullException(nameof(synchronousDispatchGate));
     }
@@ -71,7 +70,7 @@ public sealed class MessageReceiveResultProcessor {
             if (result.RequiresSynchronousDispatch) {
                 using var slot = _synchronousDispatchGate.TryEnter();
                 if (slot is null) {
-                    _replayGuard.Release(result);
+                    ReleaseReservation(result);
                     response.Headers.RetryAfter = "1";
                     await _writer.WriteAsync(
                         response,
@@ -99,10 +98,10 @@ public sealed class MessageReceiveResultProcessor {
                 .ConfigureAwait(false);
             acknowledgement = dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement;
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
-            _replayGuard.Release(result);
+            ReleaseReservation(result);
             throw;
         } catch {
-            _replayGuard.Release(result);
+            ReleaseReservation(result);
             await _writer.WriteAsync(
                 response,
                 MessageAcknowledgement.Empty(StatusCodes.Status500InternalServerError),
@@ -113,5 +112,11 @@ public sealed class MessageReceiveResultProcessor {
             replay.Complete(result, acknowledgement);
         }
         await _writer.WriteAsync(response, acknowledgement, cancellationToken).ConfigureAwait(false);
+    }
+
+    private void ReleaseReservation<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
+        if (_acceptance is IMessageIngressReservationRelease reservationRelease) {
+            reservationRelease.Release(result);
+        }
     }
 }

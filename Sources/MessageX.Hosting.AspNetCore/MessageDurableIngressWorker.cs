@@ -76,11 +76,10 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             dispatch = codec.DispatchAsync(lease.Record, _router, dispatchCancellation.Token) ??
                 throw new InvalidOperationException("A durable codec returned no dispatch task.");
         } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-            dispatchCancellation.Cancel();
+            await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
             throw;
         } catch (Exception exception) {
-            dispatchCancellation.Cancel();
-            if (await renewal.ConfigureAwait(false)) {
+            try {
                 await FailAndRecordAsync(
                     lease,
                     exception is MessageDurablePayloadException
@@ -88,12 +87,15 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                         : MessageDurableFailureKind.Handler,
                     exception is MessageDurablePayloadException ? TimeSpan.Zero : _options.RetryDelay,
                     stoppingToken).ConfigureAwait(false);
+            } finally {
+                await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
             }
             return;
         }
 
         var first = await Task.WhenAny(dispatch, renewal).ConfigureAwait(false);
         if (ReferenceEquals(first, renewal) && !await renewal.ConfigureAwait(false)) {
+            _health.LeaseLost(_timeProvider.GetUtcNow());
             dispatchCancellation.Cancel();
             ObserveAfterLeaseLoss(dispatch);
             return;
@@ -102,11 +104,10 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
         try {
             result = await dispatch.ConfigureAwait(false);
         } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-            dispatchCancellation.Cancel();
+            await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
             throw;
         } catch (Exception exception) {
-            dispatchCancellation.Cancel();
-            if (await renewal.ConfigureAwait(false)) {
+            try {
                 await FailAndRecordAsync(
                     lease,
                     exception is MessageDurablePayloadException
@@ -114,19 +115,22 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                         : MessageDurableFailureKind.Handler,
                     exception is MessageDurablePayloadException ? TimeSpan.Zero : _options.RetryDelay,
                     stoppingToken).ConfigureAwait(false);
+            } finally {
+                await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
             }
             return;
         }
-        dispatchCancellation.Cancel();
-        if (!await renewal.ConfigureAwait(false)) {
-            return;
-        }
         var completedAt = _timeProvider.GetUtcNow();
-        var completed = await _store.CompleteInboxAsync(
-            lease.RecordId,
-            lease.LeaseToken,
-            result.HandlerResult?.Outbox,
-            stoppingToken).ConfigureAwait(false);
+        bool completed;
+        try {
+            completed = await _store.CompleteInboxAsync(
+                lease.RecordId,
+                lease.LeaseToken,
+                result.HandlerResult?.Outbox,
+                stoppingToken).ConfigureAwait(false);
+        } finally {
+            await StopRenewalAsync(dispatchCancellation, renewal).ConfigureAwait(false);
+        }
         if (completed) {
             _health.Completed(completedAt);
         } else {
@@ -150,7 +154,6 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                     _options.LeaseDuration,
                     cancellationToken).ConfigureAwait(false);
                 if (renewed is null) {
-                    _health.LeaseLost(_timeProvider.GetUtcNow());
                     return false;
                 }
                 leaseExpiresAt = renewed.LeaseExpiresAt;
@@ -227,6 +230,13 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             default:
                 throw new InvalidOperationException("The durable store returned an unsupported failure state.");
         }
+    }
+
+    private static async Task StopRenewalAsync(
+        CancellationTokenSource cancellation,
+        Task<bool> renewal) {
+        cancellation.Cancel();
+        await renewal.ConfigureAwait(false);
     }
 
     private static void ObserveAfterLeaseLoss(Task dispatch) {

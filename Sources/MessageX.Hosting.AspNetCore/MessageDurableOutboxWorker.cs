@@ -64,13 +64,14 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
             delivery = handler.DeliverAsync(lease.Record, deliveryCancellation.Token) ??
                 throw new InvalidOperationException("An outbox handler returned no delivery task.");
         } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-            deliveryCancellation.Cancel();
+            await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
             throw;
         } catch (Exception exception) {
-            deliveryCancellation.Cancel();
-            if (await renewal.ConfigureAwait(false)) {
+            try {
                 await FailDeliveryAsync(lease, exception, stoppingToken)
                     .ConfigureAwait(false);
+            } finally {
+                await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
             }
             return;
         }
@@ -83,24 +84,25 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         try {
             await delivery.ConfigureAwait(false);
         } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-            deliveryCancellation.Cancel();
+            await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
             throw;
         } catch (Exception exception) {
-            deliveryCancellation.Cancel();
-            if (await renewal.ConfigureAwait(false)) {
+            try {
                 await FailDeliveryAsync(lease, exception, stoppingToken)
                     .ConfigureAwait(false);
+            } finally {
+                await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
             }
             return;
         }
-        deliveryCancellation.Cancel();
-        if (!await renewal.ConfigureAwait(false)) {
-            return;
+        try {
+            await _store.CompleteOutboxAsync(
+                lease.RecordId,
+                lease.LeaseToken,
+                stoppingToken).ConfigureAwait(false);
+        } finally {
+            await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
         }
-        await _store.CompleteOutboxAsync(
-            lease.RecordId,
-            lease.LeaseToken,
-            stoppingToken).ConfigureAwait(false);
     }
 
     private async Task<bool> RenewUntilCanceledAsync(
@@ -192,6 +194,13 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
             definitelyNotSent ? MessageDurableFailureKind.Handler : MessageDurableFailureKind.Permanent,
             definitelyNotSent ? _options.RetryDelay : TimeSpan.Zero,
             cancellationToken);
+    }
+
+    private static async Task StopRenewalAsync(
+        CancellationTokenSource cancellation,
+        Task<bool> renewal) {
+        cancellation.Cancel();
+        await renewal.ConfigureAwait(false);
     }
 
     private static void ObserveAfterLeaseLoss(Task delivery) {

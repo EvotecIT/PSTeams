@@ -168,6 +168,41 @@ public sealed class SlackInteractionReceiverTests {
     }
 
     [Fact]
+    public void RichTextInputIsPreservedWithoutNestedCapabilities() {
+        const string payload = """
+            {
+              "type":"block_actions","team":{"id":"T123"},"user":{"id":"U123"},
+              "actions":[{"type":"rich_text_input","action_id":"draft","rich_text_value":{"type":"rich_text","response_url":"https://secret.example","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Hello"}]}]}}],
+              "state":{"values":{"content":{"draft":{"type":"rich_text_input","rich_text_value":{"type":"rich_text","trigger_id":"secret-trigger","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"State"}]}]}}}}}
+            }
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        var action = result.Envelope?.Payload.ProviderPayload?.Actions[0].RichTextValue;
+        var state = result.Envelope?.Payload.ProviderPayload?.State[0].RichTextValue;
+        Assert.Equal("Hello", action?.GetProperty("elements")[0].GetProperty("elements")[0]
+            .GetProperty("text").GetString());
+        Assert.Equal("State", state?.GetProperty("elements")[0].GetProperty("elements")[0]
+            .GetProperty("text").GetString());
+        Assert.False(action?.TryGetProperty("response_url", out _) ?? true);
+        Assert.False(state?.TryGetProperty("trigger_id", out _) ?? true);
+    }
+
+    [Fact]
+    public void RichTextInputRejectsAProjectionLargerThanFortyKilobytes() {
+        var text = new string('a', 40001);
+        var payload = $$$"""
+            {"type":"block_actions","team":{"id":"T123"},"user":{"id":"U123"},"actions":[{"type":"rich_text_input","action_id":"draft","rich_text_value":{"type":"rich_text","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"{{{text}}}"}]}]}}]}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(MessageReceiveFailureKind.Malformed, result.FailureKind);
+        Assert.Equal(400, result.Acknowledgement.StatusCode);
+    }
+
+    [Fact]
     public void MessageShortcutPreservesSelectedMessageCoordinates() {
         const string payload = """
             {

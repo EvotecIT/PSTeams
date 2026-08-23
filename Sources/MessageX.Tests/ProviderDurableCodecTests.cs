@@ -119,6 +119,31 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackRichTextInputSurvivesDurableRoundTripWithoutCapabilities()
+    {
+        const string json = """
+            {"type":"block_actions","team":{"id":"T123"},"user":{"id":"U123"},"actions":[{"type":"rich_text_input","action_id":"draft","rich_text_value":{"type":"rich_text","response_url":"https://secret.example","elements":[{"type":"rich_text_section","elements":[{"type":"text","text":"Hello durable world"}]}]}}]}
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+
+        var record = codec.Encode(receive.Route!, receive.Envelope!);
+        var stored = Encoding.UTF8.GetString(record.CopyPayload());
+        var decoded = codec.Decode(record);
+        var richText = decoded.Payload.ProviderPayload?.Actions[0].RichTextValue;
+
+        Assert.Equal("Hello durable world", richText?.GetProperty("elements")[0]
+            .GetProperty("elements")[0].GetProperty("text").GetString());
+        Assert.DoesNotContain("secret.example", stored, StringComparison.Ordinal);
+        Assert.False(richText?.TryGetProperty("response_url", out _) ?? true);
+    }
+
+    [Fact]
     public void DiscordCodecRetainsOptionsButDropsInteractionAndNestedTokens()
     {
         const string json = """
