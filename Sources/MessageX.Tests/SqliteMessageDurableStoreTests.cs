@@ -685,7 +685,14 @@ public sealed class SqliteMessageDurableStoreTests {
         var live = Record("installation-a", "event-live-pending");
         await store.AcceptInboxAsync(live);
 
-        Assert.Equal(2, await store.PurgeTerminalAsync(BaseTime.AddHours(1), 100));
+        Assert.Equal(0, await store.PurgeTerminalAsync(
+            BaseTime.AddMinutes(30),
+            TimeSpan.FromHours(1),
+            100));
+        Assert.Equal(2, await store.PurgeTerminalAsync(
+            BaseTime.AddHours(2),
+            TimeSpan.FromHours(1),
+            100));
 
         Assert.Equal(MessageDurableAcceptanceStatus.Accepted, (await store.AcceptInboxAsync(completed)).Status);
         Assert.Equal(MessageDurableAcceptanceStatus.Accepted, (await store.AcceptInboxAsync(deadLettered)).Status);
@@ -726,7 +733,10 @@ public sealed class SqliteMessageDurableStoreTests {
             outbox.LeaseToken,
             BaseTime));
 
-        Assert.Equal(2, await store.PurgeTerminalAsync(BaseTime.AddHours(1), 1));
+        Assert.Equal(2, await store.PurgeTerminalAsync(
+            BaseTime.AddHours(2),
+            TimeSpan.FromHours(1),
+            1));
         Assert.Equal(
             MessageDurableAcceptanceStatus.Accepted,
             (await store.AcceptInboxAsync(record)).Status);
@@ -889,11 +899,16 @@ public sealed class SqliteMessageDurableStoreTests {
                 TestContext.Current.CancellationToken);
         }
 
-        public Task<int> PurgeTerminalAsync(DateTimeOffset completedBefore, int maximumCount) =>
-            _store.PurgeTerminalAsync(
-                completedBefore,
+        public Task<int> PurgeTerminalAsync(
+            DateTimeOffset storeNow,
+            TimeSpan terminalRetention,
+            int maximumCount) {
+            _timeProvider.Set(storeNow);
+            return _store.PurgeTerminalAsync(
+                terminalRetention,
                 maximumCount,
                 TestContext.Current.CancellationToken);
+        }
 
         public void Dispose() => _store.Dispose();
     }

@@ -27,11 +27,10 @@ internal sealed class MessageDurableCleanupWorker : BackgroundService {
         while (!stoppingToken.IsCancellationRequested) {
             try {
                 await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
-                var completedBefore = _timeProvider.GetUtcNow().Subtract(_options.TerminalRetention);
                 int purged;
                 do {
                     purged = await _store.PurgeTerminalAsync(
-                        completedBefore,
+                        _options.TerminalRetention,
                         _options.CleanupBatchSize,
                         stoppingToken).ConfigureAwait(false);
                     if (purged >= _options.CleanupBatchSize) {

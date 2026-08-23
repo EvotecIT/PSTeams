@@ -430,6 +430,45 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Null(result.Envelope?.Payload.InstallationOwnerId);
     }
 
+    [Fact]
+    public void VerifiedAuthorizationResolverBindsTheResolvedInstallationAcrossTheEnvelope() {
+        const string json = """
+            {
+              "id":"100000000000000071","application_id":"100000000000000072","type":3,
+              "token":"token","context":0,"guild_id":"100000000000000073",
+              "channel_id":"100000000000000074","member":{"user":{"id":"100000000000000075"}},
+              "message":{"id":"100000000000000076"},
+              "authorizing_integration_owners":{"0":"100000000000000073"},
+              "data":{"custom_id":"approve","component_type":2}
+            }
+            """;
+
+        var result = DiscordInteractionReceiver.Receive(
+            Request(json),
+            PublicKeyHex,
+            Sign(Timestamp, json),
+            Timestamp,
+            expectedApplicationId: "100000000000000072",
+            installationResolver: context => context.InstallationOwnerId == "100000000000000073"
+                ? "guild-seventy-three"
+                : null);
+        var otherInstallation = DiscordInteractionReceiver.Receive(
+            Request(json),
+            PublicKeyHex,
+            Sign(Timestamp, json),
+            Timestamp,
+            expectedApplicationId: "100000000000000072",
+            installationResolver: _ => "guild-other");
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal("guild-seventy-three", result.Envelope?.InstallationId);
+        Assert.Equal("guild-seventy-three", result.Envelope?.Conversation?.InstallationId);
+        Assert.Equal("guild-seventy-three", result.Envelope?.Message?.InstallationId);
+        Assert.NotEqual(
+            result.Envelope?.DeduplicationKey,
+            otherInstallation.Envelope?.DeduplicationKey);
+    }
+
     private static MessageReceiveResult<DiscordInboundInteraction> Receive(string json) {
         var signature = Sign(Timestamp, json);
         return DiscordInteractionReceiver.Receive(

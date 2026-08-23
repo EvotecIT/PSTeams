@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MessageX.Discord.Hosting.AspNetCore;
 
-/// <summary>Registers Discord endpoint services and explicit installation routes.</summary>
+/// <summary>Registers Discord endpoint services and fixed or shared-application routes.</summary>
 public static class DiscordEndpointRouteBuilderExtensions {
     /// <summary>Adds the thin Discord ASP.NET Core endpoint adapter.</summary>
     public static IServiceCollection AddMessageXDiscordAspNetCore(this IServiceCollection services) {
@@ -29,6 +29,33 @@ public static class DiscordEndpointRouteBuilderExtensions {
                 DiscordHttpEndpointHandler handler,
                 CancellationToken cancellationToken) =>
                 handler.HandleAsync(context, configuration, cancellationToken))
+            .WithSummary("Receive verified Discord HTTP interactions")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status413PayloadTooLarge)
+            .Produces(StatusCodes.Status415UnsupportedMediaType)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+    }
+
+    /// <summary>Maps one shared Discord application route with verified installation resolution.</summary>
+    public static RouteHandlerBuilder MapMessageXDiscordInteractions(
+        this IEndpointRouteBuilder endpoints,
+        string pattern,
+        DiscordApplicationEndpointConfiguration configuration) {
+        ArgumentNullException.ThrowIfNull(endpoints);
+        ArgumentNullException.ThrowIfNull(configuration);
+        return endpoints.MapPost(pattern, (
+                HttpContext context,
+                DiscordHttpEndpointHandler handler,
+                IDiscordInstallationResolver installationResolver,
+                CancellationToken cancellationToken) =>
+                handler.HandleAsync(
+                    context,
+                    configuration,
+                    installationResolver,
+                    cancellationToken))
             .WithSummary("Receive verified Discord HTTP interactions")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)

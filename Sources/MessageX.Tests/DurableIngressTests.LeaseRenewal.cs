@@ -263,9 +263,9 @@ public sealed partial class DurableIngressTests {
                 cancellationToken);
 
         public Task<int> PurgeTerminalAsync(
-            DateTimeOffset completedBefore,
+            TimeSpan terminalRetention,
             int maximumCount,
             CancellationToken cancellationToken = default) =>
-            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
+            _inner.PurgeTerminalAsync(terminalRetention, maximumCount, cancellationToken);
     }
 }

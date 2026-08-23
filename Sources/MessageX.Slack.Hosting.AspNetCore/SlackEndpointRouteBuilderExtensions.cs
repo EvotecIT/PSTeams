@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MessageX.Slack.Hosting.AspNetCore;
 
-/// <summary>Registers Slack endpoint services and explicit installation routes.</summary>
+/// <summary>Registers Slack endpoint services and fixed or shared-application routes.</summary>
 public static class SlackEndpointRouteBuilderExtensions {
     /// <summary>Adds the thin Slack ASP.NET Core endpoint adapter.</summary>
     public static IServiceCollection AddMessageXSlackAspNetCore(this IServiceCollection services) {
@@ -40,6 +40,33 @@ public static class SlackEndpointRouteBuilderExtensions {
             .Produces(StatusCodes.Status503ServiceUnavailable);
     }
 
+    /// <summary>Maps one shared Slack application Events API route with verified installation resolution.</summary>
+    public static RouteHandlerBuilder MapMessageXSlackEvents(
+        this IEndpointRouteBuilder endpoints,
+        string pattern,
+        SlackApplicationEndpointConfiguration configuration) {
+        ArgumentNullException.ThrowIfNull(endpoints);
+        ArgumentNullException.ThrowIfNull(configuration);
+        return endpoints.MapPost(pattern, (
+                HttpContext context,
+                SlackHttpEndpointHandler handler,
+                ISlackInstallationResolver installationResolver,
+                CancellationToken cancellationToken) =>
+                handler.HandleEventsAsync(
+                    context,
+                    configuration,
+                    installationResolver,
+                    cancellationToken))
+            .WithSummary("Receive verified Slack Events API requests")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status413PayloadTooLarge)
+            .Produces(StatusCodes.Status415UnsupportedMediaType)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+    }
+
     /// <summary>Maps one Slack interaction route to trusted installation configuration.</summary>
     public static RouteHandlerBuilder MapMessageXSlackInteractions(
         this IEndpointRouteBuilder endpoints,
@@ -52,6 +79,33 @@ public static class SlackEndpointRouteBuilderExtensions {
                 SlackHttpEndpointHandler handler,
                 CancellationToken cancellationToken) =>
                 handler.HandleInteractionsAsync(context, configuration, cancellationToken))
+            .WithSummary("Receive verified Slack commands and interactions")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status413PayloadTooLarge)
+            .Produces(StatusCodes.Status415UnsupportedMediaType)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+    }
+
+    /// <summary>Maps one shared Slack application interaction route with verified installation resolution.</summary>
+    public static RouteHandlerBuilder MapMessageXSlackInteractions(
+        this IEndpointRouteBuilder endpoints,
+        string pattern,
+        SlackApplicationEndpointConfiguration configuration) {
+        ArgumentNullException.ThrowIfNull(endpoints);
+        ArgumentNullException.ThrowIfNull(configuration);
+        return endpoints.MapPost(pattern, (
+                HttpContext context,
+                SlackHttpEndpointHandler handler,
+                ISlackInstallationResolver installationResolver,
+                CancellationToken cancellationToken) =>
+                handler.HandleInteractionsAsync(
+                    context,
+                    configuration,
+                    installationResolver,
+                    cancellationToken))
             .WithSummary("Receive verified Slack commands and interactions")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)

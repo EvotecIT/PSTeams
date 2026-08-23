@@ -28,7 +28,9 @@ public sealed class DurableCleanupWorkerTests {
                 TestContext.Current.CancellationToken);
             Assert.Equal(3, store.PurgeCalls);
             Assert.All(store.BatchSizes, batchSize => Assert.Equal(2, batchSize));
-            Assert.Single(store.RetentionBoundaries.Distinct());
+            Assert.Equal(
+                new[] { TimeSpan.FromDays(7) },
+                store.Retentions.Distinct());
         } finally {
             await worker.StopAsync(TestContext.Current.CancellationToken);
         }
@@ -45,19 +47,19 @@ public sealed class DurableCleanupWorkerTests {
 
         public List<int> BatchSizes { get; } = new();
 
-        public List<DateTimeOffset> RetentionBoundaries { get; } = new();
+        public List<TimeSpan> Retentions { get; } = new();
 
         public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<int> PurgeTerminalAsync(
-            DateTimeOffset completedBefore,
+            TimeSpan terminalRetention,
             int maximumCount,
             CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             lock (_gate) {
                 PurgeCalls++;
                 BatchSizes.Add(maximumCount);
-                RetentionBoundaries.Add(completedBefore);
+                Retentions.Add(terminalRetention);
                 var result = _purgeResults.Dequeue();
                 if (_purgeResults.Count == 0) {
                     Drained.TrySetResult(true);

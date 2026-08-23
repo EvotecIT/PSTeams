@@ -3,14 +3,18 @@ namespace MessageX.Persistence.DbaClientX;
 public sealed partial class SqliteMessageDurableStore {
     /// <inheritdoc />
     public async Task<int> PurgeTerminalAsync(
-        DateTimeOffset completedBefore,
+        TimeSpan terminalRetention,
         int maximumCount,
         CancellationToken cancellationToken = default) {
+        if (terminalRetention <= TimeSpan.Zero) {
+            throw new ArgumentOutOfRangeException(nameof(terminalRetention));
+        }
         if (maximumCount is < 1 or > 10_000) {
             throw new ArgumentOutOfRangeException(nameof(maximumCount));
         }
         await using var session = await OpenSessionAsync(cancellationToken).ConfigureAwait(false);
         return await session.RunInTransactionAsync(async (transaction, token) => {
+            var completedBefore = StoreNow().Subtract(terminalRetention);
             var parameters = new Dictionary<string, object?> {
                 ["completed"] = (int)MessageDurableStatus.Completed,
                 ["dead_lettered"] = (int)MessageDurableStatus.DeadLettered,

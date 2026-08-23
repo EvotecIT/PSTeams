@@ -33,4 +33,3 @@ public sealed class SlackInstallationIdentity {
             : normalized;
     }
 }
-

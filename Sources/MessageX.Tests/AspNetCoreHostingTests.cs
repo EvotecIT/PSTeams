@@ -35,6 +35,27 @@ public sealed class AspNetCoreHostingTests {
     }
 
     [Fact]
+    public async Task RequestReaderCapturesReceiveTimeBeforeStreamingTheBody() {
+        var timeProvider = new MutableTimeProvider(FixedNow);
+        var context = new DefaultHttpContext();
+        context.Request.ContentType = "application/octet-stream";
+        context.Request.Body = new CallbackReadStream(
+            new byte[] { 1, 2, 3 },
+            () => timeProvider.Set(FixedNow.AddMinutes(6)));
+        var reader = new MessageInboundRequestReader(
+            Options.Create(new MessageXHostingAspNetCoreOptions { MaximumRequestBodyBytes = 4 }),
+            timeProvider);
+
+        var request = await reader.ReadAsync(
+            context.Request,
+            "installation-1",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(FixedNow, request.ReceivedAt);
+        Assert.Equal(FixedNow.AddMinutes(6), timeProvider.GetUtcNow());
+    }
+
+    [Fact]
     public async Task RequestReaderRejectsDeclaredAndStreamingBodiesOverTheLimit() {
         var declared = new DefaultHttpContext();
         declared.Request.ContentLength = 5;
@@ -370,6 +391,33 @@ public sealed class AspNetCoreHostingTests {
         public FixedTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
 
         public override DateTimeOffset GetUtcNow() => _utcNow;
+    }
+
+    private sealed class MutableTimeProvider : TimeProvider {
+        private DateTimeOffset _utcNow;
+
+        public MutableTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Set(DateTimeOffset utcNow) => _utcNow = utcNow;
+    }
+
+    private sealed class CallbackReadStream : MemoryStream {
+        private readonly Action _onFirstRead;
+        private int _readStarted;
+
+        public CallbackReadStream(byte[] buffer, Action onFirstRead) : base(buffer) =>
+            _onFirstRead = onFirstRead;
+
+        public override ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default) {
+            if (Interlocked.Exchange(ref _readStarted, 1) == 0) {
+                _onFirstRead();
+            }
+            return base.ReadAsync(buffer, cancellationToken);
+        }
     }
 
     private sealed class TestIngressQueue : IMessageIngressQueue {

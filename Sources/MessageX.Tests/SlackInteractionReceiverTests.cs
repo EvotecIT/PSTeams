@@ -349,6 +349,31 @@ public sealed class SlackInteractionReceiverTests {
         Assert.NotEqual(first.Envelope?.DeduplicationKey, second.Envelope?.DeduplicationKey);
     }
 
+    [Fact]
+    public void VerifiedWorkspaceResolverScopesTheInteractionToTheResolvedInstallation() {
+        const string body = "command=%2Fstatus&api_app_id=A1&team_id=T2&user_id=U1&channel_id=C1";
+
+        var result = SlackInteractionReceiver.Receive(
+            Request(body),
+            SigningSecret,
+            Sign(body),
+            Timestamp,
+            installationResolver: context => context.WorkspaceId == "T2" ? "workspace-two" : null);
+        var otherInstallation = SlackInteractionReceiver.Receive(
+            Request(body),
+            SigningSecret,
+            Sign(body),
+            Timestamp,
+            installationResolver: _ => "workspace-other");
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal("workspace-two", result.Envelope?.InstallationId);
+        Assert.Equal("workspace-two", result.Envelope?.Conversation?.InstallationId);
+        Assert.NotEqual(
+            result.Envelope?.DeduplicationKey,
+            otherInstallation.Envelope?.DeduplicationKey);
+    }
+
     private static MessageReceiveResult<SlackInteractionEvent> Receive(string body) =>
         SlackInteractionReceiver.Receive(
             Request(body),

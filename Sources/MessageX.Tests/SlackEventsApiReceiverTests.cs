@@ -266,6 +266,25 @@ public sealed class SlackEventsApiReceiverTests {
         Assert.Equal(400, unsafeText.Acknowledgement.StatusCode);
     }
 
+    [Fact]
+    public void VerifiedWorkspaceResolverBindsTheResolvedInstallationAcrossTheEnvelope() {
+        const string json = """
+            {"type":"event_callback","api_app_id":"A1","team_id":"T2","event_id":"EvShared","event":{"type":"message","user":"U1","channel":"C1","ts":"1787416799.1"}}
+            """;
+
+        var result = SlackEventsApiReceiver.Receive(
+            Request(json),
+            SigningSecret,
+            Sign(json),
+            Timestamp,
+            installationResolver: context => context.WorkspaceId == "T2" ? "workspace-two" : null);
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal("workspace-two", result.Envelope?.InstallationId);
+        Assert.Equal("workspace-two", result.Envelope?.Conversation?.InstallationId);
+        Assert.Equal("workspace-two", result.Envelope?.Message?.InstallationId);
+    }
+
     private static MessageReceiveResult<SlackInboundEvent> Receive(
         string json,
         int? retryNumber = null,

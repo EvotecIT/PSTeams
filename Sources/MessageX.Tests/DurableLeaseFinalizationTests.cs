@@ -347,10 +347,10 @@ public sealed class DurableLeaseFinalizationTests {
                 cancellationToken);
 
         public Task<int> PurgeTerminalAsync(
-            DateTimeOffset completedBefore,
+            TimeSpan terminalRetention,
             int maximumCount,
             CancellationToken cancellationToken = default) =>
-            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
+            _inner.PurgeTerminalAsync(terminalRetention, maximumCount, cancellationToken);
 
         private async Task<T> ObserveTerminalAsync<T>(
             TerminalKind kind,

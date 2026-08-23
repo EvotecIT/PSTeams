@@ -110,6 +110,35 @@ public sealed class ProviderAspNetCoreEndpointTests {
     }
 
     [Fact]
+    public async Task SlackSharedApplicationEndpointResolvesEventsAndInteractionsPerWorkspace() {
+        using var provider = SlackServices(capacity: 2).BuildServiceProvider();
+        var resolver = new TestSlackInstallationResolver();
+        var configuration = new SlackApplicationEndpointConfiguration(SlackSecret, "A1");
+        var eventContext = SlackContext(SlackEvent("EvShared", "T2"));
+        const string interactionJson = """
+            {"type":"block_actions","api_app_id":"A1","team":{"id":"T3"},"user":{"id":"U1"},"channel":{"id":"C1"},"actions":[{"action_id":"approve","type":"button","value":"yes"}]}
+            """;
+        var interactionContext = SlackInteractionContext(interactionJson);
+        var handler = provider.GetRequiredService<SlackHttpEndpointHandler>();
+
+        await handler.HandleEventsAsync(
+            eventContext,
+            configuration,
+            resolver,
+            TestContext.Current.CancellationToken);
+        await handler.HandleInteractionsAsync(
+            interactionContext,
+            configuration,
+            resolver,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, eventContext.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, interactionContext.Response.StatusCode);
+        Assert.Equal(2, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+        Assert.Equal(new[] { "A1:T2", "A1:T3" }, resolver.Coordinates);
+    }
+
+    [Fact]
     public async Task DiscordPingWritesPongWithoutDispatch() {
         using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
         const string json = "{\"type\":1}";
@@ -124,6 +153,63 @@ public sealed class ProviderAspNetCoreEndpointTests {
         using var body = JsonDocument.Parse(ResponseBody(context));
         Assert.Equal(1, body.RootElement.GetProperty("type").GetInt32());
         Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task DiscordSharedApplicationEndpointResolvesTheVerifiedAuthorizationOwner() {
+        using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
+        var resolver = new TestDiscordInstallationResolver();
+        var configuration = new DiscordApplicationEndpointConfiguration(
+            DiscordPublicKey,
+            "100000000000000002");
+        const string json = """
+            {"id":"100000000000000001","application_id":"100000000000000002","type":2,"token":"token","context":0,"authorizing_integration_owners":{"0":"100000000000000004"},"member":{"user":{"id":"100000000000000005"}},"data":{"name":"status","type":1,"options":[]}}
+            """;
+        var context = DiscordContext(json);
+
+        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            context,
+            configuration,
+            resolver,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        Assert.Equal(1, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+        Assert.Equal("100000000000000002:0:100000000000000004", resolver.Coordinates);
+    }
+
+    [Fact]
+    public async Task SharedApplicationEndpointsRejectForeignApplicationCoordinatesBeforeResolution() {
+        using var slackProvider = SlackServices(capacity: 1).BuildServiceProvider();
+        using var discordProvider = DiscordServices(capacity: 1).BuildServiceProvider();
+        var slackResolver = new TestSlackInstallationResolver();
+        var discordResolver = new TestDiscordInstallationResolver();
+        var slack = SlackContext(SlackEvent("EvForeign", "T2").Replace(
+            "\"api_app_id\":\"A1\"",
+            "\"api_app_id\":\"A2\"",
+            StringComparison.Ordinal));
+        const string discordJson = """
+            {"id":"100000000000000011","application_id":"100000000000000009","type":2,"token":"token","context":0,"authorizing_integration_owners":{"0":"100000000000000004"},"member":{"user":{"id":"100000000000000005"}},"data":{"name":"status","type":1,"options":[]}}
+            """;
+        var discord = DiscordContext(discordJson);
+
+        await slackProvider.GetRequiredService<SlackHttpEndpointHandler>().HandleEventsAsync(
+            slack,
+            new SlackApplicationEndpointConfiguration(SlackSecret, "A1"),
+            slackResolver,
+            TestContext.Current.CancellationToken);
+        await discordProvider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            discord,
+            new DiscordApplicationEndpointConfiguration(
+                DiscordPublicKey,
+                "100000000000000002"),
+            discordResolver,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status403Forbidden, slack.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status403Forbidden, discord.Response.StatusCode);
+        Assert.Empty(slackResolver.Coordinates);
+        Assert.Null(discordResolver.Coordinates);
     }
 
     [Fact]
@@ -349,12 +435,22 @@ public sealed class ProviderAspNetCoreEndpointTests {
     public void ProviderConfigurationAndDependencySurfacesDoNotExposeSigningMaterialOrCrossLoadAdapters() {
         var slack = SlackConfiguration();
         var discord = DiscordConfiguration();
+        var sharedSlack = new SlackApplicationEndpointConfiguration(SlackSecret, "A1");
+        var sharedDiscord = new DiscordApplicationEndpointConfiguration(
+            DiscordPublicKey,
+            "100000000000000002");
         using var slackProvider = SlackServices(capacity: 1).BuildServiceProvider();
         using var discordProvider = DiscordServices(capacity: 1).BuildServiceProvider();
 
         Assert.DoesNotContain(SlackSecret, JsonSerializer.Serialize(slack), StringComparison.Ordinal);
         Assert.DoesNotContain(SlackSecret, slack.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(SlackSecret, JsonSerializer.Serialize(sharedSlack), StringComparison.Ordinal);
+        Assert.DoesNotContain(SlackSecret, sharedSlack.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain(DiscordPublicKey, JsonSerializer.Serialize(discord), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            DiscordPublicKey,
+            JsonSerializer.Serialize(sharedDiscord),
+            StringComparison.OrdinalIgnoreCase);
         Assert.Null(slackProvider.GetService<DiscordHttpEndpointHandler>());
         Assert.Null(discordProvider.GetService<SlackHttpEndpointHandler>());
     }
@@ -428,8 +524,8 @@ public sealed class ProviderAspNetCoreEndpointTests {
             "100000000000000002",
             "100000000000000003");
 
-    private static string SlackEvent(string eventId) =>
-        $"{{\"type\":\"event_callback\",\"api_app_id\":\"A1\",\"team_id\":\"T1\",\"event_id\":\"{eventId}\",\"event\":{{\"type\":\"message\",\"user\":\"U1\",\"channel\":\"C1\",\"ts\":\"1787416799.1\"}}}}";
+    private static string SlackEvent(string eventId, string workspaceId = "T1") =>
+        $"{{\"type\":\"event_callback\",\"api_app_id\":\"A1\",\"team_id\":\"{workspaceId}\",\"event_id\":\"{eventId}\",\"event\":{{\"type\":\"message\",\"user\":\"U1\",\"channel\":\"C1\",\"ts\":\"1787416799.1\"}}}}";
 
     private static string SignSlack(string body) {
         var bodyBytes = Encoding.UTF8.GetBytes(body);
@@ -456,5 +552,29 @@ public sealed class ProviderAspNetCoreEndpointTests {
         public FixedTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
 
         public override DateTimeOffset GetUtcNow() => _utcNow;
+    }
+
+    private sealed class TestSlackInstallationResolver : ISlackInstallationResolver {
+        public List<string> Coordinates { get; } = new();
+
+        public string? ResolveInstallationId(SlackInstallationContext context) {
+            Coordinates.Add($"{context.ApplicationId}:{context.WorkspaceId}");
+            return context.WorkspaceId switch {
+                "T2" => "workspace-two",
+                "T3" => "workspace-three",
+                _ => null
+            };
+        }
+    }
+
+    private sealed class TestDiscordInstallationResolver : IDiscordInstallationResolver {
+        public string? Coordinates { get; private set; }
+
+        public string? ResolveInstallationId(DiscordInstallationContext context) {
+            Coordinates = $"{context.ApplicationId}:{context.IntegrationType}:{context.InstallationOwnerId}";
+            return context.InstallationOwnerId == "100000000000000004"
+                ? "guild-four"
+                : null;
+        }
     }
 }

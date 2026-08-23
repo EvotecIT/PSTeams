@@ -58,7 +58,7 @@ public sealed class DiscordEndpointConfiguration {
             : normalized;
     }
 
-    private static string NormalizeSnowflake(
+    internal static string NormalizeSnowflake(
         string? value,
         string parameterName,
         bool allowZero = false) {

@@ -115,10 +115,11 @@ public interface IMessageDurableStore {
 
     /// <summary>
     /// Deletes bounded batches of completed or dead-lettered inbox and outbox records older than the supplied
-    /// retention boundary. Pending, leased, and inbox records with retained outbound work must remain untouched.
+    /// relative retention period. The store must derive the cutoff from the same authoritative clock used to stamp
+    /// terminal records. Pending, leased, and inbox records with retained outbound work must remain untouched.
     /// </summary>
     Task<int> PurgeTerminalAsync(
-        DateTimeOffset completedBefore,
+        TimeSpan terminalRetention,
         int maximumCount,
         CancellationToken cancellationToken = default);
 }

@@ -19,7 +19,8 @@ public static class SlackInteractionReceiver {
         string signature,
         string timestamp,
         TimeSpan? replayWindow = null,
-        SlackInstallationIdentity? expectedIdentity = null) {
+        SlackInstallationIdentity? expectedIdentity = null,
+        Func<SlackInstallationContext, string?>? installationResolver = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -53,15 +54,16 @@ public static class SlackInteractionReceiver {
                 MessageAcknowledgement.Empty(200));
         }
         return fields.TryGetValue("payload", out var payload)
-            ? ReceiveInteractive(request, signature, fields, payload, expectedIdentity)
-            : ReceiveCommand(request, signature, fields, expectedIdentity);
+            ? ReceiveInteractive(request, signature, fields, payload, expectedIdentity, installationResolver)
+            : ReceiveCommand(request, signature, fields, expectedIdentity, installationResolver);
     }
 
     private static MessageReceiveResult<SlackInteractionEvent> ReceiveCommand(
         MessageInboundRequest request,
         string signature,
         IReadOnlyDictionary<string, string> fields,
-        SlackInstallationIdentity? expectedIdentity) {
+        SlackInstallationIdentity? expectedIdentity,
+        Func<SlackInstallationContext, string?>? installationResolver) {
         if (!TryRequired(fields, "command", 129, out var command) ||
             command[0] != '/' ||
             !TryOptional(fields, "api_app_id", MaximumCoordinateLength, out var applicationId) ||
@@ -78,6 +80,15 @@ public static class SlackInteractionReceiver {
             !expectedIdentity.Matches(applicationId, teamId, enterpriseId)) {
             return Reject(403, MessageReceiveFailureKind.Unauthorized);
         }
+        if (!TryResolveInstallation(
+                request.InstallationId,
+                applicationId,
+                teamId,
+                enterpriseId,
+                installationResolver,
+                out var installationId)) {
+            return Reject(403, MessageReceiveFailureKind.Unauthorized);
+        }
         var commandName = command.Substring(1);
         if (!IsRouteName(commandName, SlackInteractionKind.SlashCommand)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -92,10 +103,11 @@ public static class SlackInteractionReceiver {
             enterpriseId,
             userId,
             new SlackTransientInteractionContext(triggerId, responseUrl),
-            CreateDeduplicationKey(request.InstallationId, signature),
+            CreateDeduplicationKey(installationId, signature),
             channelId);
         return Dispatch(
             request,
+            installationId,
             signature,
             MessageRoute.ForCommand(commandName),
             interaction,
@@ -110,7 +122,8 @@ public static class SlackInteractionReceiver {
         string signature,
         IReadOnlyDictionary<string, string> fields,
         string payload,
-        SlackInstallationIdentity? expectedIdentity) {
+        SlackInstallationIdentity? expectedIdentity,
+        Func<SlackInstallationContext, string?>? installationResolver) {
         if (fields.Count != 1 || payload.Length is <= 0 or > 512 * 1024) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
@@ -134,6 +147,15 @@ public static class SlackInteractionReceiver {
             }
             if (expectedIdentity is not null &&
                 !expectedIdentity.Matches(applicationId, teamId, enterpriseId)) {
+                return Reject(403, MessageReceiveFailureKind.Unauthorized);
+            }
+            if (!TryResolveInstallation(
+                    request.InstallationId,
+                    applicationId,
+                    teamId,
+                    enterpriseId,
+                    installationResolver,
+                    out var installationId)) {
                 return Reject(403, MessageReceiveFailureKind.Unauthorized);
             }
 
@@ -202,12 +224,13 @@ public static class SlackInteractionReceiver {
                 enterpriseId,
                 userId,
                 new SlackTransientInteractionContext(triggerId, responseUrl),
-                CreateDeduplicationKey(request.InstallationId, signature),
+                CreateDeduplicationKey(installationId, signature),
                 channelId,
                 messageTimestamp,
                 threadTimestamp);
             return Dispatch(
                 request,
+                installationId,
                 signature,
                 route,
                 interaction,
@@ -224,6 +247,7 @@ public static class SlackInteractionReceiver {
 
     private static MessageReceiveResult<SlackInteractionEvent> Dispatch(
         MessageInboundRequest request,
+        string installationId,
         string signature,
         MessageRoute route,
         SlackInteractionEvent interaction,
@@ -233,10 +257,10 @@ public static class SlackInteractionReceiver {
         string? messageTimestamp,
         string? threadTimestamp = null) {
         var deduplicationKey = interaction.RequestId ??
-            CreateDeduplicationKey(request.InstallationId, signature);
+            CreateDeduplicationKey(installationId, signature);
         var envelope = new MessageEventEnvelope<SlackInteractionEvent>(
             MessageProviders.Slack,
-            request.InstallationId,
+            installationId,
             deduplicationKey,
             route.EventKind,
             request.ReceivedAt,
@@ -255,7 +279,7 @@ public static class SlackInteractionReceiver {
                         ? MessageConversationKind.DirectMessage
                         : MessageConversationKind.Unknown;
             envelope.Conversation = new MessageReference(MessageProviders.Slack) {
-                InstallationId = request.InstallationId,
+                InstallationId = installationId,
                 ScopeId = scopeId,
                 ConversationId = channelId,
                 ThreadId = threadTimestamp,
@@ -264,7 +288,7 @@ public static class SlackInteractionReceiver {
             var parsedTimestamp = SlackMessageValidator.ParseTimestamp(messageTimestamp);
             if (messageTimestamp is not null && parsedTimestamp is not null) {
                 envelope.Message = new MessageReference(MessageProviders.Slack) {
-                    InstallationId = request.InstallationId,
+                    InstallationId = installationId,
                     ScopeId = scopeId,
                     ConversationId = channelId,
                     ThreadId = threadTimestamp,
@@ -280,6 +304,37 @@ public static class SlackInteractionReceiver {
             MessageAcknowledgement.Empty(200),
             requiresSynchronousDispatch: interaction.Kind == SlackInteractionKind.ViewSubmission);
     }
+
+    private static bool TryResolveInstallation(
+        string fallbackInstallationId,
+        string? applicationId,
+        string? workspaceId,
+        string? enterpriseId,
+        Func<SlackInstallationContext, string?>? installationResolver,
+        out string installationId) {
+        installationId = fallbackInstallationId;
+        if (installationResolver is null) {
+            return true;
+        }
+        if (applicationId is null) {
+            return false;
+        }
+        var resolved = installationResolver(new SlackInstallationContext(
+            applicationId,
+            workspaceId,
+            enterpriseId));
+        if (!IsInstallationId(resolved)) {
+            return false;
+        }
+        installationId = resolved!;
+        return true;
+    }
+
+    private static bool IsInstallationId(string? value) =>
+        value is not null &&
+        value.Length is > 0 and <= MaximumCoordinateLength &&
+        string.Equals(value, value.Trim(), StringComparison.Ordinal) &&
+        !value.Any(char.IsControl);
 
     private static bool TrySingleAction(
         JsonElement root,

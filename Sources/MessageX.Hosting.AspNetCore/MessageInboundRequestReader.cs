@@ -23,6 +23,7 @@ public sealed class MessageInboundRequestReader {
         string installationId,
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(request);
+        var receivedAt = _timeProvider.GetUtcNow();
         if (request.ContentLength is > 0 && request.ContentLength > _maximumBodyBytes) {
             throw new MessageInboundBodyTooLargeException(_maximumBodyBytes);
         }
@@ -46,6 +47,6 @@ public sealed class MessageInboundRequestReader {
             installationId,
             request.ContentType ?? "application/octet-stream",
             buffer.ToArray(),
-            _timeProvider.GetUtcNow());
+            receivedAt);
     }
 }

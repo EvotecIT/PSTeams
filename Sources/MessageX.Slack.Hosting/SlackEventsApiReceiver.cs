@@ -18,7 +18,8 @@ public static class SlackEventsApiReceiver {
         int? retryNumber = null,
         string? retryReason = null,
         TimeSpan? replayWindow = null,
-        SlackInstallationIdentity? expectedIdentity = null) {
+        SlackInstallationIdentity? expectedIdentity = null,
+        Func<SlackInstallationContext, string?>? installationResolver = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -64,10 +65,20 @@ public static class SlackEventsApiReceiver {
                 return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
             }
-            if (expectedIdentity is not null && !MatchesExpectedIdentity(root, expectedIdentity)) {
+            if (!TryResolveInstallation(
+                    root,
+                    request.InstallationId,
+                    expectedIdentity,
+                    installationResolver,
+                    out var installationId)) {
                 return Reject(403, MessageReceiveFailureKind.Unauthorized);
             }
-            return ReceiveEventCallback(request, root, retryNumber, retryReason?.Trim());
+            return ReceiveEventCallback(
+                request,
+                root,
+                retryNumber,
+                retryReason?.Trim(),
+                installationId);
         }
         catch (JsonException) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -89,7 +100,8 @@ public static class SlackEventsApiReceiver {
         MessageInboundRequest request,
         JsonElement root,
         int? retryNumber,
-        string? retryReason) {
+        string? retryReason,
+        string installationId) {
         if (!TryReadRequired(root, "event_id", out var eventId) ||
             !root.TryGetProperty("event", out var providerEvent) ||
             providerEvent.ValueKind != JsonValueKind.Object ||
@@ -186,7 +198,7 @@ public static class SlackEventsApiReceiver {
             retryNumber);
         var envelope = new MessageEventEnvelope<SlackInboundEvent>(
             MessageProviders.Slack,
-            request.InstallationId,
+            installationId,
             eventId,
             eventKind,
             request.ReceivedAt,
@@ -200,7 +212,7 @@ public static class SlackEventsApiReceiver {
         if (channelId is not null) {
             var conversationKind = GetConversationKind(channelId, channelType, threadTimestamp);
             envelope.Conversation = new MessageReference(MessageProviders.Slack) {
-                InstallationId = request.InstallationId,
+                InstallationId = installationId,
                 ScopeId = teamId,
                 ConversationId = channelId,
                 ThreadId = threadTimestamp,
@@ -210,7 +222,7 @@ public static class SlackEventsApiReceiver {
         var parsedTimestamp = SlackMessageValidator.ParseTimestamp(messageTimestamp);
         if (channelId is not null && messageTimestamp is not null && parsedTimestamp is not null) {
             envelope.Message = new MessageReference(MessageProviders.Slack) {
-                InstallationId = request.InstallationId,
+                InstallationId = installationId,
                 ScopeId = teamId,
                 ConversationId = channelId,
                 ThreadId = threadTimestamp,
@@ -366,6 +378,44 @@ public static class SlackEventsApiReceiver {
         }
         return false;
     }
+
+    private static bool TryResolveInstallation(
+        JsonElement root,
+        string fallbackInstallationId,
+        SlackInstallationIdentity? expectedIdentity,
+        Func<SlackInstallationContext, string?>? installationResolver,
+        out string installationId) {
+        installationId = fallbackInstallationId;
+        if (expectedIdentity is not null && !MatchesExpectedIdentity(root, expectedIdentity)) {
+            return false;
+        }
+        if (installationResolver is null) {
+            return true;
+        }
+        if (!TryReadCoordinate(root, "api_app_id", out var applicationId) ||
+            applicationId is null ||
+            !TryReadCoordinate(root, "team_id", out var workspaceId) ||
+            !TryReadCoordinate(root, "enterprise_id", out var enterpriseId) ||
+            !TryReadCoordinate(root, "context_team_id", out var contextWorkspaceId) ||
+            !TryReadCoordinate(root, "context_enterprise_id", out var contextEnterpriseId)) {
+            return false;
+        }
+        var resolved = installationResolver(new SlackInstallationContext(
+            applicationId,
+            contextWorkspaceId ?? workspaceId,
+            contextEnterpriseId ?? enterpriseId));
+        if (!IsInstallationId(resolved)) {
+            return false;
+        }
+        installationId = resolved!;
+        return true;
+    }
+
+    private static bool IsInstallationId(string? value) =>
+        value is not null &&
+        value.Length is > 0 and <= MaximumCoordinateLength &&
+        string.Equals(value, value.Trim(), StringComparison.Ordinal) &&
+        !value.Any(char.IsControl);
 
     private static bool TryReadText(JsonElement element, string propertyName, out string? value) {
         value = null;

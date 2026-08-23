@@ -349,10 +349,10 @@ public sealed class ProviderDurableEndpointTests {
             _inner.FailOutboxAsync(recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken);
 
         public Task<int> PurgeTerminalAsync(
-            DateTimeOffset completedBefore,
+            TimeSpan terminalRetention,
             int maximumCount,
             CancellationToken cancellationToken = default) =>
-            _inner.PurgeTerminalAsync(completedBefore, maximumCount, cancellationToken);
+            _inner.PurgeTerminalAsync(terminalRetention, maximumCount, cancellationToken);
 
         public void Dispose() => _inner.Dispose();
     }

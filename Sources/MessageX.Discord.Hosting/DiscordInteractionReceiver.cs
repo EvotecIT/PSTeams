@@ -18,7 +18,8 @@ public static class DiscordInteractionReceiver {
         string timestamp,
         TimeSpan? replayWindow = null,
         string? expectedApplicationId = null,
-        string? expectedInstallationOwnerId = null) {
+        string? expectedInstallationOwnerId = null,
+        Func<DiscordInstallationContext, string?>? installationResolver = null) {
         if (request is null) {
             throw new ArgumentNullException(nameof(request));
         }
@@ -63,7 +64,8 @@ public static class DiscordInteractionReceiver {
                 root,
                 kind,
                 expectedApplicationId,
-                expectedInstallationOwnerId);
+                expectedInstallationOwnerId,
+                installationResolver);
         }
         catch (JsonException) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -76,7 +78,8 @@ public static class DiscordInteractionReceiver {
         JsonElement root,
         DiscordInteractionKind kind,
         string? expectedApplicationId,
-        string? expectedInstallationOwnerId) {
+        string? expectedInstallationOwnerId,
+        Func<DiscordInstallationContext, string?>? installationResolver) {
         if (!TryRequiredSnowflake(root, "id", out var interactionId) ||
             !DiscordSnowflake.TryGetTimestamp(interactionId, out var interactionCreatedAt) ||
             !TryRequiredSnowflake(root, "application_id", out var applicationId) ||
@@ -95,6 +98,8 @@ public static class DiscordInteractionReceiver {
                 context,
                 expectedInstallationOwnerId,
                 out var installationOwnerId,
+                out var installationType,
+                out var authorizationOwnerId,
                 out var installationOwnerMatched) ||
             !TryNestedOptionalSnowflake(root, "message", "id", out var messageId)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
@@ -103,6 +108,20 @@ public static class DiscordInteractionReceiver {
              !string.Equals(expectedApplicationId, applicationId, StringComparison.Ordinal)) ||
             (expectedInstallationOwnerId is not null && !installationOwnerMatched)) {
             return Reject(403, MessageReceiveFailureKind.Unauthorized);
+        }
+        var installationId = request.InstallationId;
+        if (installationResolver is not null) {
+            if (installationType is null || authorizationOwnerId is null) {
+                return Reject(403, MessageReceiveFailureKind.Unauthorized);
+            }
+            var resolvedInstallationId = installationResolver(new DiscordInstallationContext(
+                applicationId,
+                installationType.Value,
+                authorizationOwnerId));
+            if (!IsInstallationId(resolvedInstallationId)) {
+                return Reject(403, MessageReceiveFailureKind.Unauthorized);
+            }
+            installationId = resolvedInstallationId!;
         }
 
         string name;
@@ -187,11 +206,11 @@ public static class DiscordInteractionReceiver {
                 DiscordSafeInteractionData.ForbiddenPropertyNames),
             transientContext);
         var deduplicationKey = DiscordInteractionIdentity.CreateDeduplicationKey(
-            request.InstallationId,
+            installationId,
             interactionId);
         var envelope = new MessageEventEnvelope<DiscordInboundInteraction>(
             MessageProviders.Discord,
-            request.InstallationId,
+            installationId,
             deduplicationKey,
             route.EventKind,
             request.ReceivedAt,
@@ -211,7 +230,7 @@ public static class DiscordInteractionReceiver {
                     ? MessageConversationKind.Channel
                     : MessageConversationKind.Unknown;
             envelope.Conversation = new MessageReference(MessageProviders.Discord) {
-                InstallationId = request.InstallationId,
+                InstallationId = installationId,
                 ScopeId = scopeId,
                 ConversationId = channelId,
                 ThreadId = isThread ? channelId : null,
@@ -222,7 +241,7 @@ public static class DiscordInteractionReceiver {
                 : messageId;
             if (effectiveMessageId is not null) {
                 envelope.Message = new MessageReference(MessageProviders.Discord, effectiveMessageId) {
-                    InstallationId = request.InstallationId,
+                    InstallationId = installationId,
                     ScopeId = scopeId,
                     ConversationId = channelId,
                     ThreadId = isThread ? channelId : null,
@@ -254,8 +273,12 @@ public static class DiscordInteractionReceiver {
         int? context,
         string? expectedOwnerId,
         out string? ownerId,
+        out int? integrationType,
+        out string? authorizationOwnerId,
         out bool expectedOwnerMatched) {
         ownerId = null;
+        integrationType = null;
+        authorizationOwnerId = null;
         expectedOwnerMatched = expectedOwnerId is null;
         if (!root.TryGetProperty("authorizing_integration_owners", out var owners)) {
             return true;
@@ -278,6 +301,11 @@ public static class DiscordInteractionReceiver {
             1 or 2 => userOwner,
             _ => null
         };
+        var contextualIntegrationType = context switch {
+            0 => 0,
+            1 or 2 => 1,
+            _ => (int?)null
+        };
         if (expectedOwnerId is not null) {
             if (contextualAuthorizationOwner is not null) {
                 expectedOwnerMatched = string.Equals(
@@ -285,20 +313,39 @@ public static class DiscordInteractionReceiver {
                     expectedOwnerId,
                     StringComparison.Ordinal);
                 ownerId = contextualOwner;
+                if (expectedOwnerMatched) {
+                    integrationType = contextualIntegrationType;
+                    authorizationOwnerId = contextualAuthorizationOwner;
+                }
                 return true;
             }
-            if (string.Equals(guildOwner, expectedOwnerId, StringComparison.Ordinal) ||
-                string.Equals(userOwner, expectedOwnerId, StringComparison.Ordinal)) {
+            if (string.Equals(guildOwner, expectedOwnerId, StringComparison.Ordinal)) {
                 expectedOwnerMatched = true;
                 ownerId = string.Equals(expectedOwnerId, "0", StringComparison.Ordinal)
                     ? null
                     : expectedOwnerId;
+                integrationType = 0;
+                authorizationOwnerId = guildOwner;
+                return true;
+            }
+            if (string.Equals(userOwner, expectedOwnerId, StringComparison.Ordinal)) {
+                expectedOwnerMatched = true;
+                ownerId = expectedOwnerId;
+                integrationType = 1;
+                authorizationOwnerId = userOwner;
                 return true;
             }
             return true;
         }
         if (contextualOwner is not null) {
             ownerId = contextualOwner;
+            integrationType = contextualIntegrationType;
+            authorizationOwnerId = contextualAuthorizationOwner;
+            return true;
+        }
+        if (contextualAuthorizationOwner is not null) {
+            integrationType = contextualIntegrationType;
+            authorizationOwnerId = contextualAuthorizationOwner;
             return true;
         }
         if (normalizedGuildOwner is not null && userOwner is not null &&
@@ -306,8 +353,21 @@ public static class DiscordInteractionReceiver {
             return false;
         }
         ownerId = normalizedGuildOwner ?? userOwner;
+        if (guildOwner is not null) {
+            integrationType = 0;
+            authorizationOwnerId = guildOwner;
+        } else if (userOwner is not null) {
+            integrationType = 1;
+            authorizationOwnerId = userOwner;
+        }
         return true;
     }
+
+    private static bool IsInstallationId(string? value) =>
+        value is not null &&
+        value.Length is > 0 and <= 256 &&
+        string.Equals(value, value.Trim(), StringComparison.Ordinal) &&
+        !value.Any(char.IsControl);
 
     private static bool TryOptionalOwner(
         JsonElement owners,

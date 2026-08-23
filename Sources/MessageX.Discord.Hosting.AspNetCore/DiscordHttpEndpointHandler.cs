@@ -20,8 +20,47 @@ public sealed class DiscordHttpEndpointHandler {
         HttpContext context,
         DiscordEndpointConfiguration configuration,
         CancellationToken cancellationToken = default) {
-        ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(configuration);
+        await HandleAsync(
+            context,
+            configuration.InstallationId,
+            configuration.PublicKeyHex,
+            configuration.ReplayWindow,
+            configuration.ApplicationId,
+            configuration.InstallationOwnerId,
+            installationResolver: null,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Receives one Discord HTTP interaction on a shared application endpoint.</summary>
+    public async Task HandleAsync(
+        HttpContext context,
+        DiscordApplicationEndpointConfiguration configuration,
+        IDiscordInstallationResolver installationResolver,
+        CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(installationResolver);
+        await HandleAsync(
+            context,
+            configuration.ApplicationId,
+            configuration.PublicKeyHex,
+            configuration.ReplayWindow,
+            configuration.ApplicationId,
+            expectedInstallationOwnerId: null,
+            coordinates => installationResolver.ResolveInstallationId(coordinates),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task HandleAsync(
+        HttpContext context,
+        string requestInstallationId,
+        string publicKeyHex,
+        TimeSpan replayWindow,
+        string expectedApplicationId,
+        string? expectedInstallationOwnerId,
+        Func<DiscordInstallationContext, string?>? installationResolver,
+        CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(context);
         using var operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             context.RequestAborted,
             cancellationToken);
@@ -29,17 +68,18 @@ public sealed class DiscordHttpEndpointHandler {
         try {
             var request = await _reader.ReadAsync(
                 context.Request,
-                configuration.InstallationId,
+                requestInstallationId,
                 operationToken).ConfigureAwait(false);
             request.CorrelationId = context.TraceIdentifier;
             var result = DiscordInteractionReceiver.Receive(
                 request,
-                configuration.PublicKeyHex,
+                publicKeyHex,
                 context.Request.Headers["X-Signature-Ed25519"].ToString(),
                 context.Request.Headers["X-Signature-Timestamp"].ToString(),
-                configuration.ReplayWindow,
-                configuration.ApplicationId,
-                configuration.InstallationOwnerId);
+                replayWindow,
+                expectedApplicationId,
+                expectedInstallationOwnerId,
+                installationResolver);
             await _processor.ProcessAsync(context.Response, result, operationToken).ConfigureAwait(false);
         } catch (MessageInboundBodyTooLargeException) {
             context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
