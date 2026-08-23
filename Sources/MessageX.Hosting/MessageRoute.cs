@@ -92,7 +92,7 @@ public sealed class MessageRoute {
         string? name = null,
         string? qualifier = null) => kind switch {
             MessageRouteKind.Event when name is null && qualifier is null => ForEvent(eventKind),
-            MessageRouteKind.Command when eventKind == MessageEventKind.CommandInvoked => ForCommand(name!, qualifier),
+            MessageRouteKind.Command when eventKind == MessageEventKind.CommandInvoked => ForDurableCommand(name, qualifier),
             MessageRouteKind.Mention when eventKind == MessageEventKind.AppMentioned && name is null && qualifier is null => ForMention(),
             MessageRouteKind.DirectMessage when eventKind == MessageEventKind.MessageReceived && name is null && qualifier is null => ForDirectMessage(),
             MessageRouteKind.Action when eventKind == MessageEventKind.ActionInvoked && qualifier is null => ForAction(name!),
@@ -134,4 +134,14 @@ public sealed class MessageRoute {
         }
         return NormalizeName(value, parameterName);
     }
+
+    private static MessageRoute ForDurableCommand(string? name, string? qualifier) {
+        if (!IsCanonicalNormalized(name) || (qualifier is not null && !IsCanonicalNormalized(qualifier))) {
+            throw new ArgumentException("Durable command coordinates must already use their canonical form.");
+        }
+        return ForCommand(name!, qualifier);
+    }
+
+    private static bool IsCanonicalNormalized(string? value) =>
+        value is not null && string.Equals(value, value.Trim(), StringComparison.Ordinal);
 }

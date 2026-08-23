@@ -26,6 +26,14 @@ public sealed class MessageOutboxBatch : IReadOnlyList<MessageOutboxRecord> {
         if (_records.Any(record => record is null)) {
             throw new ArgumentException("Outbox batches cannot contain null records.", nameof(records));
         }
+        var coordinates = new HashSet<(string Provider, string InstallationId, string DeduplicationKey)>();
+        foreach (var record in _records) {
+            if (!coordinates.Add((record.Provider, record.InstallationId, record.DeduplicationKey))) {
+                throw new ArgumentException(
+                    "Outbox batches require ordinal-unique provider, installation, and deduplication coordinates.",
+                    nameof(records));
+            }
+        }
     }
 
     /// <inheritdoc />

@@ -37,8 +37,9 @@ public interface IMessageDurableStore {
 
     /// <summary>
     /// Schedules another inbox attempt or atomically dead-letters the item. Permanent failures dead-letter
-    /// immediately. Transient failures retry only while the current one-based lease attempt is less than
+    /// immediately. Handler and transient failures retry only while the current one-based lease attempt is less than
     /// <paramref name="maximumAttempts"/>; equality dead-letters the item.
+    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid.
     /// </summary>
     Task<MessageDurableFailureResult> FailInboxAsync(
         string recordId,
@@ -71,8 +72,9 @@ public interface IMessageDurableStore {
 
     /// <summary>
     /// Schedules another outbound attempt or atomically dead-letters the operation. Permanent failures dead-letter
-    /// immediately. Transient failures retry only while the current one-based lease attempt is less than
+    /// immediately. Handler and transient failures retry only while the current one-based lease attempt is less than
     /// <paramref name="maximumAttempts"/>; equality dead-letters the operation.
+    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid.
     /// </summary>
     Task<MessageDurableFailureResult> FailOutboxAsync(
         string recordId,

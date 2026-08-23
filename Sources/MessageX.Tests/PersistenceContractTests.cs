@@ -172,6 +172,43 @@ public sealed class PersistenceContractTests {
         Assert.Throws<ArgumentException>(() => new MessageOutboxBatch(
             Enumerable.Range(0, MessageOutboxBatch.MaximumCount + 1)
                 .Select(index => OutboxRecord($"reply-{index}"))));
+        Assert.Throws<ArgumentException>(() => new MessageOutboxBatch(new[] {
+            OutboxRecord("duplicate"),
+            OutboxRecord("duplicate")
+        }));
+        Assert.Equal(2, new MessageOutboxBatch(new[] {
+            OutboxRecord("duplicate"),
+            new MessageOutboxRecord(
+                MessageProviders.Discord,
+                "APPLICATION-A",
+                "duplicate",
+                "send-message",
+                "discord.send.v1",
+                Array.Empty<byte>(),
+                new DateTimeOffset(2026, 8, 22, 19, 1, 0, TimeSpan.Zero))
+        }).Count);
+    }
+
+    [Fact]
+    public void DurableCommandCoordinatesMustAlreadyBeCanonical() {
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            " status",
+            "1"));
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "status",
+            "1 "));
+        var route = MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "status",
+            "1");
+
+        Assert.Equal("status", route.Name);
+        Assert.Equal("1", route.Qualifier);
     }
 
     private static MessageDurableRecord Record() => new(
