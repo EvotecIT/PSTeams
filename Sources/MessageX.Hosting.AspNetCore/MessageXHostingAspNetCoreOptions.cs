@@ -11,6 +11,9 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// <summary>Default number of accepted deduplication coordinates retained in memory.</summary>
     public const int DefaultReplayCapacity = 65536;
 
+    /// <summary>Largest configurable in-memory replay set.</summary>
+    public const int MaximumReplayCapacity = 10_000_000;
+
     /// <summary>Minimum retention that covers every supported provider signature replay window.</summary>
     public static readonly TimeSpan MinimumReplayRetention = TimeSpan.FromHours(1);
 
@@ -23,7 +26,10 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// <summary>Maximum number of verified envelopes waiting for background dispatch.</summary>
     public int QueueCapacity { get; set; } = DefaultQueueCapacity;
 
-    /// <summary>Maximum accepted deduplication coordinates retained by in-memory ingress.</summary>
+    /// <summary>
+    /// Maximum accepted deduplication coordinates retained by in-memory ingress. Size this for the
+    /// peak verified request rate across all installations multiplied by <see cref="ReplayRetention"/>.
+    /// </summary>
     public int ReplayCapacity { get; set; } = DefaultReplayCapacity;
 
     /// <summary>Retention for accepted in-memory deduplication coordinates.</summary>

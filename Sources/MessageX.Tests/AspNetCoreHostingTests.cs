@@ -241,6 +241,24 @@ public sealed class AspNetCoreHostingTests {
         Assert.Contains(nameof(MessageXHostingAspNetCoreOptions.ReplayRetention), exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ReplayCapacitySupportsHighVolumeHostsWithAnIndependentBound() {
+        var services = new ServiceCollection();
+        services.AddMessageXHostingAspNetCore(options => options.ReplayCapacity = 1_000_000);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Equal(
+            1_000_000,
+            provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value.ReplayCapacity);
+
+        var invalidServices = new ServiceCollection();
+        invalidServices.AddMessageXHostingAspNetCore(options =>
+            options.ReplayCapacity = MessageXHostingAspNetCoreOptions.MaximumReplayCapacity + 1);
+        using var invalidProvider = invalidServices.BuildServiceProvider();
+        Assert.Throws<OptionsValidationException>(() =>
+            invalidProvider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
+    }
+
     private static MessageInboundRequestReader Reader(int maximumBodyBytes) => new(
         Options.Create(new MessageXHostingAspNetCoreOptions {
             MaximumRequestBodyBytes = maximumBodyBytes
