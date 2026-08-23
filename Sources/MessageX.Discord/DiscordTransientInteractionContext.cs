@@ -3,14 +3,15 @@ using System.Text.Json.Serialization;
 namespace MessageX.Discord;
 
 /// <summary>Short-lived Discord follow-up capability that must never enter durable reference storage.</summary>
-public sealed class DiscordTransientInteractionContext {
+public sealed class DiscordTransientInteractionContext
+{
     internal static DiscordTransientInteractionContext Unavailable { get; } =
-        new(string.Empty, string.Empty, DateTimeOffset.MinValue);
-
+        new(string.Empty, null, null);
     internal DiscordTransientInteractionContext(
         string applicationId,
         string? token,
-        DateTimeOffset? expiresAt) {
+        DateTimeOffset? expiresAt)
+    {
         ApplicationId = applicationId;
         Token = token;
         ExpiresAt = expiresAt;
@@ -23,7 +24,7 @@ public sealed class DiscordTransientInteractionContext {
     public DateTimeOffset? ExpiresAt { get; }
 
     /// <summary>Whether this in-memory context still has a usable follow-up capability.</summary>
-    public bool CanFollowUp => Token is not null && ExpiresAt is not null;
+    public bool CanFollowUp => Token is not null && ExpiresAt is not null && DateTimeOffset.UtcNow < ExpiresAt.Value;
 
     /// <summary>Short-lived interaction token. Never persist, serialize, or log this value.</summary>
     [JsonIgnore]

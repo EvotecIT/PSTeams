@@ -4,9 +4,11 @@ using MessageX.Hosting;
 namespace MessageX.Discord;
 
 /// <summary>Durable codec for verified Discord HTTP interactions.</summary>
-public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<DiscordInboundInteraction> {
+public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<DiscordInboundInteraction>
+{
     private const string Discriminator = "discord.interaction.v1";
-    private static readonly JsonSerializerOptions SerializerOptions = new() {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
     private static readonly string[] ForbiddenProperties = {
@@ -20,14 +22,18 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     /// <inheritdoc />
     public MessageDurableRecord Encode(
         MessageRoute route,
-        MessageEventEnvelope<DiscordInboundInteraction> envelope) {
-        if (route is null) {
+        MessageEventEnvelope<DiscordInboundInteraction> envelope)
+    {
+        if (route is null)
+        {
             throw new ArgumentNullException(nameof(route));
         }
-        if (envelope is null) {
+        if (envelope is null)
+        {
             throw new ArgumentNullException(nameof(envelope));
         }
-        var projection = new DiscordInteractionProjection {
+        var projection = new DiscordInteractionProjection
+        {
             Metadata = MessageDurableEnvelopeMetadata.Capture(envelope),
             Kind = envelope.Payload.Kind,
             Name = envelope.Payload.Name,
@@ -35,6 +41,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             Locale = envelope.Payload.Locale,
             GuildLocale = envelope.Payload.GuildLocale,
             Context = envelope.Payload.Context,
+            CommandType = envelope.Payload.CommandType,
             ApplicationId = envelope.Payload.TransientContext.ApplicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };
@@ -49,32 +56,38 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     }
 
     /// <inheritdoc />
-    public MessageEventEnvelope<DiscordInboundInteraction> Decode(MessageDurableRecord record) {
-        if (record is null) {
+    public MessageEventEnvelope<DiscordInboundInteraction> Decode(MessageDurableRecord record)
+    {
+        if (record is null)
+        {
             throw new ArgumentNullException(nameof(record));
         }
         if (!string.Equals(record.PayloadType, Discriminator, StringComparison.Ordinal) ||
-            !string.Equals(record.Provider, MessageProviders.Discord, StringComparison.Ordinal)) {
+            !string.Equals(record.Provider, MessageProviders.Discord, StringComparison.Ordinal))
+        {
             throw new MessageDurablePayloadException("The durable payload is not owned by the Discord codec.");
         }
         DiscordInteractionProjection projection;
-        try {
+        try
+        {
             projection = JsonSerializer.Deserialize<DiscordInteractionProjection>(
                 record.CopyPayload(),
                 SerializerOptions) ?? throw new MessageDurablePayloadException("The Discord durable payload is empty.");
         }
-        catch (JsonException exception) {
+        catch (JsonException exception)
+        {
             throw new MessageDurablePayloadException("The Discord durable payload is malformed.", exception);
         }
         if (projection.Metadata is null ||
-            !RouteMatches(projection.Kind, projection.Name, record.Route) ||
+            !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
             !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
             !IsSafeOptional(projection.InstallationOwnerId, 256) ||
             !IsSafeOptional(projection.Locale, 64) ||
             !IsSafeOptional(projection.GuildLocale, 64) ||
             projection.Context is < 0 or > 2 ||
             projection.Data.ValueKind != JsonValueKind.Object ||
-            !DataMatches(projection.Kind, projection.Name!, projection.Data)) {
+            !DataMatches(projection.Kind, projection.Name!, projection.Data))
+        {
             throw new MessageDurablePayloadException("The Discord interaction durable payload is incomplete.");
         }
         var payload = new DiscordInboundInteraction(
@@ -84,6 +97,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             projection.Locale,
             projection.GuildLocale,
             projection.Context,
+            projection.CommandType,
             MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
             new DiscordTransientInteractionContext(applicationId, null, null));
         return projection.Metadata.Restore(record, payload);
@@ -92,16 +106,23 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     private static bool RouteMatches(
         DiscordInteractionKind kind,
         string? name,
-        MessageRoute route) {
+        DiscordApplicationCommandType? commandType,
+        MessageRoute route)
+    {
         if (name is null || name.Length is 0 or > 128 || name.Any(char.IsControl) ||
-            !string.Equals(name.Trim(), route.Name, StringComparison.OrdinalIgnoreCase)) {
+            !string.Equals(name.Trim(), route.Name, StringComparison.OrdinalIgnoreCase))
+        {
             return false;
         }
-        return kind switch {
-            DiscordInteractionKind.ApplicationCommand => route.Kind == MessageRouteKind.Command,
-            DiscordInteractionKind.MessageComponent => route.Kind == MessageRouteKind.Action,
-            DiscordInteractionKind.Autocomplete => route.Kind == MessageRouteKind.Autocomplete,
-            DiscordInteractionKind.ModalSubmit => route.Kind == MessageRouteKind.Submission,
+        return kind switch
+        {
+            DiscordInteractionKind.ApplicationCommand => route.Kind == MessageRouteKind.Command &&
+                commandType is >= DiscordApplicationCommandType.ChatInput and <= DiscordApplicationCommandType.Message &&
+                string.Equals(route.Qualifier, ((int)commandType.Value).ToString(), StringComparison.Ordinal),
+            DiscordInteractionKind.MessageComponent => route.Kind == MessageRouteKind.Action && commandType is null,
+            DiscordInteractionKind.Autocomplete => route.Kind == MessageRouteKind.Autocomplete &&
+                commandType == DiscordApplicationCommandType.ChatInput,
+            DiscordInteractionKind.ModalSubmit => route.Kind == MessageRouteKind.Submission && commandType is null,
             _ => false
         };
     }
@@ -112,17 +133,27 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
     private static bool DataMatches(
         DiscordInteractionKind kind,
         string name,
-        JsonElement data) {
+        JsonElement data)
+    {
         var propertyName = kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
             ? "custom_id"
             : "name";
-        return data.TryGetProperty(propertyName, out var property) &&
-            property.ValueKind == JsonValueKind.String &&
-            string.Equals(property.GetString(), name, StringComparison.Ordinal);
+        if (!data.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.String)
+        {
+            return false;
+        }
+        var candidate = property.GetString();
+        if (candidate is null || candidate.Length > 128 || candidate.Any(char.IsControl))
+        {
+            return false;
+        }
+        return string.Equals(candidate.Trim(), name, StringComparison.Ordinal);
     }
 }
 
-internal sealed class DiscordInteractionProjection {
+internal sealed class DiscordInteractionProjection
+{
     public MessageDurableEnvelopeMetadata? Metadata { get; set; }
     public DiscordInteractionKind Kind { get; set; }
     public string? Name { get; set; }
@@ -130,6 +161,7 @@ internal sealed class DiscordInteractionProjection {
     public string? Locale { get; set; }
     public string? GuildLocale { get; set; }
     public int? Context { get; set; }
+    public DiscordApplicationCommandType? CommandType { get; set; }
     public string? ApplicationId { get; set; }
     public JsonElement Data { get; set; }
 }
