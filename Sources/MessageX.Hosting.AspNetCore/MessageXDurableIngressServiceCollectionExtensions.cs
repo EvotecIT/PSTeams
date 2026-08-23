@@ -25,9 +25,8 @@ public static class MessageXDurableIngressServiceCollectionExtensions {
         services.TryAddSingleton<MessageDurableIngressHealth>();
         services.TryAddSingleton<IMessageDurableIngressHealth>(provider =>
             provider.GetRequiredService<MessageDurableIngressHealth>());
-        services.Replace(ServiceDescriptor.Singleton<
-            IMessageIngressAcceptance,
-            DurableMessageIngressAcceptance>());
+        services.RemoveAll<IMessageIngressAcceptance>();
+        services.AddSingleton<IMessageIngressAcceptance, DurableMessageIngressAcceptance>();
         services.AddHostedService<MessageDurableIngressWorker>();
         services.AddHostedService<MessageDurableOutboxWorker>();
         return services;

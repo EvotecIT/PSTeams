@@ -34,5 +34,18 @@ internal static class MessageDurableCodecGuard {
     private static bool RoutesMatch(MessageRoute left, MessageRoute right) =>
         left.Kind == right.Kind &&
         left.EventKind == right.EventKind &&
-        string.Equals(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+        left.NameComparison == right.NameComparison &&
+        string.Equals(left.Qualifier, right.Qualifier, StringComparison.Ordinal) &&
+        NamesMatch(left.Name, right.Name, right.NameComparison);
+
+    private static bool NamesMatch(
+        string? left,
+        string? right,
+        MessageRouteNameComparison comparison) => comparison switch {
+            MessageRouteNameComparison.None => left is null && right is null,
+            MessageRouteNameComparison.Ordinal => string.Equals(left, right, StringComparison.Ordinal),
+            MessageRouteNameComparison.OrdinalIgnoreCase =>
+                string.Equals(left, right, StringComparison.OrdinalIgnoreCase),
+            _ => false
+        };
 }

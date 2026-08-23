@@ -9,6 +9,7 @@ internal sealed class DurableMessageIngressAcceptance : IMessageIngressAcceptanc
     private readonly MessageDurableIngressHealth _health;
     private readonly MessageReplayGuard _replayGuard;
     private readonly TimeProvider _timeProvider;
+    private readonly IReadOnlySet<string> _dispatchPayloadTypes;
 
     public DurableMessageIngressAcceptance(
         IServiceProvider services,
@@ -16,13 +17,18 @@ internal sealed class DurableMessageIngressAcceptance : IMessageIngressAcceptanc
         MessageDurableStoreInitializer initializer,
         MessageDurableIngressHealth health,
         MessageReplayGuard replayGuard,
-        TimeProvider timeProvider) {
+        TimeProvider timeProvider,
+        IEnumerable<IMessageDurableDispatchCodec> dispatchCodecs) {
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _initializer = initializer ?? throw new ArgumentNullException(nameof(initializer));
         _health = health ?? throw new ArgumentNullException(nameof(health));
         _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        ArgumentNullException.ThrowIfNull(dispatchCodecs);
+        _dispatchPayloadTypes = dispatchCodecs
+            .Select(static codec => codec.PayloadType)
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     public async ValueTask<MessageIngressEnqueueStatus> AcceptAsync<TProviderPayload>(
@@ -48,7 +54,7 @@ internal sealed class DurableMessageIngressAcceptance : IMessageIngressAcceptanc
             };
         }
         var codec = _services.GetService<IMessageDurableCodec<TProviderPayload>>();
-        if (codec is null) {
+        if (codec is null || !_dispatchPayloadTypes.Contains(codec.PayloadType)) {
             _health.Unavailable(_timeProvider.GetUtcNow());
             return MessageIngressEnqueueStatus.Unavailable;
         }

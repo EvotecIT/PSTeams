@@ -105,6 +105,72 @@ public sealed class DurableIngressTests {
             TimeSpan.FromMinutes(1),
             new[] { "test.payload.v1" },
             TestContext.Current.CancellationToken));
+
+        var missingDispatchServices = Services(store, includeCodec: false);
+        missingDispatchServices.AddSingleton<IMessageDurableCodec<TestPayload>, TestPayloadCodec>();
+        using var missingDispatchProvider = missingDispatchServices.BuildServiceProvider();
+        var missingDispatch = ResponseContext();
+        await missingDispatchProvider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            missingDispatch.Response,
+            Dispatch("missing-dispatch"),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, missingDispatch.Response.StatusCode);
+
+        var routeServices = Services(store, includeCodec: false);
+        routeServices.AddMessageXDurableCodec<TestPayload, RouteChangingCodec>();
+        using var routeProvider = routeServices.BuildServiceProvider();
+        var changedRoute = ResponseContext();
+        await routeProvider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            changedRoute.Response,
+            Dispatch("changed-route"),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, changedRoute.Response.StatusCode);
+
+        var actionServices = Services(store, includeCodec: false);
+        actionServices.AddMessageXDurableCodec<TestPayload, ActionRouteChangingCodec>();
+        using var actionProvider = actionServices.BuildServiceProvider();
+        var changedAction = ResponseContext();
+        await actionProvider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            changedAction.Response,
+            MessageReceiveResult<TestPayload>.Dispatch(
+                MessageRoute.ForAction("approve"),
+                new MessageEventEnvelope<TestPayload>(
+                    MessageProviders.Slack,
+                    "installation-a",
+                    "event-changed-action",
+                    MessageEventKind.ActionInvoked,
+                    FixedNow,
+                    new TestPayload("changed-action")),
+                MessageAcknowledgement.Empty(StatusCodes.Status200OK)),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, changedAction.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DurableAcceptanceWinsRegardlessOfRegistrationOrder() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = new ServiceCollection();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IMessageDurableStore>(store);
+        services.AddMessageXDurableIngress();
+        services.AddMessageXHostingAspNetCore();
+        services.AddMessageXDurableCodec<TestPayload, TestPayloadCodec>();
+        using var provider = services.BuildServiceProvider();
+        var response = ResponseContext();
+
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            response.Response,
+            Dispatch("registration-order"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, response.Response.StatusCode);
+        Assert.Single(await store.ClaimInboxAsync(
+            "test-reader",
+            1,
+            TimeSpan.FromMinutes(1),
+            new[] { "test.payload.v1" },
+            TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -567,6 +633,42 @@ public sealed class DurableIngressTests {
             "another-installation",
             envelope.DeduplicationKey,
             route,
+            envelope.ReceivedAt,
+            PayloadType,
+            Array.Empty<byte>());
+
+        public MessageEventEnvelope<TestPayload> Decode(MessageDurableRecord record) =>
+            throw new NotSupportedException();
+    }
+
+    private sealed class RouteChangingCodec : IMessageDurableCodec<TestPayload> {
+        public string PayloadType => "test.payload.route-changed.v1";
+
+        public MessageDurableRecord Encode(
+            MessageRoute route,
+            MessageEventEnvelope<TestPayload> envelope) => new(
+            envelope.Provider,
+            envelope.InstallationId,
+            envelope.DeduplicationKey,
+            MessageRoute.ForCommand(route.Name!, "chat-input"),
+            envelope.ReceivedAt,
+            PayloadType,
+            Array.Empty<byte>());
+
+        public MessageEventEnvelope<TestPayload> Decode(MessageDurableRecord record) =>
+            throw new NotSupportedException();
+    }
+
+    private sealed class ActionRouteChangingCodec : IMessageDurableCodec<TestPayload> {
+        public string PayloadType => "test.payload.action-route-changed.v1";
+
+        public MessageDurableRecord Encode(
+            MessageRoute route,
+            MessageEventEnvelope<TestPayload> envelope) => new(
+            envelope.Provider,
+            envelope.InstallationId,
+            envelope.DeduplicationKey,
+            MessageRoute.ForAction(route.Name!.ToUpperInvariant()),
             envelope.ReceivedAt,
             PayloadType,
             Array.Empty<byte>());
