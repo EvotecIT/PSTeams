@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using MessageX.Core;
 using MessageX.Hosting;
@@ -332,6 +333,41 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal("ready", restored.Payload.InputData["note"]);
         Assert.Throws<ArgumentException>(() => TeamsActivityMapper.NormalizeAdaptiveInputs(
             new Dictionary<string, object> { ["nested"] = new { unsafeValue = true } }));
+    }
+
+    [Fact]
+    public void DurableCodecRejectsConflictingTenantScopeCoordinates() {
+        var dispatch = TeamsActivityMapper.MapMessage(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt);
+        var codec = new TeamsInboundActivityDurableCodec();
+        var valid = codec.Encode(dispatch.Route, dispatch.Envelope);
+        var stored = Encoding.UTF8.GetString(valid.CopyPayload());
+        var changed = stored.Replace(
+            "\"scopeId\":\"tenant-1\"",
+            "\"scopeId\":\"tenant-2\"",
+            StringComparison.Ordinal);
+        Assert.NotEqual(stored, changed);
+        var tampered = new MessageDurableRecord(
+            valid.Provider,
+            valid.InstallationId,
+            valid.DeduplicationKey,
+            valid.Route,
+            valid.ReceivedAt,
+            valid.PayloadType,
+            Encoding.UTF8.GetBytes(changed));
+
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+
+        dispatch.Envelope.ScopeId = "tenant-2";
+        if (dispatch.Envelope.Conversation is not null) {
+            dispatch.Envelope.Conversation.ScopeId = "tenant-2";
+        }
+        if (dispatch.Envelope.Message is not null) {
+            dispatch.Envelope.Message.ScopeId = "tenant-2";
+        }
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Encode(dispatch.Route, dispatch.Envelope));
     }
 
     [Fact]

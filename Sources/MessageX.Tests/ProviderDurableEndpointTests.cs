@@ -69,6 +69,7 @@ public sealed class ProviderDurableEndpointTests {
         restarted.GetRequiredService<MessageRouter>().OnAction<SlackInteractionEvent>("approve", (context, _) => {
             Interlocked.Increment(ref calls);
             Assert.Equal("yes", context.Envelope.Payload.ProviderPayload?.Actions[0].Value);
+            Assert.Equal("0HMP1FKC7Q9A3:00000001", context.Envelope.CorrelationId);
             Assert.Null(context.Envelope.Payload.TransientContext.TriggerId);
             Assert.Null(context.Envelope.Payload.TransientContext.ResponseUrl);
             handled.TrySetResult(true);
@@ -120,6 +121,7 @@ public sealed class ProviderDurableEndpointTests {
         restarted.GetRequiredService<MessageRouter>().OnCommand<DiscordInboundInteraction>("status", "1", (context, _) => {
             Assert.Equal("server-1", context.Envelope.Payload.Data
                 .GetProperty("options")[0].GetProperty("value").GetString());
+            Assert.Equal("0HMP1FKC7Q9A3:00000001", context.Envelope.CorrelationId);
             Assert.False(context.Envelope.Payload.TransientContext.CanFollowUp);
             Assert.Null(context.Envelope.Payload.TransientContext.Token);
             handled.TrySetResult(true);
@@ -206,7 +208,7 @@ public sealed class ProviderDurableEndpointTests {
     private static DefaultHttpContext Context(string body, string contentType) {
         var bytes = Encoding.UTF8.GetBytes(body);
         var context = new DefaultHttpContext();
-        context.TraceIdentifier = "durable-provider-test";
+        context.TraceIdentifier = "0HMP1FKC7Q9A3:00000001";
         context.Request.ContentType = contentType;
         context.Request.ContentLength = bytes.Length;
         context.Request.Body = new MemoryStream(bytes);

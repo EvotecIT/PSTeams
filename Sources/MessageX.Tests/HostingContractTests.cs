@@ -17,7 +17,7 @@ public sealed class HostingContractTests {
             EventId = " provider-event-1 ",
             ScopeId = " workspace-1 ",
             SenderId = " user-1 ",
-            CorrelationId = " trace_1 ",
+            CorrelationId = " 0HMP1FKC7Q9A3:00000001 ",
             Conversation = new MessageReference(MessageProviders.Slack) {
                 ConversationId = "C0123456789"
             }
@@ -28,10 +28,20 @@ public sealed class HostingContractTests {
         Assert.Equal("provider-event-1", envelope.EventId);
         Assert.Equal("workspace-1", envelope.ScopeId);
         Assert.Equal("user-1", envelope.SenderId);
-        Assert.Equal("trace_1", envelope.CorrelationId);
+        Assert.Equal("0HMP1FKC7Q9A3:00000001", envelope.CorrelationId);
         Assert.Equal(receivedAt, envelope.ReceivedAt);
         Assert.Same(payload, envelope.Payload);
         Assert.Equal("C0123456789", envelope.Conversation?.ConversationId);
+    }
+
+    [Fact]
+    public void DiagnosticTokensAcceptKestrelSeparatorsButRejectUnsafeTransportCharacters() {
+        Assert.Equal("trace:00000001", MessageDiagnosticToken.Normalize(" trace:00000001 "));
+        Assert.Null(MessageDiagnosticToken.Normalize("trace/00000001"));
+        Assert.Null(MessageDiagnosticToken.Normalize("trace\\00000001"));
+        Assert.Null(MessageDiagnosticToken.Normalize("trace\r00000001"));
+        Assert.Null(MessageDiagnosticToken.Normalize("trace\n00000001"));
+        Assert.Null(MessageDiagnosticToken.Normalize(new string('a', 129)));
     }
 
     [Fact]

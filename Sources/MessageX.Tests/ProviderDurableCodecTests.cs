@@ -32,7 +32,7 @@ public sealed class ProviderDurableCodecTests
               "channel":{"id":"C123"},"trigger_id":"trigger-secret",
               "response_url":"https://hooks.slack.com/actions/secret",
               "actions":[{"type":"button","action_id":"approve","value":"yes","token":"nested-secret"}],
-              "state":{"values":{"one":{"two":{"value":"handler-value","response_url":"nested-url"}}}}
+              "state":{"values":{"one":{"two":{"type":"plain_text_input","value":"handler-value","response_url":"nested-url"}}}}
             }
             """;
         var body = "payload=" + Uri.EscapeDataString(json);
@@ -52,6 +52,10 @@ public sealed class ProviderDurableCodecTests
         Assert.DoesNotContain("nested-secret", stored, StringComparison.Ordinal);
         Assert.DoesNotContain("nested-url", stored, StringComparison.Ordinal);
         Assert.Equal("yes", decoded.Payload.ProviderPayload?.Actions[0].Value);
+        Assert.Equal("one", decoded.Payload.ProviderPayload?.State[0].BlockId);
+        Assert.Equal("two", decoded.Payload.ProviderPayload?.State[0].ActionId);
+        Assert.Equal("plain_text_input", decoded.Payload.ProviderPayload?.State[0].Type);
+        Assert.Equal("handler-value", decoded.Payload.ProviderPayload?.State[0].Value);
         Assert.Empty(decoded.Payload.ProviderPayload?.View?.Values ?? Array.Empty<SlackViewStateInput>());
         Assert.Null(decoded.Payload.TransientContext.TriggerId);
         Assert.Null(decoded.Payload.TransientContext.ResponseUrl);

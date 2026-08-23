@@ -46,7 +46,8 @@ public sealed class SlackInteractionReceiverTests {
               "message":{"thread_ts":"1787418500.000100"},
               "trigger_id":"trigger-2",
               "response_url":"https://hooks.slack.com/actions/T123/1/secret",
-              "actions":[{"type":"button","action_id":"approve","value":"yes"}]
+              "actions":[{"type":"button","action_id":"approve","value":"yes"}],
+              "state":{"values":{"details":{"comment":{"type":"plain_text_input","value":"ready"}}}}
             }
             """;
 
@@ -60,7 +61,34 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal(MessageConversationKind.Thread, result.Envelope?.Conversation?.ConversationKind);
         Assert.Equal("button", result.Envelope?.Payload.ProviderPayload?.Actions[0].Type);
         Assert.Equal("yes", result.Envelope?.Payload.ProviderPayload?.Actions[0].Value);
+        Assert.Equal("details", result.Envelope?.Payload.ProviderPayload?.State[0].BlockId);
+        Assert.Equal("comment", result.Envelope?.Payload.ProviderPayload?.State[0].ActionId);
+        Assert.Equal("ready", result.Envelope?.Payload.ProviderPayload?.State[0].Value);
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
+    }
+
+    [Fact]
+    public void BlockActionStateFailsClosedWhenMalformedOrOversized() {
+        const string malformed = """
+            {"type":"block_actions","team":{"id":"T1"},"user":{"id":"U1"},"actions":[{"type":"button","action_id":"approve"}],"state":{"values":[]}}
+            """;
+        var inputs = Enumerable.Range(0, 257).ToDictionary(
+            index => "input-" + index,
+            _ => new { type = "plain_text_input", value = "ok" });
+        var oversized = JsonSerializer.Serialize(new {
+            type = "block_actions",
+            team = new { id = "T1" },
+            user = new { id = "U1" },
+            actions = new[] { new { type = "button", action_id = "approve" } },
+            state = new {
+                values = new Dictionary<string, object> {
+                    ["block"] = inputs
+                }
+            }
+        });
+
+        Assert.Equal(MessageReceiveStatus.Rejected, Receive(PayloadForm(malformed)).Status);
+        Assert.Equal(MessageReceiveStatus.Rejected, Receive(PayloadForm(oversized)).Status);
     }
 
     [Theory]

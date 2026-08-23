@@ -5,14 +5,24 @@ namespace MessageX.Slack;
 /// <summary>Safe typed projection of handler-useful Slack interaction data.</summary>
 public sealed class SlackInteractionPayload {
     /// <summary>Creates a safe Slack interaction projection.</summary>
+    public SlackInteractionPayload(
+        SlackActionInput[]? actions,
+        SlackViewSubmissionInput? view,
+        SlackMessageInput? message)
+        : this(actions, view, message, null) {
+    }
+
+    /// <summary>Creates a safe Slack interaction projection including state accompanying a block action.</summary>
     [JsonConstructor]
     public SlackInteractionPayload(
         SlackActionInput[]? actions,
         SlackViewSubmissionInput? view,
-        SlackMessageInput? message) {
+        SlackMessageInput? message,
+        SlackViewStateInput[]? state) {
         Actions = actions ?? Array.Empty<SlackActionInput>();
         View = view;
         Message = message;
+        State = state ?? Array.Empty<SlackViewStateInput>();
     }
 
     /// <summary>Action or selection values supplied by the interaction.</summary>
@@ -23,6 +33,9 @@ public sealed class SlackInteractionPayload {
 
     /// <summary>Selected-message data for message shortcuts.</summary>
     public SlackMessageInput? Message { get; }
+
+    /// <summary>Current bounded input state accompanying a block action.</summary>
+    public SlackViewStateInput[] State { get; }
 }
 
 /// <summary>Safe normalized value from one Slack block action or selection.</summary>

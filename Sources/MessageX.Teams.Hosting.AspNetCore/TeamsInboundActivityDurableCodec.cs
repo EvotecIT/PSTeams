@@ -20,9 +20,10 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         MessageEventEnvelope<TeamsInboundActivity> envelope) {
         ArgumentNullException.ThrowIfNull(route);
         ArgumentNullException.ThrowIfNull(envelope);
-        Validate(envelope.Payload, route);
+        var metadata = MessageDurableEnvelopeMetadata.Capture(envelope);
+        Validate(envelope.Payload, route, metadata);
         var projection = new TeamsActivityProjection {
-            Metadata = MessageDurableEnvelopeMetadata.Capture(envelope),
+            Metadata = metadata,
             Kind = envelope.Payload.Kind,
             Text = envelope.Payload.Text,
             ActionName = envelope.Payload.ActionName,
@@ -75,11 +76,14 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             projection.ReactionsAdded ?? Array.Empty<string>(),
             projection.ReactionsRemoved ?? Array.Empty<string>(),
             projection.InputData);
-        Validate(payload, record.Route);
+        Validate(payload, record.Route, projection.Metadata);
         return projection.Metadata.Restore(record, payload);
     }
 
-    private static void Validate(TeamsInboundActivity payload, MessageRoute route) {
+    private static void Validate(
+        TeamsInboundActivity payload,
+        MessageRoute route,
+        MessageDurableEnvelopeMetadata metadata) {
         if (!Enum.IsDefined(typeof(TeamsInboundActivityKind), payload.Kind) ||
             !IsText(payload.Text, 32 * 1024) ||
             !IsCoordinate(payload.ActionName) ||
@@ -90,6 +94,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             !AreCoordinates(payload.ReactionsAdded) ||
             !AreCoordinates(payload.ReactionsRemoved) ||
             !AreInputsSafe(payload.InputData) ||
+            !string.Equals(payload.TenantId, metadata.ScopeId, StringComparison.Ordinal) ||
             !RouteMatches(payload, route)) {
             throw new MessageDurablePayloadException("The Teams durable payload is unsafe or does not match its route.");
         }

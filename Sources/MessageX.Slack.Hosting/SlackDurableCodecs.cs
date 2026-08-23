@@ -227,11 +227,12 @@ internal static class SlackDurableCodecValidation
     public static SlackInteractionPayload? NormalizeInteraction(SlackInteractionPayload? value)
     {
         if (value is null) return null;
-        if (value.Actions.Length > 1 || value.View?.Values.Length > 256)
+        if (value.Actions.Length > 1 || value.View?.Values.Length > 256 || value.State.Length > 256)
         {
             throw new MessageDurablePayloadException("The Slack interaction projection exceeds its supported shape.");
         }
         var actions = value.Actions.Select(NormalizeAction).ToArray();
+        var state = value.State.Select(NormalizeViewValue).ToArray();
         SlackViewSubmissionInput? view = null;
         if (value.View is not null)
         {
@@ -250,7 +251,7 @@ internal static class SlackDurableCodecValidation
             message = new SlackMessageInput(timestamp,
                 OptionalText(value.Message.Text, 40000));
         }
-        return new SlackInteractionPayload(actions, view, message);
+        return new SlackInteractionPayload(actions, view, message, state);
     }
 
     public static bool InteractionMatches(
@@ -268,7 +269,7 @@ internal static class SlackDurableCodecValidation
             SlackInteractionKind.Shortcut => route.Kind == MessageRouteKind.Action &&
                 text is null &&
                 string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
-                providerPayload.Actions.Length == 0 && providerPayload.View is null,
+                providerPayload.Actions.Length == 0 && providerPayload.View is null && providerPayload.State.Length == 0,
             SlackInteractionKind.BlockAction => route.Kind == MessageRouteKind.Action &&
                 text is null &&
                 string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
@@ -278,7 +279,8 @@ internal static class SlackDurableCodecValidation
             SlackInteractionKind.ViewSubmission => route.Kind == MessageRouteKind.Submission &&
                 text is null &&
                 string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
-                providerPayload.Actions.Length == 0 && providerPayload.Message is null && providerPayload.View is not null &&
+                providerPayload.Actions.Length == 0 && providerPayload.Message is null &&
+                providerPayload.State.Length == 0 && providerPayload.View is not null &&
                 string.Equals(providerPayload.View.CallbackId, name, StringComparison.Ordinal),
             _ => false
         };

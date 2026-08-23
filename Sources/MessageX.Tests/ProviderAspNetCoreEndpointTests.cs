@@ -330,7 +330,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
     private static DefaultHttpContext Context(byte[] body, string contentType) {
         var context = new DefaultHttpContext();
-        context.TraceIdentifier = "safe-endpoint-test";
+        context.TraceIdentifier = "0HMP1FKC7Q9A3:00000001";
         context.Request.ContentType = contentType;
         context.Request.ContentLength = body.Length;
         context.Request.Body = new MemoryStream(body);

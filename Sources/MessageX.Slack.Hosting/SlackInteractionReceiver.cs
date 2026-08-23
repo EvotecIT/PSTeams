@@ -138,13 +138,14 @@ public static class SlackInteractionReceiver {
                 if (!TrySingleAction(root, out name, out var action) ||
                     !TryNestedOptional(root, "container", "message_ts", 32, out messageTimestamp) ||
                     !TryNestedOptional(root, "container", "channel_id", MaximumCoordinateLength, out var containerChannel) ||
-                    !TryNestedOptional(root, "message", "thread_ts", 32, out threadTimestamp)) {
+                    !TryNestedOptional(root, "message", "thread_ts", 32, out threadTimestamp) ||
+                    !TryReadStateValues(root, out var state)) {
                     return Reject(400, MessageReceiveFailureKind.Malformed);
                 }
                 channelId ??= containerChannel;
                 kind = SlackInteractionKind.BlockAction;
                 route = MessageRoute.ForAction(name);
-                providerPayload = new SlackInteractionPayload(new[] { action }, null, null);
+                providerPayload = new SlackInteractionPayload(new[] { action }, null, null, state);
             } else if (string.Equals(type, "shortcut", StringComparison.Ordinal) ||
                        string.Equals(type, "message_action", StringComparison.Ordinal)) {
                 if (!TryRequired(root, "callback_id", 128, out name)) {
@@ -288,37 +289,47 @@ public static class SlackInteractionReceiver {
             return false;
         }
 
-        var values = new List<SlackViewStateInput>();
-        if (viewElement.TryGetProperty("state", out var state)) {
-            if (state.ValueKind != JsonValueKind.Object ||
-                !state.TryGetProperty("values", out var stateValues) ||
-                stateValues.ValueKind != JsonValueKind.Object) {
+        if (!TryReadStateValues(viewElement, out var values)) {
+            return false;
+        }
+        view = new SlackViewSubmissionInput(callbackId, values, privateMetadata);
+        return true;
+    }
+
+    private static bool TryReadStateValues(JsonElement owner, out SlackViewStateInput[] values) {
+        values = Array.Empty<SlackViewStateInput>();
+        if (!owner.TryGetProperty("state", out var state) || state.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (state.ValueKind != JsonValueKind.Object ||
+            !state.TryGetProperty("values", out var stateValues) ||
+            stateValues.ValueKind != JsonValueKind.Object) {
+            return false;
+        }
+        var normalized = new List<SlackViewStateInput>();
+        foreach (var block in stateValues.EnumerateObject()) {
+            if (!TryNormalizeCoordinate(block.Name, 128, required: true, out var blockId) ||
+                block.Value.ValueKind != JsonValueKind.Object) {
                 return false;
             }
-            foreach (var block in stateValues.EnumerateObject()) {
-                if (!TryNormalizeCoordinate(block.Name, 128, required: true, out var blockId) ||
-                    block.Value.ValueKind != JsonValueKind.Object) {
+            foreach (var input in block.Value.EnumerateObject()) {
+                if (normalized.Count >= 256 ||
+                    !TryNormalizeCoordinate(input.Name, 255, required: true, out var actionId) ||
+                    input.Value.ValueKind != JsonValueKind.Object ||
+                    !TryCreateActionInput(input.Value, actionId, blockId, out var action) ||
+                    !TryReadFileIds(input.Value, out var fileIds)) {
                     return false;
                 }
-                foreach (var input in block.Value.EnumerateObject()) {
-                    if (values.Count >= 256 ||
-                        !TryNormalizeCoordinate(input.Name, 255, required: true, out var actionId) ||
-                        input.Value.ValueKind != JsonValueKind.Object ||
-                        !TryCreateActionInput(input.Value, actionId, blockId, out var action) ||
-                        !TryReadFileIds(input.Value, out var fileIds)) {
-                        return false;
-                    }
-                    values.Add(new SlackViewStateInput(
-                        blockId,
-                        action.ActionId,
-                        action.Type,
-                        action.Value,
-                        action.SelectedValues,
-                        fileIds));
-                }
+                normalized.Add(new SlackViewStateInput(
+                    blockId,
+                    action.ActionId,
+                    action.Type,
+                    action.Value,
+                    action.SelectedValues,
+                    fileIds));
             }
         }
-        view = new SlackViewSubmissionInput(callbackId, values.ToArray(), privateMetadata);
+        values = normalized.ToArray();
         return true;
     }
 

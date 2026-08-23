@@ -70,6 +70,7 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
         }
         using var dispatchCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var renewal = RenewUntilCanceledAsync(lease, dispatchCancellation.Token);
+        await Task.Yield();
         Task<MessageDispatchResult> dispatch;
         try {
             dispatch = codec.DispatchAsync(lease.Record, _router, dispatchCancellation.Token) ??

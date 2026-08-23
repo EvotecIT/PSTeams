@@ -15,7 +15,7 @@ public static class MessageDiagnosticToken {
             var isAsciiLetterOrDigit = character is >= 'a' and <= 'z' or
                 >= 'A' and <= 'Z' or
                 >= '0' and <= '9';
-            if (!isAsciiLetterOrDigit && character is not '-' and not '_' and not '.') {
+            if (!isAsciiLetterOrDigit && character is not '-' and not '_' and not '.' and not ':') {
                 return null;
             }
         }

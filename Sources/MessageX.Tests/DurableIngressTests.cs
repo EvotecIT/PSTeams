@@ -644,14 +644,17 @@ public sealed class DurableIngressTests {
             timeProvider: TimeProvider.System,
             leaseDuration: TimeSpan.FromSeconds(1)).BuildServiceProvider();
         var started = 0;
-        var bothStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstTimedOut = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", async (_, token) => {
-            if (Interlocked.Increment(ref started) == 2) {
-                bothStarted.TrySetResult(true);
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (_, token) => {
+            var ordinal = Interlocked.Increment(ref started);
+            if (ordinal == 1 && !secondStarted.Task.Wait(TimeSpan.FromSeconds(2), token)) {
+                firstTimedOut.TrySetResult(true);
+            } else if (ordinal == 2) {
+                secondStarted.TrySetResult(true);
             }
-            await release.Task.WaitAsync(token);
-            return MessageHandlerResult.Completed();
+            return AwaitReleaseAsync(release.Task, token);
         });
         var processor = provider.GetRequiredService<MessageReceiveResultProcessor>();
         await processor.ProcessAsync(
@@ -667,13 +670,21 @@ public sealed class DurableIngressTests {
             await worker.StartAsync(TestContext.Current.CancellationToken);
         }
 
-        await bothStarted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(firstTimedOut.Task.IsCompleted);
         release.TrySetResult(true);
         await WaitUntilCompletedAsync(store, "event-batch-a");
         await WaitUntilCompletedAsync(store, "event-batch-b");
         for (var index = workers.Length - 1; index >= 0; index--) {
             await workers[index].StopAsync(TestContext.Current.CancellationToken);
         }
+    }
+
+    private static async Task<MessageHandlerResult> AwaitReleaseAsync(
+        Task release,
+        CancellationToken cancellationToken) {
+        await release.WaitAsync(cancellationToken);
+        return MessageHandlerResult.Completed();
     }
 
     [Fact]
