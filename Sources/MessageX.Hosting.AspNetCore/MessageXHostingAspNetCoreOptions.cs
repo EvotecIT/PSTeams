@@ -11,8 +11,11 @@ public sealed class MessageXHostingAspNetCoreOptions {
     /// <summary>Default number of accepted deduplication coordinates retained in memory.</summary>
     public const int DefaultReplayCapacity = 65536;
 
+    /// <summary>Minimum retention that covers every supported provider signature replay window.</summary>
+    public static readonly TimeSpan MinimumReplayRetention = TimeSpan.FromHours(1);
+
     /// <summary>Default retention for accepted in-memory deduplication coordinates.</summary>
-    public static readonly TimeSpan DefaultReplayRetention = TimeSpan.FromHours(1);
+    public static readonly TimeSpan DefaultReplayRetention = MinimumReplayRetention;
 
     /// <summary>Maximum exact request-body size accepted before provider parsing.</summary>
     public int MaximumRequestBodyBytes { get; set; } = DefaultMaximumRequestBodyBytes;

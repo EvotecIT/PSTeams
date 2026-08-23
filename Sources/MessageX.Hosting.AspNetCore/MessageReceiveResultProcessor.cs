@@ -33,14 +33,12 @@ public sealed class MessageReceiveResultProcessor {
         ArgumentNullException.ThrowIfNull(result);
 
         if (result.Status == MessageReceiveStatus.DispatchReady) {
-            if (result.RequiresSynchronousDispatch) {
-                await ProcessSynchronousAsync(response, result, cancellationToken).ConfigureAwait(false);
-                return;
-            }
             var acceptance = _replayGuard.TryAccept(
                 result,
                 _timeProvider.GetUtcNow(),
-                () => _queue.TryEnqueue(result));
+                result.RequiresSynchronousDispatch
+                    ? static () => MessageIngressEnqueueStatus.Accepted
+                    : () => _queue.TryEnqueue(result));
             if (acceptance == MessageReplayAcceptance.Duplicate) {
                 await _writer.WriteAsync(response, result.Acknowledgement, cancellationToken).ConfigureAwait(false);
                 return;
@@ -51,6 +49,10 @@ public sealed class MessageReceiveResultProcessor {
                     response,
                     MessageAcknowledgement.Empty(StatusCodes.Status503ServiceUnavailable),
                     cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            if (result.RequiresSynchronousDispatch) {
+                await ProcessSynchronousAsync(response, result, cancellationToken).ConfigureAwait(false);
                 return;
             }
         }

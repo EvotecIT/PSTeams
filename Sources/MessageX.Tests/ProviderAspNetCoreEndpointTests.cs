@@ -121,19 +121,28 @@ public sealed class ProviderAspNetCoreEndpointTests {
     [Fact]
     public async Task DiscordAutocompleteHandlerProducesTheInitialChoicesInline() {
         using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
+        var dispatchCount = 0;
         provider.GetRequiredService<MessageRouter>().OnAutocomplete<DiscordInboundInteraction>(
             "search",
-            (_, _) => Task.FromResult(MessageHandlerResult.Respond(
-                DiscordInteractionAcknowledgement.Autocomplete(new[] {
-                    DiscordAutocompleteChoice.FromString("Alpha", "alpha")
-                }))));
+            (_, _) => {
+                Interlocked.Increment(ref dispatchCount);
+                return Task.FromResult(MessageHandlerResult.Respond(
+                    DiscordInteractionAcknowledgement.Autocomplete(new[] {
+                        DiscordAutocompleteChoice.FromString("Alpha", "alpha")
+                    })));
+            });
         const string json = """
             {"id":"100000000000000001","application_id":"100000000000000002","type":4,"token":"token","user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
             """;
         var context = DiscordContext(json);
+        var duplicate = DiscordContext(json);
 
         await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             context,
+            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            TestContext.Current.CancellationToken);
+        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            duplicate,
             new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
             TestContext.Current.CancellationToken);
 
@@ -141,6 +150,8 @@ public sealed class ProviderAspNetCoreEndpointTests {
         using var body = JsonDocument.Parse(ResponseBody(context));
         Assert.Equal(8, body.RootElement.GetProperty("type").GetInt32());
         Assert.Equal("alpha", body.RootElement.GetProperty("data").GetProperty("choices")[0].GetProperty("value").GetString());
+        Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
+        Assert.Equal(1, Volatile.Read(ref dispatchCount));
         Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
     }
 

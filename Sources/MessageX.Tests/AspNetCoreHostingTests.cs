@@ -227,6 +227,20 @@ public sealed class AspNetCoreHostingTests {
             provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
     }
 
+    [Fact]
+    public void DependencyInjectionRejectsReplayRetentionShorterThanProviderVerificationWindows() {
+        var services = new ServiceCollection();
+        services.AddMessageXHostingAspNetCore(options =>
+            options.ReplayRetention = MessageXHostingAspNetCoreOptions.MinimumReplayRetention -
+                TimeSpan.FromTicks(1));
+        using var provider = services.BuildServiceProvider();
+
+        var exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<MessageXHostingAspNetCoreOptions>>().Value);
+
+        Assert.Contains(nameof(MessageXHostingAspNetCoreOptions.ReplayRetention), exception.Message, StringComparison.Ordinal);
+    }
+
     private static MessageInboundRequestReader Reader(int maximumBodyBytes) => new(
         Options.Create(new MessageXHostingAspNetCoreOptions {
             MaximumRequestBodyBytes = maximumBodyBytes
