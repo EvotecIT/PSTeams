@@ -77,7 +77,9 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal("interaction-secret-token", result.Envelope?.Payload.TransientContext.Token);
         var persisted = JsonSerializer.Serialize(result.Envelope?.Payload);
         Assert.DoesNotContain("interaction-secret-token", persisted, StringComparison.Ordinal);
-        Assert.DoesNotContain("data", persisted, StringComparison.OrdinalIgnoreCase);
+        using var persistedDocument = JsonDocument.Parse(persisted);
+        Assert.Equal("status", persistedDocument.RootElement.GetProperty("Data").GetProperty("name").GetString());
+        Assert.False(persistedDocument.RootElement.GetProperty("Data").TryGetProperty("token", out _));
     }
 
     [Fact]
@@ -219,9 +221,32 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(DiscordInteractionKind.ApplicationCommand, roundTrip.Kind);
         Assert.Equal("inspect", roundTrip.Name);
         Assert.Equal("100000000000000094", roundTrip.TargetId);
-        Assert.Equal(JsonValueKind.Undefined, roundTrip.Data.ValueKind);
+        Assert.Equal(JsonValueKind.Object, roundTrip.Data.ValueKind);
+        Assert.Equal("100000000000000094", roundTrip.Data.GetProperty("target_id").GetString());
         Assert.Null(roundTrip.TransientContext.Token);
         Assert.DoesNotContain("secret", persisted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PublicInteractionProjectionOwnsAndSanitizesProviderData() {
+        DiscordInboundInteraction interaction;
+        using (var document = JsonDocument.Parse(
+                   "{\"name\":\"status\",\"options\":[{\"value\":\"server-1\",\"token\":\"nested-secret\"}]}")) {
+            interaction = new DiscordInboundInteraction(
+                DiscordInteractionKind.ApplicationCommand,
+                "status",
+                null,
+                null,
+                null,
+                null,
+                DiscordApplicationCommandType.ChatInput,
+                null,
+                document.RootElement);
+        }
+
+        Assert.Equal("server-1", interaction.Data.GetProperty("options")[0].GetProperty("value").GetString());
+        Assert.False(interaction.Data.GetProperty("options")[0].TryGetProperty("token", out _));
+        Assert.DoesNotContain("nested-secret", JsonSerializer.Serialize(interaction), StringComparison.Ordinal);
     }
 
     [Fact]

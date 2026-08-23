@@ -98,12 +98,26 @@ public sealed class SlackEventsApiReceiverTests {
 
         Assert.Equal(MessageRouteKind.DirectMessage, result.Route?.Kind);
         Assert.Equal(MessageEventKind.MessageReceived, result.Envelope?.Kind);
+        Assert.Equal(MessageConversationKind.GroupChat, result.Envelope?.Conversation?.ConversationKind);
     }
 
     [Fact]
     public void UnsupportedVerifiedEventIsAcknowledgedWithoutDispatch() {
         const string json = """
             {"type":"event_callback","team_id":"T1","event_id":"Ev1","event":{"type":"app_home_opened"}}
+            """;
+
+        var result = Receive(json);
+
+        Assert.Equal(MessageReceiveStatus.Acknowledged, result.Status);
+        Assert.Equal(200, result.Acknowledgement.StatusCode);
+        Assert.Null(result.Envelope);
+    }
+
+    [Fact]
+    public void ReactionToUnsupportedItemTypeIsAcknowledgedWithoutDispatch() {
+        const string json = """
+            {"type":"event_callback","team_id":"T1","event_id":"EvReactionFile","event":{"type":"reaction_added","user":"U3","reaction":"thumbsup","event_ts":"1787416801.1","item":{"type":"file","file":"F1"}}}
             """;
 
         var result = Receive(json);

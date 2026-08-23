@@ -110,7 +110,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             route.Kind == MessageRouteKind.Event && route.EventKind == MessageEventKind.ReactionChanged,
         TeamsInboundActivityKind.AdaptiveCardAction =>
             route.Kind == MessageRouteKind.Action &&
-            string.Equals(route.Name, payload.ActionName, StringComparison.OrdinalIgnoreCase),
+            string.Equals(route.Name, payload.ActionName, StringComparison.Ordinal),
         _ => false
     };
 

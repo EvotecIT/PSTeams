@@ -88,6 +88,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         try
         {
             if (projection.Metadata is null ||
+                !MetadataMatches(projection.Metadata) ||
                 !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
                 !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
                 !TryNormalizeOwner(projection.InstallationOwnerId, out var installationOwnerId) ||
@@ -96,7 +97,12 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 projection.Context is < 0 or > 2 ||
                 !TryNormalizeTarget(projection.CommandType, projection.TargetId, out var targetId) ||
                 projection.Data.ValueKind != JsonValueKind.Object ||
-                !DataMatches(projection.Kind, projection.Name!, projection.CommandType, projection.Data))
+                !DataMatches(
+                    projection.Kind,
+                    projection.Name!,
+                    projection.CommandType,
+                    targetId,
+                    projection.Data))
             {
                 throw new MessageDurablePayloadException("The Discord interaction durable payload is incomplete.");
             }
@@ -192,6 +198,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         DiscordInteractionKind kind,
         string name,
         DiscordApplicationCommandType? commandType,
+        string? targetId,
         JsonElement data)
     {
         var propertyName = kind is DiscordInteractionKind.MessageComponent or DiscordInteractionKind.ModalSubmit
@@ -214,13 +221,34 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             return false;
         }
         if (kind is DiscordInteractionKind.ApplicationCommand or DiscordInteractionKind.Autocomplete) {
-            return commandType.HasValue &&
-                data.TryGetProperty("type", out var type) &&
-                type.ValueKind == JsonValueKind.Number &&
-                type.TryGetInt32(out var value) &&
-                value == (int)commandType.Value;
+            if (!commandType.HasValue ||
+                !data.TryGetProperty("type", out var type) ||
+                type.ValueKind != JsonValueKind.Number ||
+                !type.TryGetInt32(out var value) ||
+                value != (int)commandType.Value) {
+                return false;
+            }
+            if (commandType is DiscordApplicationCommandType.User or DiscordApplicationCommandType.Message) {
+                return data.TryGetProperty("target_id", out var target) &&
+                    target.ValueKind == JsonValueKind.String &&
+                    string.Equals(target.GetString(), targetId, StringComparison.Ordinal);
+            }
+            return true;
         }
         return true;
+    }
+
+    private static bool MetadataMatches(MessageDurableEnvelopeMetadata metadata) =>
+        IsCanonicalSnowflake(metadata.EventId, required: true) &&
+        IsCanonicalSnowflake(metadata.ScopeId, required: true) &&
+        IsCanonicalSnowflake(metadata.SenderId, required: true);
+
+    private static bool IsCanonicalSnowflake(string? value, bool required) {
+        if (value is null) {
+            return !required;
+        }
+        return DiscordSnowflake.TryNormalize(value, out var normalized) &&
+            string.Equals(value, normalized, StringComparison.Ordinal);
     }
 }
 

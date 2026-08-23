@@ -2,7 +2,8 @@ namespace MessageX.Hosting;
 
 /// <summary>Validated application route derived from a verified provider event.</summary>
 public sealed class MessageRoute {
-    private const int MaximumNameLength = 128;
+    private const int MaximumNormalizedNameLength = 128;
+    private const int MaximumOpaqueNameLength = 255;
 
     private MessageRoute(
         MessageRouteKind kind,
@@ -97,13 +98,13 @@ public sealed class MessageRoute {
             MessageRouteKind.DirectMessage when eventKind == MessageEventKind.MessageReceived && name is null && qualifier is null => ForDirectMessage(),
             MessageRouteKind.Action when eventKind == MessageEventKind.ActionInvoked && qualifier is null => ForAction(name!),
             MessageRouteKind.Submission when eventKind == MessageEventKind.ModalSubmitted && qualifier is null => ForSubmission(name!),
-            MessageRouteKind.Autocomplete when eventKind == MessageEventKind.AutocompleteRequested && qualifier is null => ForAutocomplete(name!),
+            MessageRouteKind.Autocomplete when eventKind == MessageEventKind.AutocompleteRequested && qualifier is null => ForDurableAutocomplete(name),
             _ => throw new ArgumentException("The durable route coordinates do not describe a valid MessageX route.")
         };
 
     internal static string NormalizeName(string? value, string parameterName) {
         if (value is not null &&
-            (value.Length > MaximumNameLength || value.Any(char.IsControl))) {
+            (value.Length > MaximumNormalizedNameLength || value.Any(char.IsControl))) {
             throw new ArgumentException(
                 "Route names must be bounded non-empty text without control characters.",
                 parameterName);
@@ -119,7 +120,7 @@ public sealed class MessageRoute {
 
     private static string NormalizeOpaqueName(string? value, string parameterName) {
         if (value is null || value.Length == 0 ||
-            value.Length > MaximumNameLength ||
+            value.Length > MaximumOpaqueNameLength ||
             value.Any(char.IsControl)) {
             throw new ArgumentException(
                 "Route names must be bounded non-empty text without control characters.",
@@ -140,6 +141,13 @@ public sealed class MessageRoute {
             throw new ArgumentException("Durable command coordinates must already use their canonical form.");
         }
         return ForCommand(name!, qualifier);
+    }
+
+    private static MessageRoute ForDurableAutocomplete(string? name) {
+        if (!IsCanonicalNormalized(name)) {
+            throw new ArgumentException("Durable autocomplete coordinates must already use their canonical form.");
+        }
+        return ForAutocomplete(name!);
     }
 
     private static bool IsCanonicalNormalized(string? value) =>

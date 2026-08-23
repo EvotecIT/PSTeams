@@ -60,7 +60,7 @@ public static class TeamsBotApplicationExtensions {
             acceptance,
             cancellationToken));
         application.OnAdaptiveCardAction(async (context, cancellationToken) => {
-            var result = await DispatchAdaptiveCardAsync(
+            var acknowledgement = await DispatchAdaptiveCardAsync(
                 TeamsActivityMapper.MapAdaptiveCardAction(
                     context.Activity,
                     ResolveInstallation(context.Activity, installationResolver),
@@ -69,7 +69,7 @@ public static class TeamsBotApplicationExtensions {
                 acceptance,
                 router,
                 cancellationToken).ConfigureAwait(false);
-            return CreateInvokeResponse(result?.HandlerResult?.Acknowledgement);
+            return CreateInvokeResponse(acknowledgement);
         });
 
         var sdkActivityHandler = application.OnActivity ??
@@ -97,7 +97,7 @@ public static class TeamsBotApplicationExtensions {
         }
     }
 
-    internal static async Task<MessageDispatchResult?> DispatchAdaptiveCardAsync(
+    internal static async Task<MessageAcknowledgement> DispatchAdaptiveCardAsync(
         TeamsInboundDispatch dispatch,
         IMessageIngressAcceptance acceptance,
         MessageRouter router,
@@ -109,16 +109,39 @@ public static class TeamsBotApplicationExtensions {
             requiresSynchronousDispatch: true);
         var accepted = await acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
         if (accepted == MessageIngressEnqueueStatus.Duplicate) {
-            return null;
+            if (acceptance is not IMessageSynchronousAcknowledgementReplay replay) {
+                throw new InvalidOperationException(
+                    "The MessageX Teams ingress boundary cannot replay synchronous acknowledgements.");
+            }
+            return await replay.WaitForAcknowledgementAsync(result, cancellationToken).ConfigureAwait(false);
         }
         if (accepted != MessageIngressEnqueueStatus.Accepted) {
             throw new InvalidOperationException("The MessageX Teams ingress boundary is unavailable.");
         }
+        if (acceptance is not IMessageSynchronousDispatchGate gate) {
+            if (acceptance is IMessageIngressReservationRelease reservationRelease) {
+                reservationRelease.Release(result);
+            }
+            throw new InvalidOperationException(
+                "The MessageX Teams ingress boundary does not expose its synchronous dispatch gate.");
+        }
+        using var slot = gate.TryEnterSynchronousDispatch();
+        if (slot is null) {
+            if (acceptance is IMessageIngressReservationRelease reservationRelease) {
+                reservationRelease.Release(result);
+            }
+            throw new InvalidOperationException("The MessageX Teams synchronous dispatch boundary is at capacity.");
+        }
         try {
-            return await router.DispatchAsync(
+            var dispatched = await router.DispatchAsync(
                 dispatch.Route,
                 dispatch.Envelope,
                 cancellationToken).ConfigureAwait(false);
+            var acknowledgement = dispatched.HandlerResult?.Acknowledgement ?? MessageAcknowledgement.Empty(200);
+            if (acceptance is IMessageSynchronousAcknowledgementReplay replay) {
+                replay.Complete(result, acknowledgement);
+            }
+            return acknowledgement;
         } catch {
             if (acceptance is IMessageIngressReservationRelease reservationRelease) {
                 reservationRelease.Release(result);
@@ -152,4 +175,5 @@ public static class TeamsBotApplicationExtensions {
         }
         return new InvokeResponse(acknowledgement.StatusCode, body);
     }
+
 }

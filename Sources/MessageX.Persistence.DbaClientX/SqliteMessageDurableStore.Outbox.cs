@@ -173,7 +173,7 @@ public sealed partial class SqliteMessageDurableStore {
     }
 
     private static OutboxCandidate ReadOutboxCandidate(IDataRecord row) {
-        var record = new MessageOutboxRecord(
+        var record = MessageOutboxRecord.FromStoredCoordinates(
             row.GetString(1),
             row.GetString(2),
             row.GetString(3),

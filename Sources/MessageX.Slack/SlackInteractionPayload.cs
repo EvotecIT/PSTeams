@@ -61,10 +61,20 @@ public sealed class SlackActionInput {
 /// <summary>Safe normalized modal submission.</summary>
 public sealed class SlackViewSubmissionInput {
     /// <summary>Creates a normalized Slack view submission.</summary>
-    [JsonConstructor]
     public SlackViewSubmissionInput(string callbackId, SlackViewStateInput[]? values) {
         CallbackId = callbackId ?? throw new ArgumentNullException(nameof(callbackId));
         Values = values ?? Array.Empty<SlackViewStateInput>();
+    }
+
+    /// <summary>Creates a normalized Slack view submission including safe modal metadata.</summary>
+    [JsonConstructor]
+    public SlackViewSubmissionInput(
+        string callbackId,
+        SlackViewStateInput[]? values,
+        string? privateMetadata) {
+        CallbackId = callbackId ?? throw new ArgumentNullException(nameof(callbackId));
+        Values = values ?? Array.Empty<SlackViewStateInput>();
+        PrivateMetadata = privateMetadata;
     }
 
     /// <summary>Provider view callback identifier.</summary>
@@ -72,23 +82,38 @@ public sealed class SlackViewSubmissionInput {
 
     /// <summary>Submitted modal state values.</summary>
     public SlackViewStateInput[] Values { get; }
+
+    /// <summary>Opaque application-owned modal metadata supplied by Slack.</summary>
+    public string? PrivateMetadata { get; }
 }
 
 /// <summary>Safe normalized value from a Slack modal state entry.</summary>
 public sealed class SlackViewStateInput {
     /// <summary>Creates one normalized modal state value.</summary>
+    public SlackViewStateInput(
+        string blockId,
+        string actionId,
+        string type,
+        string? value,
+        string[]? selectedValues)
+        : this(blockId, actionId, type, value, selectedValues, null) {
+    }
+
+    /// <summary>Creates one normalized modal state value, including file-input identifiers.</summary>
     [JsonConstructor]
     public SlackViewStateInput(
         string blockId,
         string actionId,
         string type,
         string? value,
-        string[]? selectedValues) {
+        string[]? selectedValues,
+        string[]? fileIds) {
         BlockId = blockId ?? throw new ArgumentNullException(nameof(blockId));
         ActionId = actionId ?? throw new ArgumentNullException(nameof(actionId));
         Type = type ?? throw new ArgumentNullException(nameof(type));
         Value = value;
         SelectedValues = selectedValues ?? Array.Empty<string>();
+        FileIds = fileIds ?? Array.Empty<string>();
     }
 
     /// <summary>Owning block identifier.</summary>
@@ -105,6 +130,9 @@ public sealed class SlackViewStateInput {
 
     /// <summary>Normalized selected values for selection inputs.</summary>
     public string[] SelectedValues { get; }
+
+    /// <summary>Slack file identifiers submitted by a file input.</summary>
+    public string[] FileIds { get; }
 }
 
 /// <summary>Safe selected-message data for a Slack message shortcut.</summary>

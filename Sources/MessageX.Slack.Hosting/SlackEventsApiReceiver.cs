@@ -146,7 +146,14 @@ public static class SlackEventsApiReceiver {
             if (!providerEvent.TryGetProperty("item", out var item) ||
                 item.ValueKind != JsonValueKind.Object ||
                 !TryReadCoordinate(item, "type", out itemType) ||
-                !string.Equals(itemType, "message", StringComparison.Ordinal) ||
+                itemType is null) {
+                return Reject(400, MessageReceiveFailureKind.Malformed);
+            }
+            if (!string.Equals(itemType, "message", StringComparison.Ordinal)) {
+                return MessageReceiveResult<SlackInboundEvent>.Acknowledge(
+                    MessageAcknowledgement.Empty(200));
+            }
+            if (reaction is null || userId is null ||
                 !TryReadCoordinate(item, "channel", out channelId) ||
                 channelId is null ||
                 !TryReadCoordinate(item, "ts", out messageTimestamp) ||
@@ -191,7 +198,7 @@ public static class SlackEventsApiReceiver {
             EventTime = ReadUnixTime(root, "event_time")
         };
         if (channelId is not null) {
-            var conversationKind = GetConversationKind(channelId, threadTimestamp);
+            var conversationKind = GetConversationKind(channelId, channelType, threadTimestamp);
             envelope.Conversation = new MessageReference(MessageProviders.Slack) {
                 InstallationId = request.InstallationId,
                 ScopeId = teamId,
@@ -253,12 +260,19 @@ public static class SlackEventsApiReceiver {
         return MessageRoute.ForEvent(eventKind);
     }
 
-    private static MessageConversationKind GetConversationKind(string channelId, string? threadTimestamp) {
+    private static MessageConversationKind GetConversationKind(
+        string channelId,
+        string? channelType,
+        string? threadTimestamp) {
         if (threadTimestamp is not null) {
             return MessageConversationKind.Thread;
         }
-        if (channelId.StartsWith("D", StringComparison.Ordinal)) {
+        if (string.Equals(channelType, "im", StringComparison.Ordinal) ||
+            channelId.StartsWith("D", StringComparison.Ordinal)) {
             return MessageConversationKind.DirectMessage;
+        }
+        if (string.Equals(channelType, "mpim", StringComparison.Ordinal)) {
+            return MessageConversationKind.GroupChat;
         }
         return channelId.StartsWith("C", StringComparison.Ordinal)
             ? MessageConversationKind.Channel

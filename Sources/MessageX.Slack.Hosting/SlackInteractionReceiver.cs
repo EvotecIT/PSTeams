@@ -73,7 +73,7 @@ public static class SlackInteractionReceiver {
             return Reject(403, MessageReceiveFailureKind.Unauthorized);
         }
         var commandName = command.Substring(1);
-        if (!IsRouteName(commandName)) {
+        if (!IsRouteName(commandName, SlackInteractionKind.SlashCommand)) {
             return Reject(400, MessageReceiveFailureKind.Malformed);
         }
 
@@ -82,6 +82,8 @@ public static class SlackInteractionReceiver {
             commandName,
             text,
             null,
+            teamId,
+            enterpriseId,
             new SlackTransientInteractionContext(triggerId, responseUrl));
         return Dispatch(
             request,
@@ -171,7 +173,7 @@ public static class SlackInteractionReceiver {
                 return MessageReceiveResult<SlackInteractionEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
             }
-            if (!IsRouteName(name)) {
+            if (!IsRouteName(name, kind)) {
                 return Reject(400, MessageReceiveFailureKind.Malformed);
             }
 
@@ -180,6 +182,8 @@ public static class SlackInteractionReceiver {
                 name,
                 null,
                 providerPayload,
+                teamId,
+                enterpriseId,
                 new SlackTransientInteractionContext(triggerId, responseUrl));
             return Dispatch(
                 request,
@@ -267,7 +271,7 @@ public static class SlackInteractionReceiver {
         }
         var action = actions[0];
         return action.ValueKind == JsonValueKind.Object &&
-            TryRequired(action, "action_id", 128, out name) &&
+            TryRequired(action, "action_id", 255, out name) &&
             TryCreateActionInput(action, name, null, out actionValue);
     }
 
@@ -279,7 +283,8 @@ public static class SlackInteractionReceiver {
         view = null!;
         if (!root.TryGetProperty("view", out var viewElement) ||
             viewElement.ValueKind != JsonValueKind.Object ||
-            !TryRequired(viewElement, "callback_id", 128, out callbackId)) {
+            !TryRequired(viewElement, "callback_id", 128, out callbackId) ||
+            !TryOptionalText(viewElement, "private_metadata", 3000, out var privateMetadata)) {
             return false;
         }
 
@@ -297,9 +302,10 @@ public static class SlackInteractionReceiver {
                 }
                 foreach (var input in block.Value.EnumerateObject()) {
                     if (values.Count >= 256 ||
-                        !TryNormalizeCoordinate(input.Name, 128, required: true, out var actionId) ||
+                        !TryNormalizeCoordinate(input.Name, 255, required: true, out var actionId) ||
                         input.Value.ValueKind != JsonValueKind.Object ||
-                        !TryCreateActionInput(input.Value, actionId, blockId, out var action)) {
+                        !TryCreateActionInput(input.Value, actionId, blockId, out var action) ||
+                        !TryReadFileIds(input.Value, out var fileIds)) {
                         return false;
                     }
                     values.Add(new SlackViewStateInput(
@@ -307,11 +313,32 @@ public static class SlackInteractionReceiver {
                         action.ActionId,
                         action.Type,
                         action.Value,
-                        action.SelectedValues));
+                        action.SelectedValues,
+                        fileIds));
                 }
             }
         }
-        view = new SlackViewSubmissionInput(callbackId, values.ToArray());
+        view = new SlackViewSubmissionInput(callbackId, values.ToArray(), privateMetadata);
+        return true;
+    }
+
+    private static bool TryReadFileIds(JsonElement input, out string[] fileIds) {
+        fileIds = Array.Empty<string>();
+        if (!input.TryGetProperty("files", out var files) || files.ValueKind == JsonValueKind.Null) {
+            return true;
+        }
+        if (files.ValueKind != JsonValueKind.Array || files.GetArrayLength() > 10) {
+            return false;
+        }
+        var normalized = new List<string>(files.GetArrayLength());
+        foreach (var file in files.EnumerateArray()) {
+            if (file.ValueKind != JsonValueKind.Object ||
+                !TryRequired(file, "id", MaximumCoordinateLength, out var fileId)) {
+                return false;
+            }
+            normalized.Add(fileId);
+        }
+        fileIds = normalized.ToArray();
         return true;
     }
 
@@ -617,8 +644,10 @@ public static class SlackInteractionReceiver {
         return true;
     }
 
-    private static bool IsRouteName(string value) =>
-        value.Length is > 0 and <= 128 && !value.Any(char.IsControl);
+    private static bool IsRouteName(string value, SlackInteractionKind kind) =>
+        value.Length > 0 &&
+        value.Length <= (kind == SlackInteractionKind.BlockAction ? 255 : 128) &&
+        !value.Any(char.IsControl);
 
     private static bool IsForm(string contentType) {
         var mediaType = contentType.Split(';')[0].Trim();

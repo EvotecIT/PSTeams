@@ -410,6 +410,80 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task AmbiguousOutboxFailureIsNotAutomaticallyRetried() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = Services(store, includeCodec: true, retryDelay: TimeSpan.Zero);
+        services.AddMessageXOutboxHandler<AmbiguousOutboxHandler>();
+        using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (context, _) =>
+            Task.FromResult(MessageHandlerResult.CompletedWithOutbox(new MessageOutboxBatch([
+                new MessageOutboxRecord(
+                    context.Envelope.Provider,
+                    context.Envelope.InstallationId,
+                    context.Envelope.DeduplicationKey + ":ambiguous",
+                    "send",
+                    "test.ambiguous.v1",
+                    Array.Empty<byte>(),
+                    FixedNow)
+            ]))));
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            ResponseContext().Response,
+            Dispatch("ambiguous-outbox"),
+            TestContext.Current.CancellationToken);
+        var workers = provider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in workers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        var handler = Assert.IsType<AmbiguousOutboxHandler>(
+            provider.GetServices<IMessageOutboxHandler>().Single());
+        await handler.Attempted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, handler.Attempts);
+        for (var index = workers.Length - 1; index >= 0; index--) {
+            await workers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task RenewalUsesStoreReportedLeaseExpiryInsteadOfConfiguredDuration() {
+        using var database = new TemporaryDatabase();
+        using var innerStore = new SqliteMessageDurableStore(database.Path);
+        var losingStore = new LeaseLosingStore(innerStore, TimeSpan.FromMilliseconds(100));
+        using var provider = Services(
+            losingStore,
+            includeCodec: true,
+            timeProvider: TimeProvider.System,
+            leaseDuration: TimeSpan.FromSeconds(30)).BuildServiceProvider();
+        var canceled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", async (_, token) => {
+            try {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            } catch (OperationCanceledException) when (token.IsCancellationRequested) {
+                canceled.TrySetResult(true);
+                throw;
+            }
+            return MessageHandlerResult.Completed();
+        });
+        await provider.GetRequiredService<MessageReceiveResultProcessor>().ProcessAsync(
+            ResponseContext().Response,
+            Dispatch("short-reported-lease"),
+            TestContext.Current.CancellationToken);
+        var workers = provider.GetServices<IHostedService>().ToArray();
+        foreach (var worker in workers) {
+            await worker.StartAsync(TestContext.Current.CancellationToken);
+        }
+
+        await canceled.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.True(losingStore.RenewInboxCalls > 0);
+        for (var index = workers.Length - 1; index >= 0; index--) {
+            await workers[index].StopAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task EveryOutboxBatchLeaseStartsBeforeASynchronousHandlerCanBlock() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);
@@ -774,7 +848,9 @@ public sealed class DurableIngressTests {
             var value = Encoding.UTF8.GetString(record.CopyPayload());
             if (string.Equals(value, "retry", StringComparison.Ordinal) &&
                 Interlocked.Increment(ref _retryAttempts) == 1) {
-                throw new InvalidOperationException("synchronous retry contract");
+                throw new MessageOutboxDeliveryException(
+                    "synchronous retry contract",
+                    MessageOutboxDeliveryOutcome.DefinitelyNotSent);
             }
             if (string.Equals(value, "retry", StringComparison.Ordinal)) {
                 Retried.TrySetResult(true);
@@ -782,6 +858,24 @@ public sealed class DurableIngressTests {
                 Continued.TrySetResult(true);
             }
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class AmbiguousOutboxHandler : IMessageOutboxHandler {
+        private int _attempts;
+
+        public string PayloadType => "test.ambiguous.v1";
+
+        public TaskCompletionSource<bool> Attempted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int Attempts => Volatile.Read(ref _attempts);
+
+        public Task DeliverAsync(MessageOutboxRecord record, CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            Interlocked.Increment(ref _attempts);
+            Attempted.TrySetResult(true);
+            throw new InvalidOperationException("provider acceptance is unknown");
         }
     }
 
@@ -901,7 +995,14 @@ public sealed class DurableIngressTests {
     private sealed class LeaseLosingStore : IMessageDurableStore {
         private readonly IMessageDurableStore _inner;
 
-        public LeaseLosingStore(IMessageDurableStore inner) => _inner = inner;
+        private readonly TimeSpan? _reportedLeaseLifetime;
+
+        public LeaseLosingStore(
+            IMessageDurableStore inner,
+            TimeSpan? reportedLeaseLifetime = null) {
+            _inner = inner;
+            _reportedLeaseLifetime = reportedLeaseLifetime;
+        }
 
         public int RenewInboxCalls { get; private set; }
 
@@ -917,13 +1018,29 @@ public sealed class DurableIngressTests {
             CancellationToken cancellationToken = default) =>
             _inner.AcceptInboxAsync(record, cancellationToken);
 
-        public Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
+        public async Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,
             IReadOnlyCollection<string> payloadTypes,
-            CancellationToken cancellationToken = default) =>
-            _inner.ClaimInboxAsync(ownerId, maximumCount, leaseDuration, payloadTypes, cancellationToken);
+            CancellationToken cancellationToken = default) {
+            var leases = await _inner.ClaimInboxAsync(
+                ownerId,
+                maximumCount,
+                leaseDuration,
+                payloadTypes,
+                cancellationToken);
+            if (_reportedLeaseLifetime is null) {
+                return leases;
+            }
+            var reportedExpiry = DateTimeOffset.UtcNow.Add(_reportedLeaseLifetime.Value);
+            return leases.Select(lease => new MessageDurableLease(
+                lease.RecordId,
+                lease.LeaseToken,
+                reportedExpiry,
+                lease.AttemptCount,
+                lease.Record)).ToArray();
+        }
 
         public Task<MessageLeaseRenewal?> RenewInboxLeaseAsync(
             string recordId,

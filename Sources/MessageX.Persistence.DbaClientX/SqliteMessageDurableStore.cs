@@ -83,11 +83,21 @@ public sealed partial class SqliteMessageDurableStore : IMessageDurableStore, ID
     private static byte[] ReadBytes(IDataRecord record, int ordinal) =>
         (byte[])record.GetValue(ordinal);
 
-    private static bool IsInMemoryPath(string databasePath) =>
-        databasePath.Equals(":memory:", StringComparison.OrdinalIgnoreCase) ||
-        (databasePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) &&
-         (databasePath.Contains(":memory:", StringComparison.OrdinalIgnoreCase) ||
-          databasePath.Contains("mode=memory", StringComparison.OrdinalIgnoreCase)));
+    private static bool IsInMemoryPath(string databasePath) {
+        if (databasePath.Equals(":memory:", StringComparison.OrdinalIgnoreCase)) {
+            return true;
+        }
+        if (!databasePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase)) {
+            return false;
+        }
+        try {
+            var decoded = Uri.UnescapeDataString(databasePath);
+            return decoded.Contains(":memory:", StringComparison.OrdinalIgnoreCase) ||
+                decoded.Contains("mode=memory", StringComparison.OrdinalIgnoreCase);
+        } catch (UriFormatException) {
+            return false;
+        }
+    }
 
     private static string NormalizeDatabasePath(string databasePath) {
         var normalized = databasePath.Trim();

@@ -77,6 +77,35 @@ public sealed class MessageReplayGuard {
         lock (_sync) {
             if (_accepted.Remove(key, out var node)) {
                 _expirations.Remove(node);
+                node.Value.Acknowledgement.TrySetCanceled();
+            }
+        }
+    }
+
+    /// <summary>Waits for the original synchronous dispatch acknowledgement.</summary>
+    public ValueTask<MessageAcknowledgement> WaitForAcknowledgementAsync<TProviderPayload>(
+        MessageReceiveResult<TProviderPayload> result,
+        CancellationToken cancellationToken) {
+        var key = GetKey(result);
+        Task<MessageAcknowledgement> acknowledgement;
+        lock (_sync) {
+            if (!_accepted.TryGetValue(key, out var node)) {
+                throw new InvalidOperationException("The synchronous replay reservation is no longer available.");
+            }
+            acknowledgement = node.Value.Acknowledgement.Task;
+        }
+        return new ValueTask<MessageAcknowledgement>(acknowledgement.WaitAsync(cancellationToken));
+    }
+
+    /// <summary>Publishes the original synchronous dispatch acknowledgement.</summary>
+    public void Complete<TProviderPayload>(
+        MessageReceiveResult<TProviderPayload> result,
+        MessageAcknowledgement acknowledgement) {
+        ArgumentNullException.ThrowIfNull(acknowledgement);
+        var key = GetKey(result);
+        lock (_sync) {
+            if (_accepted.TryGetValue(key, out var node)) {
+                node.Value.Acknowledgement.TrySetResult(acknowledgement);
             }
         }
     }
@@ -86,10 +115,33 @@ public sealed class MessageReplayGuard {
             var expired = _expirations.First;
             _expirations.RemoveFirst();
             _accepted.Remove(expired.Value.Key);
+            expired.Value.Acknowledgement.TrySetCanceled();
         }
     }
 
-    private sealed record Entry(string Key, DateTimeOffset ExpiresAt);
+    private static string GetKey<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
+        ArgumentNullException.ThrowIfNull(result);
+        if (result.Envelope is null) {
+            throw new ArgumentException("A dispatch-ready envelope is required.", nameof(result));
+        }
+        return string.Join(
+            "\n",
+            result.Envelope.Provider,
+            result.Envelope.InstallationId,
+            result.Envelope.DeduplicationKey);
+    }
+
+    private sealed class Entry {
+        public Entry(string key, DateTimeOffset expiresAt) {
+            Key = key;
+            ExpiresAt = expiresAt;
+        }
+
+        public string Key { get; }
+        public DateTimeOffset ExpiresAt { get; }
+        public TaskCompletionSource<MessageAcknowledgement> Acknowledgement { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
 }
 
 /// <summary>Outcome of replay-guarded in-memory ingress acceptance.</summary>

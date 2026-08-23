@@ -54,6 +54,9 @@ public sealed class MessageDurableEnvelopeMetadata {
             throw new ArgumentNullException(nameof(record));
         }
         try {
+            var conversation = Conversation?.Restore(record.Provider, record.InstallationId);
+            var message = Message?.Restore(record.Provider, record.InstallationId);
+            ValidateReferenceHierarchy(ScopeId, conversation, message);
             var envelope = new MessageEventEnvelope<TProviderPayload>(
                 record.Provider,
                 record.InstallationId,
@@ -64,8 +67,8 @@ public sealed class MessageDurableEnvelopeMetadata {
                 EventId = EventId,
                 ScopeId = ScopeId,
                 SenderId = SenderId,
-                Conversation = Conversation?.Restore(record.Provider, record.InstallationId),
-                Message = Message?.Restore(record.Provider, record.InstallationId),
+                Conversation = conversation,
+                Message = message,
                 EventTime = EventTime,
                 CorrelationId = CorrelationId
             };
@@ -75,6 +78,29 @@ public sealed class MessageDurableEnvelopeMetadata {
             throw new MessageDurablePayloadException(
                 "Durable envelope metadata contains unsafe or inconsistent coordinates.",
                 exception);
+        }
+    }
+
+    private static void ValidateReferenceHierarchy(
+        string? scopeId,
+        MessageReference? conversation,
+        MessageReference? message) {
+        if (conversation is not null &&
+            !string.Equals(scopeId, conversation.ScopeId, StringComparison.Ordinal)) {
+            throw new ArgumentException("The durable conversation scope must match the envelope scope.");
+        }
+        if (message is not null &&
+            !string.Equals(scopeId, message.ScopeId, StringComparison.Ordinal)) {
+            throw new ArgumentException("The durable message scope must match the envelope scope.");
+        }
+        if (conversation is null || message is null) {
+            return;
+        }
+        if (!string.Equals(conversation.ScopeId, message.ScopeId, StringComparison.Ordinal) ||
+            !string.Equals(conversation.ConversationId, message.ConversationId, StringComparison.Ordinal) ||
+            conversation.ConversationKind != message.ConversationKind ||
+            !string.Equals(conversation.ThreadId, message.ThreadId, StringComparison.Ordinal)) {
+            throw new ArgumentException("Durable message coordinates must belong to the durable conversation reference.");
         }
     }
 }
@@ -130,7 +156,7 @@ public sealed class MessageDurableReference {
             MessageId = reference.MessageId,
             CorrelationId = reference.CorrelationId,
             Timestamp = reference.Timestamp,
-            Capabilities = reference.Capabilities
+            Capabilities = MessageCapabilities.None
         };
         projection.Restore(provider, installationId);
         return projection;
@@ -142,7 +168,7 @@ public sealed class MessageDurableReference {
             (InstallationId is not null &&
              !string.Equals(Required(InstallationId, nameof(InstallationId)), installationId, StringComparison.Ordinal)) ||
             !Enum.IsDefined(typeof(MessageConversationKind), ConversationKind) ||
-            (Capabilities & ~AllCapabilities) != 0) {
+            Capabilities != MessageCapabilities.None) {
             throw new ArgumentException("Durable references must match their record and contain known enum values.");
         }
 
@@ -158,19 +184,18 @@ public sealed class MessageDurableReference {
         };
     }
 
-    private static readonly MessageCapabilities AllCapabilities =
-        Enum.GetValues(typeof(MessageCapabilities))
-            .Cast<MessageCapabilities>()
-            .Aggregate(MessageCapabilities.None, (current, value) => current | value);
-
     private static string Required(string? value, string name) =>
         Optional(value, name) ?? throw new ArgumentException("A durable reference coordinate is required.", name);
 
     private static string? Optional(string? value, string name) {
-        if (value is not null && (value.Length > MaximumCoordinateLength || value.Any(char.IsControl))) {
+        if (value is not null &&
+            (value.Length == 0 ||
+             value.Length > MaximumCoordinateLength ||
+             value.Any(char.IsControl) ||
+             char.IsWhiteSpace(value[0]) ||
+             char.IsWhiteSpace(value[value.Length - 1]))) {
             throw new ArgumentException("Durable reference coordinates must be bounded text without control characters.", name);
         }
-        var normalized = value?.Trim();
-        return string.IsNullOrEmpty(normalized) ? null : normalized;
+        return value;
     }
 }

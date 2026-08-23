@@ -63,6 +63,36 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
     }
 
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void BlockActionEnforcesSlackActionIdBoundary(int length, MessageReceiveStatus expected) {
+        var actionId = new string('a', length);
+        var payload = $$"""
+            {"type":"block_actions","team":{"id":"T1"},"user":{"id":"U1"},"actions":[{"type":"button","action_id":{{JsonSerializer.Serialize(actionId)}}}]}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(expected, result.Status);
+    }
+
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void ViewStateEnforcesSlackActionIdBoundary(int length, MessageReceiveStatus expected) {
+        var actionId = new string('a', length);
+        var payload = """
+            {"type":"view_submission","team":{"id":"T1"},"user":{"id":"U1"},"view":{"callback_id":"approval","state":{"values":{"block":{
+            """ + JsonSerializer.Serialize(actionId) + """
+            :{"type":"plain_text_input","value":"ok"}}}}}}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(expected, result.Status);
+    }
+
     [Fact]
     public void ViewSubmissionUsesDistinctSubmissionClassification() {
         const string payload = """
@@ -80,6 +110,22 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("approval", result.Route?.Name);
         Assert.Equal(MessageEventKind.ModalSubmitted, result.Envelope?.Kind);
         Assert.Equal(SlackInteractionKind.ViewSubmission, result.Envelope?.Payload.Kind);
+    }
+
+    [Fact]
+    public void ViewSubmissionPreservesPrivateMetadataAndFileInputIds() {
+        const string payload = """
+            {"type":"view_submission","team":{"id":"T123"},"enterprise":{"id":"E123"},"user":{"id":"U123"},"view":{"callback_id":"approval","private_metadata":"case-42","state":{"values":{"documents":{"evidence":{"type":"file_input","files":[{"id":"F1"},{"id":"F2"}]}}}}}}
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal("T123", result.Envelope?.Payload.WorkspaceId);
+        Assert.Equal("E123", result.Envelope?.Payload.EnterpriseId);
+        Assert.Equal("case-42", result.Envelope?.Payload.ProviderPayload?.View?.PrivateMetadata);
+        Assert.Equal(
+            ["F1", "F2"],
+            result.Envelope?.Payload.ProviderPayload?.View?.Values[0].FileIds ?? Array.Empty<string>());
     }
 
     [Fact]

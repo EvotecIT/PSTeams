@@ -90,6 +90,31 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackModalCodecRetainsIdentityMetadataAndFileInputs()
+    {
+        const string json = """
+            {"type":"view_submission","team":{"id":"T123"},"enterprise":{"id":"E123"},"user":{"id":"U123"},"view":{"callback_id":"approval","private_metadata":"case-42","state":{"values":{"documents":{"evidence":{"type":"file_input","files":[{"id":"F1"},{"id":"F2"}]}}}}}}
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(receive.Route!, receive.Envelope!));
+
+        Assert.Equal("T123", decoded.Payload.WorkspaceId);
+        Assert.Equal("E123", decoded.Payload.EnterpriseId);
+        Assert.Equal("case-42", decoded.Payload.ProviderPayload?.View?.PrivateMetadata);
+        Assert.Equal(
+            ["F1", "F2"],
+            decoded.Payload.ProviderPayload?.View?.Values[0].FileIds ?? Array.Empty<string>());
+        Assert.Equal("T123", decoded.ScopeId);
+    }
+
+    [Fact]
     public void DiscordCodecRetainsOptionsButDropsInteractionAndNestedTokens()
     {
         const string json = """
@@ -261,6 +286,36 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackMessageShortcutCodecRejectsConflictingSelectedMessageTimestamp()
+    {
+        const string json = """
+            {"type":"message_action","callback_id":"inspect","team":{"id":"T123"},"user":{"id":"U123"},"channel":{"id":"C123"},"message":{"ts":"1787418599.000200","text":"selected"}}
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var changed = Encoding.UTF8.GetString(valid.CopyPayload()).Replace(
+            "1787418599.000200",
+            "1787418599.000201",
+            StringComparison.Ordinal);
+        var tampered = new MessageDurableRecord(
+            valid.Provider,
+            valid.InstallationId,
+            valid.DeduplicationKey,
+            valid.Route,
+            valid.ReceivedAt,
+            valid.PayloadType,
+            Encoding.UTF8.GetBytes(changed));
+
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+    }
+
+    [Fact]
     public void ProviderCodecConstructorFailuresAndExactRoutesArePermanentPayloadErrors()
     {
         const string json = """
@@ -353,6 +408,37 @@ public sealed class ProviderDurableCodecTests
                  }) {
             var tampered = new MessageDurableRecord(valid.Provider, valid.InstallationId,
                 valid.DeduplicationKey, valid.Route, valid.ReceivedAt, valid.PayloadType,
+                Encoding.UTF8.GetBytes(changed));
+            Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
+        }
+    }
+
+    [Fact]
+    public void DiscordCodecRejectsTamperedContextTargetAndMetadataSnowflakes()
+    {
+        const string json = """
+            {"id":"100000000000000101","application_id":"100000000000000102","type":2,"token":"interaction-secret","channel_id":"100000000000000103","user":{"id":"100000000000000104"},"data":{"name":"inspect","type":3,"target_id":"100000000000000105"}}
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+        var valid = codec.Encode(receive.Route!, receive.Envelope!);
+        var stored = Encoding.UTF8.GetString(valid.CopyPayload());
+
+        foreach (var changed in new[] {
+                     stored.Replace("\"target_id\":\"100000000000000105\"", "\"target_id\":\"100000000000000106\"", StringComparison.Ordinal),
+                     stored.Replace("\"eventId\":\"100000000000000101\"", "\"eventId\":\"not-a-snowflake\"", StringComparison.Ordinal)
+                 }) {
+            var tampered = new MessageDurableRecord(
+                valid.Provider,
+                valid.InstallationId,
+                valid.DeduplicationKey,
+                valid.Route,
+                valid.ReceivedAt,
+                valid.PayloadType,
                 Encoding.UTF8.GetBytes(changed));
             Assert.Throws<MessageDurablePayloadException>(() => codec.Decode(tampered));
         }

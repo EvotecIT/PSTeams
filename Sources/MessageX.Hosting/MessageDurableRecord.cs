@@ -29,6 +29,29 @@ public sealed class MessageDurableRecord {
         _payload = (byte[])safePayload.Clone();
     }
 
+    /// <summary>Reconstructs a record whose stored coordinates must already be canonical.</summary>
+    public static MessageDurableRecord FromStoredCoordinates(
+        string provider,
+        string installationId,
+        string deduplicationKey,
+        MessageRoute route,
+        DateTimeOffset receivedAt,
+        string payloadType,
+        byte[] safePayload) {
+        MessageDurableValidation.RequiredOpaque(provider, nameof(provider));
+        MessageDurableValidation.RequiredOpaque(installationId, nameof(installationId));
+        MessageDurableValidation.RequiredOpaque(deduplicationKey, nameof(deduplicationKey));
+        MessageDurableValidation.RequiredOpaque(payloadType, nameof(payloadType));
+        return new MessageDurableRecord(
+            provider,
+            installationId,
+            deduplicationKey,
+            route,
+            receivedAt,
+            payloadType,
+            safePayload);
+    }
+
     /// <summary>Stable provider identifier.</summary>
     public string Provider { get; }
 

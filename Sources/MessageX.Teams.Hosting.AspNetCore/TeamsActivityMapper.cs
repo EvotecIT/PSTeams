@@ -25,9 +25,7 @@ internal static class TeamsActivityMapper {
         CoreActivity? verifiedSource = null) {
         ArgumentNullException.ThrowIfNull(activity);
         return new TeamsInstallationContext(
-            NormalizeOptional(
-                activity.Conversation?.TenantId ?? activity.ChannelData?.Tenant?.Id,
-                "tenantId"),
+            NormalizeTenantId(activity),
             NormalizeOptional(
                 activity.ChannelData?.Team?.Id ?? activity.ChannelData?.TeamsTeamId,
                 "teamId"),
@@ -199,9 +197,7 @@ internal static class TeamsActivityMapper {
             verifiedSource?.Id ?? activity.Id,
             "activity.Id");
         var conversationId = NormalizeRequired(activity.Conversation?.Id, "activity.Conversation.Id");
-        var tenantId = NormalizeOptional(
-            activity.Conversation?.TenantId ?? activity.ChannelData?.Tenant?.Id,
-            "tenantId");
+        var tenantId = NormalizeTenantId(activity);
         var senderId = NormalizeOptional(
             activity.From?.AadObjectId ?? activity.From?.Id,
             "senderId");
@@ -425,6 +421,16 @@ internal static class TeamsActivityMapper {
         }
         var normalized = value?.Trim();
         return string.IsNullOrEmpty(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeTenantId(TeamsActivity activity) {
+        var conversationTenantId = NormalizeOptional(activity.Conversation?.TenantId, "conversationTenantId");
+        var channelTenantId = NormalizeOptional(activity.ChannelData?.Tenant?.Id, "channelTenantId");
+        if (conversationTenantId is not null && channelTenantId is not null &&
+            !string.Equals(conversationTenantId, channelTenantId, StringComparison.Ordinal)) {
+            throw new ArgumentException("Verified Teams tenant coordinates conflict.", "tenantId");
+        }
+        return conversationTenantId ?? channelTenantId;
     }
 
     private static string? NormalizeText(string? value, string parameterName) {

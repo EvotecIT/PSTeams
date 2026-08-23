@@ -13,7 +13,10 @@ public interface IMessageDurableStore {
         MessageDurableRecord record,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Claims eligible inbox work for payload types matched with ordinal, case-sensitive equality and a strictly positive lease duration.</summary>
+    /// <summary>
+    /// Atomically and exclusively claims eligible inbox work. Concurrent claimers cannot receive the same active
+    /// record. Payload types use ordinal, case-sensitive equality and the lease duration must be strictly positive.
+    /// </summary>
     Task<IReadOnlyList<MessageDurableLease>> ClaimInboxAsync(
         string ownerId,
         int maximumCount,
@@ -28,7 +31,10 @@ public interface IMessageDurableStore {
         TimeSpan leaseDuration,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Completes one owned inbox item and commits any outbound work in the same transaction.</summary>
+    /// <summary>
+    /// Completes one owned inbox item and commits any outbound work in the same transaction. Outbox deduplication
+    /// coordinates are unique across the store, not only within one completion batch.
+    /// </summary>
     Task<bool> CompleteInboxAsync(
         string recordId,
         string leaseToken,
@@ -39,7 +45,7 @@ public interface IMessageDurableStore {
     /// Schedules another inbox attempt or atomically dead-letters the item. Permanent failures dead-letter
     /// immediately. Handler and transient failures retry only while the current one-based lease attempt is less than
     /// <paramref name="maximumAttempts"/>; equality dead-letters the item.
-    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid.
+    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid. The retry delay cannot be negative.
     /// </summary>
     Task<MessageDurableFailureResult> FailInboxAsync(
         string recordId,
@@ -49,7 +55,10 @@ public interface IMessageDurableStore {
         int maximumAttempts,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Claims eligible outbound work for payload types matched with ordinal, case-sensitive equality and a strictly positive lease duration.</summary>
+    /// <summary>
+    /// Atomically and exclusively claims eligible outbound work. Concurrent claimers cannot receive the same active
+    /// record. Payload types use ordinal, case-sensitive equality and the lease duration must be strictly positive.
+    /// </summary>
     Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
         string ownerId,
         int maximumCount,
@@ -74,7 +83,7 @@ public interface IMessageDurableStore {
     /// Schedules another outbound attempt or atomically dead-letters the operation. Permanent failures dead-letter
     /// immediately. Handler and transient failures retry only while the current one-based lease attempt is less than
     /// <paramref name="maximumAttempts"/>; equality dead-letters the operation.
-    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid.
+    /// <see cref="MessageDurableFailureKind.None"/> and undefined values are invalid. The retry delay cannot be negative.
     /// </summary>
     Task<MessageDurableFailureResult> FailOutboxAsync(
         string recordId,

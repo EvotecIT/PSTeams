@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 namespace MessageX.Hosting.AspNetCore;
 
 internal sealed class MessageDurableIngressWorker : BackgroundService {
+    private const int MaximumPayloadTypesPerClaim = 64;
     private readonly IMessageDurableStore _store;
     private readonly MessageDurableStoreInitializer _initializer;
     private readonly IReadOnlyDictionary<string, IMessageDurableDispatchCodec> _codecs;
@@ -13,6 +14,7 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
     private readonly TimeProvider _timeProvider;
     private readonly MessageDurableIngressHealth _health;
     private readonly string _ownerId = Guid.NewGuid().ToString("N");
+    private int _claimPayloadOffset;
 
     public MessageDurableIngressWorker(
         IMessageDurableStore store,
@@ -41,12 +43,7 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                     await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
                     continue;
                 }
-                var leases = await _store.ClaimInboxAsync(
-                    _ownerId,
-                    _options.ClaimBatchSize,
-                    _options.LeaseDuration,
-                    _payloadTypes,
-                    stoppingToken).ConfigureAwait(false);
+                var leases = await ClaimSupportedInboxAsync(stoppingToken).ConfigureAwait(false);
                 _health.Claimed(leases.Count);
                 if (leases.Count == 0) {
                     await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
@@ -72,7 +69,7 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             return;
         }
         using var dispatchCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        var renewal = RenewUntilCanceledAsync(lease.RecordId, lease.LeaseToken, dispatchCancellation.Token);
+        var renewal = RenewUntilCanceledAsync(lease, dispatchCancellation.Token);
         Task<MessageDispatchResult> dispatch;
         try {
             dispatch = codec.DispatchAsync(lease.Record, _router, dispatchCancellation.Token) ??
@@ -137,24 +134,25 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
     }
 
     private async Task<bool> RenewUntilCanceledAsync(
-        string recordId,
-        string leaseToken,
+        MessageDurableLease lease,
         CancellationToken cancellationToken) {
-        var interval = TimeSpan.FromTicks(Math.Max(
-            TimeSpan.FromMilliseconds(100).Ticks,
-            _options.LeaseDuration.Ticks / 3));
+        var leaseExpiresAt = lease.LeaseExpiresAt;
         try {
             while (true) {
-                await Task.Delay(interval, _timeProvider, cancellationToken).ConfigureAwait(false);
+                var delay = GetRenewalDelay(leaseExpiresAt);
+                if (delay > TimeSpan.Zero) {
+                    await Task.Delay(delay, _timeProvider, cancellationToken).ConfigureAwait(false);
+                }
                 var renewed = await _store.RenewInboxLeaseAsync(
-                    recordId,
-                    leaseToken,
+                    lease.RecordId,
+                    lease.LeaseToken,
                     _options.LeaseDuration,
                     cancellationToken).ConfigureAwait(false);
                 if (renewed is null) {
                     _health.LeaseLost(_timeProvider.GetUtcNow());
                     return false;
                 }
+                leaseExpiresAt = renewed.LeaseExpiresAt;
                 _health.LeaseRenewed();
             }
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
@@ -163,6 +161,43 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
             _health.Unavailable(_timeProvider.GetUtcNow());
             return false;
         }
+    }
+
+    private async Task<IReadOnlyList<MessageDurableLease>> ClaimSupportedInboxAsync(
+        CancellationToken cancellationToken) {
+        var leases = new List<MessageDurableLease>(_options.ClaimBatchSize);
+        var start = _claimPayloadOffset;
+        _claimPayloadOffset = (_claimPayloadOffset + MaximumPayloadTypesPerClaim) % _payloadTypes.Length;
+        var orderedPayloadTypes = _payloadTypes
+            .Skip(start)
+            .Concat(_payloadTypes.Take(start))
+            .ToArray();
+        for (var offset = 0;
+             offset < orderedPayloadTypes.Length && leases.Count < _options.ClaimBatchSize;
+             offset += MaximumPayloadTypesPerClaim) {
+            var payloadTypes = orderedPayloadTypes
+                .Skip(offset)
+                .Take(MaximumPayloadTypesPerClaim)
+                .ToArray();
+            var claimed = await _store.ClaimInboxAsync(
+                _ownerId,
+                _options.ClaimBatchSize - leases.Count,
+                _options.LeaseDuration,
+                payloadTypes,
+                cancellationToken).ConfigureAwait(false);
+            leases.AddRange(claimed);
+        }
+        return leases;
+    }
+
+    private TimeSpan GetRenewalDelay(DateTimeOffset leaseExpiresAt) {
+        var remaining = leaseExpiresAt - _timeProvider.GetUtcNow();
+        if (remaining <= TimeSpan.FromMilliseconds(100)) {
+            return TimeSpan.Zero;
+        }
+        var configuredInterval = TimeSpan.FromTicks(_options.LeaseDuration.Ticks / 3);
+        var expiryInterval = TimeSpan.FromTicks(remaining.Ticks / 3);
+        return configuredInterval <= expiryInterval ? configuredInterval : expiryInterval;
     }
 
     private async Task FailAndRecordAsync(

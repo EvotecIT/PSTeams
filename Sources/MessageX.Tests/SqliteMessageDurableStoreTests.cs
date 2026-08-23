@@ -422,6 +422,8 @@ public sealed class SqliteMessageDurableStoreTests {
     [InlineData(":memory:")]
     [InlineData("file::memory:?cache=shared")]
     [InlineData("file:messagex?mode=memory&cache=shared")]
+    [InlineData("file:%3Amemory%3A?cache=shared")]
+    [InlineData("file:messagex?mode%3Dmemory&cache=shared")]
     public void InMemoryDatabasePathsAreRejected(string databasePath) {
         Assert.Throws<ArgumentException>(() => new SqliteMessageDurableStore(databasePath));
     }

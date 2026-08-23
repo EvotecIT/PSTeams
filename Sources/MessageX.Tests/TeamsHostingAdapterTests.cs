@@ -167,8 +167,11 @@ public sealed class TeamsHostingAdapterTests {
             router,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(202, first?.HandlerResult?.Acknowledgement?.StatusCode);
-        Assert.Null(duplicate);
+        Assert.Equal(202, first.StatusCode);
+        Assert.Equal(202, duplicate.StatusCode);
+        Assert.Equal(
+            first.CopyBody(),
+            duplicate.CopyBody());
     }
 
     [Fact]
@@ -210,6 +213,101 @@ public sealed class TeamsHostingAdapterTests {
 
         Assert.NotNull(retry);
         Assert.Equal(2, Volatile.Read(ref attempts));
+    }
+
+    [Fact]
+    public async Task ConcurrentAdaptiveCardReplayWaitsForOriginalAcknowledgement() {
+        var services = new ServiceCollection();
+        services.AddMessageXTeamsHosting();
+        using var provider = services.BuildServiceProvider();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var router = provider.GetRequiredService<MessageRouter>();
+        router.OnAction<TeamsInboundActivity>("approve-request", async (_, cancellationToken) => {
+            entered.TrySetResult(true);
+            await release.Task.WaitAsync(cancellationToken);
+            return MessageHandlerResult.Respond(new MessageAcknowledgement(
+                202,
+                "application/json",
+                System.Text.Encoding.UTF8.GetBytes("{\"accepted\":true}")));
+        });
+        var dispatch = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request");
+        var acceptance = provider.GetRequiredService<IMessageIngressAcceptance>();
+
+        var original = TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            dispatch,
+            acceptance,
+            router,
+            TestContext.Current.CancellationToken);
+        await entered.Task.WaitAsync(TestContext.Current.CancellationToken);
+        var duplicate = TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            dispatch,
+            acceptance,
+            router,
+            TestContext.Current.CancellationToken);
+        Assert.False(duplicate.IsCompleted);
+
+        release.TrySetResult(true);
+        var acknowledgements = await Task.WhenAll(original, duplicate);
+
+        Assert.All(acknowledgements, acknowledgement => Assert.Equal(202, acknowledgement.StatusCode));
+        Assert.Equal(acknowledgements[0].CopyBody(), acknowledgements[1].CopyBody());
+    }
+
+    [Fact]
+    public async Task AdaptiveCardDispatchHonorsHostWideSynchronousCapacity() {
+        var services = new ServiceCollection();
+        services.AddMessageXTeamsHosting();
+        services.AddMessageXHostingAspNetCore(options => options.SynchronousDispatchCapacity = 1);
+        using var provider = services.BuildServiceProvider();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var router = provider.GetRequiredService<MessageRouter>();
+        router.OnAction<TeamsInboundActivity>("approve-request", async (_, cancellationToken) => {
+            if (Interlocked.Increment(ref calls) == 1) {
+                entered.TrySetResult(true);
+                await release.Task.WaitAsync(cancellationToken);
+            }
+            return MessageHandlerResult.Completed();
+        });
+        var first = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel", id: "activity-1"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request");
+        var second = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel", id: "activity-2"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request");
+        var acceptance = provider.GetRequiredService<IMessageIngressAcceptance>();
+
+        var firstDispatch = TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            first,
+            acceptance,
+            router,
+            TestContext.Current.CancellationToken);
+        await entered.Task.WaitAsync(TestContext.Current.CancellationToken);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+                second,
+                acceptance,
+                router,
+                TestContext.Current.CancellationToken));
+
+        release.TrySetResult(true);
+        await firstDispatch;
+        await TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            second,
+            acceptance,
+            router,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(2, Volatile.Read(ref calls));
     }
 
     [Fact]
@@ -438,6 +536,18 @@ public sealed class TeamsHostingAdapterTests {
         Assert.Equal("tenant-1", resolver.Last?.TenantId);
         Assert.Equal("team-1", resolver.Last?.TeamId);
         Assert.Equal("conversation-1", resolver.Last?.ConversationId);
+    }
+
+    [Fact]
+    public void ConflictingVerifiedTenantCoordinatesAreRejected() {
+        var activity = Message("channel");
+        activity.ChannelData!.Tenant!.Id = "tenant-2";
+
+        Assert.Throws<ArgumentException>(() => TeamsActivityMapper.MapInstallationContext(activity));
+        Assert.Throws<ArgumentException>(() => TeamsActivityMapper.MapMessage(
+            activity,
+            "install-a",
+            ReceivedAt));
     }
 
     private static MessageActivity Message(

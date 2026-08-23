@@ -122,14 +122,18 @@ public sealed class ProviderAspNetCoreEndpointTests {
     public async Task DiscordAutocompleteHandlerProducesTheInitialChoicesInline() {
         using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
         var dispatchCount = 0;
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         provider.GetRequiredService<MessageRouter>().OnAutocomplete<DiscordInboundInteraction>(
             "search",
-            (_, _) => {
+            async (_, cancellationToken) => {
                 Interlocked.Increment(ref dispatchCount);
-                return Task.FromResult(MessageHandlerResult.Respond(
+                entered.TrySetResult(true);
+                await release.Task.WaitAsync(cancellationToken);
+                return MessageHandlerResult.Respond(
                     DiscordInteractionAcknowledgement.Autocomplete(new[] {
                         DiscordAutocompleteChoice.FromString("Alpha", "alpha")
-                    })));
+                    }));
             });
         const string json = """
             {"id":"100000000000000001","application_id":"100000000000000002","type":4,"token":"token","authorizing_integration_owners":{"1":"100000000000000003"},"user":{"id":"100000000000000003"},"data":{"name":"search","type":1,"options":[]}}
@@ -137,20 +141,26 @@ public sealed class ProviderAspNetCoreEndpointTests {
         var context = DiscordContext(json);
         var duplicate = DiscordContext(json);
 
-        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+        var handler = provider.GetRequiredService<DiscordHttpEndpointHandler>();
+        var original = handler.HandleAsync(
             context,
             DiscordConfiguration(),
             TestContext.Current.CancellationToken);
-        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+        await entered.Task.WaitAsync(TestContext.Current.CancellationToken);
+        var replay = handler.HandleAsync(
             duplicate,
             DiscordConfiguration(),
             TestContext.Current.CancellationToken);
+        Assert.False(replay.IsCompleted);
+        release.TrySetResult(true);
+        await Task.WhenAll(original, replay);
 
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
         using var body = JsonDocument.Parse(ResponseBody(context));
         Assert.Equal(8, body.RootElement.GetProperty("type").GetInt32());
         Assert.Equal("alpha", body.RootElement.GetProperty("data").GetProperty("choices")[0].GetProperty("value").GetString());
         Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
+        Assert.Equal(ResponseBody(context), ResponseBody(duplicate));
         Assert.Equal(1, Volatile.Read(ref dispatchCount));
         Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
     }
@@ -222,7 +232,6 @@ public sealed class ProviderAspNetCoreEndpointTests {
                 return MessageHandlerResult.Respond(DiscordInteractionAcknowledgement.EmptyAutocomplete());
             });
         const string firstJson = "{\"id\":\"100000000000000021\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"authorizing_integration_owners\":{\"0\":\"0\"},\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
-        const string retryJson = "{\"id\":\"100000000000000024\",\"application_id\":\"100000000000000022\",\"type\":4,\"token\":\"token\",\"authorizing_integration_owners\":{\"0\":\"0\"},\"user\":{\"id\":\"100000000000000023\"},\"data\":{\"name\":\"search\",\"type\":1,\"options\":[]}}";
         var handler = provider.GetRequiredService<DiscordHttpEndpointHandler>();
         var first = DiscordContext(firstJson);
         using var cancellation = new CancellationTokenSource();
@@ -234,7 +243,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstDispatch);
-        var retry = DiscordContext(retryJson);
+        var retry = DiscordContext(firstJson);
 
         await handler.HandleAsync(
             retry,

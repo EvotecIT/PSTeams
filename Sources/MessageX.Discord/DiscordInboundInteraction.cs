@@ -6,7 +6,6 @@ namespace MessageX.Discord;
 /// <summary>Verified Discord interaction with safe routing coordinates and transient provider data.</summary>
 public sealed class DiscordInboundInteraction {
     /// <summary>Creates a safe persisted Discord interaction projection without transient provider capabilities.</summary>
-    [JsonConstructor]
     public DiscordInboundInteraction(
         DiscordInteractionKind kind,
         string name,
@@ -24,7 +23,31 @@ public sealed class DiscordInboundInteraction {
             context,
             commandType,
             targetId,
-            default,
+            EmptyData,
+            DiscordTransientInteractionContext.Unavailable) {
+    }
+
+    /// <summary>Creates a safe persisted Discord interaction projection with handler-useful provider data.</summary>
+    [JsonConstructor]
+    public DiscordInboundInteraction(
+        DiscordInteractionKind kind,
+        string name,
+        string? installationOwnerId,
+        string? locale,
+        string? guildLocale,
+        int? context,
+        DiscordApplicationCommandType? commandType,
+        string? targetId,
+        JsonElement data) : this(
+            kind,
+            name,
+            installationOwnerId,
+            locale,
+            guildLocale,
+            context,
+            commandType,
+            targetId,
+            data,
             DiscordTransientInteractionContext.Unavailable) {
     }
 
@@ -47,7 +70,7 @@ public sealed class DiscordInboundInteraction {
         Context = context;
         CommandType = commandType;
         TargetId = targetId;
-        Data = data;
+        Data = DiscordSafeInteractionData.Create(data);
         TransientContext = transientContext;
     }
 
@@ -75,11 +98,17 @@ public sealed class DiscordInboundInteraction {
     /// <summary>Target user or message identifier for a Discord context command.</summary>
     public string? TargetId { get; }
 
-    /// <summary>Provider-native interaction data. May contain user input and is intentionally transient.</summary>
-    [JsonIgnore]
+    /// <summary>Safe provider-native interaction data, including bounded command options and modal inputs.</summary>
     public JsonElement Data { get; }
 
     /// <summary>Explicitly transient follow-up capability.</summary>
     [JsonIgnore]
     public DiscordTransientInteractionContext TransientContext { get; }
+
+    private static readonly JsonElement EmptyData = CreateEmptyData();
+
+    private static JsonElement CreateEmptyData() {
+        using var document = JsonDocument.Parse("{}");
+        return document.RootElement.Clone();
+    }
 }

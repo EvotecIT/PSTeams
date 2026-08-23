@@ -59,7 +59,13 @@ public sealed class MessageReceiveResultProcessor {
                 return;
             }
             if (acceptance == MessageIngressEnqueueStatus.Duplicate) {
-                await _writer.WriteAsync(response, result.Acknowledgement, cancellationToken).ConfigureAwait(false);
+                var acknowledgement = result.Acknowledgement;
+                if (result.RequiresSynchronousDispatch &&
+                    _acceptance is IMessageSynchronousAcknowledgementReplay replay) {
+                    acknowledgement = await replay.WaitForAcknowledgementAsync(result, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                await _writer.WriteAsync(response, acknowledgement, cancellationToken).ConfigureAwait(false);
                 return;
             }
             if (result.RequiresSynchronousDispatch) {
@@ -93,6 +99,7 @@ public sealed class MessageReceiveResultProcessor {
                 .ConfigureAwait(false);
             acknowledgement = dispatch.HandlerResult?.Acknowledgement ?? result.Acknowledgement;
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            _replayGuard.Release(result);
             throw;
         } catch {
             _replayGuard.Release(result);
@@ -101,6 +108,9 @@ public sealed class MessageReceiveResultProcessor {
                 MessageAcknowledgement.Empty(StatusCodes.Status500InternalServerError),
                 cancellationToken).ConfigureAwait(false);
             return;
+        }
+        if (_acceptance is IMessageSynchronousAcknowledgementReplay replay) {
+            replay.Complete(result, acknowledgement);
         }
         await _writer.WriteAsync(response, acknowledgement, cancellationToken).ConfigureAwait(false);
     }

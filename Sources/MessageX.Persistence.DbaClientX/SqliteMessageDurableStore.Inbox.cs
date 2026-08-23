@@ -216,7 +216,7 @@ public sealed partial class SqliteMessageDurableStore {
             (MessageEventKind)row.GetInt32(5),
             row.IsDBNull(6) ? null : row.GetString(6),
             row.IsDBNull(7) ? null : row.GetString(7));
-        var record = new MessageDurableRecord(
+        var record = MessageDurableRecord.FromStoredCoordinates(
             row.GetString(1),
             row.GetString(2),
             row.GetString(3),

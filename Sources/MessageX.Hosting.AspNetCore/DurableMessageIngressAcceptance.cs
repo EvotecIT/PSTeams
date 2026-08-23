@@ -4,7 +4,9 @@ namespace MessageX.Hosting.AspNetCore;
 
 internal sealed class DurableMessageIngressAcceptance :
     IMessageIngressAcceptance,
-    IMessageIngressReservationRelease {
+    IMessageIngressReservationRelease,
+    IMessageSynchronousAcknowledgementReplay,
+    IMessageSynchronousDispatchGate {
     private readonly IServiceProvider _services;
     private readonly IMessageDurableStore _store;
     private readonly MessageDurableStoreInitializer _initializer;
@@ -12,6 +14,7 @@ internal sealed class DurableMessageIngressAcceptance :
     private readonly MessageReplayGuard _replayGuard;
     private readonly TimeProvider _timeProvider;
     private readonly IReadOnlySet<string> _dispatchPayloadTypes;
+    private readonly MessageSynchronousDispatchGate _synchronousDispatchGate;
 
     public DurableMessageIngressAcceptance(
         IServiceProvider services,
@@ -20,13 +23,16 @@ internal sealed class DurableMessageIngressAcceptance :
         MessageDurableIngressHealth health,
         MessageReplayGuard replayGuard,
         TimeProvider timeProvider,
-        IEnumerable<IMessageDurableDispatchCodec> dispatchCodecs) {
+        IEnumerable<IMessageDurableDispatchCodec> dispatchCodecs,
+        MessageSynchronousDispatchGate synchronousDispatchGate) {
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _initializer = initializer ?? throw new ArgumentNullException(nameof(initializer));
         _health = health ?? throw new ArgumentNullException(nameof(health));
         _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        _synchronousDispatchGate = synchronousDispatchGate ??
+            throw new ArgumentNullException(nameof(synchronousDispatchGate));
         ArgumentNullException.ThrowIfNull(dispatchCodecs);
         _dispatchPayloadTypes = dispatchCodecs
             .Select(static codec => codec.PayloadType)
@@ -80,4 +86,16 @@ internal sealed class DurableMessageIngressAcceptance :
 
     public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) =>
         _replayGuard.Release(result);
+
+    public ValueTask<MessageAcknowledgement> WaitForAcknowledgementAsync<TProviderPayload>(
+        MessageReceiveResult<TProviderPayload> result,
+        CancellationToken cancellationToken) =>
+        _replayGuard.WaitForAcknowledgementAsync(result, cancellationToken);
+
+    public void Complete<TProviderPayload>(
+        MessageReceiveResult<TProviderPayload> result,
+        MessageAcknowledgement acknowledgement) =>
+        _replayGuard.Complete(result, acknowledgement);
+
+    public IDisposable? TryEnterSynchronousDispatch() => _synchronousDispatchGate.TryEnter();
 }

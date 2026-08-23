@@ -211,6 +211,72 @@ public sealed class PersistenceContractTests {
         Assert.Equal("1", route.Qualifier);
     }
 
+    [Fact]
+    public void DurableAutocompleteCoordinatesMustAlreadyBeCanonical() {
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Autocomplete,
+            MessageEventKind.AutocompleteRequested,
+            " search"));
+        Assert.Equal("search", MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Autocomplete,
+            MessageEventKind.AutocompleteRequested,
+            "search").Name);
+    }
+
+    [Fact]
+    public void OpaqueActionRoutesSupportSlackActionIdBoundary() {
+        Assert.Equal(new string('a', 255), MessageRoute.ForAction(new string('a', 255)).Name);
+        Assert.Throws<ArgumentException>(() => MessageRoute.ForAction(new string('a', 256)));
+    }
+
+    [Fact]
+    public void StoredRecordsRejectCoordinatesThatWouldBeNormalized() {
+        Assert.Throws<ArgumentException>(() => MessageDurableRecord.FromStoredCoordinates(
+            MessageProviders.Teams,
+            " installation-a",
+            "event-1",
+            MessageRoute.ForDirectMessage(),
+            DateTimeOffset.UtcNow,
+            "teams.activity.v1",
+            Array.Empty<byte>()));
+        Assert.Throws<ArgumentException>(() => MessageOutboxRecord.FromStoredCoordinates(
+            MessageProviders.Teams,
+            "installation-a",
+            "event-1",
+            "send ",
+            "teams.send.v1",
+            Array.Empty<byte>(),
+            DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public void DurableMetadataRejectsCapabilitiesAndMismatchedMessageHierarchy() {
+        var record = Record();
+        var metadata = new MessageDurableEnvelopeMetadata {
+            Conversation = new MessageDurableReference {
+                Provider = MessageProviders.Teams,
+                InstallationId = "tenant-a",
+                ConversationId = "conversation-a",
+                ConversationKind = MessageConversationKind.Channel
+            },
+            Message = new MessageDurableReference {
+                Provider = MessageProviders.Teams,
+                InstallationId = "tenant-a",
+                ConversationId = "conversation-b",
+                ConversationKind = MessageConversationKind.Channel,
+                MessageId = "message-1"
+            }
+        };
+
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+        metadata.Message!.ConversationId = "conversation-a";
+        metadata.Message.Capabilities = MessageCapabilities.Reply;
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+        metadata.Message.Capabilities = MessageCapabilities.None;
+        metadata.ScopeId = "scope-a";
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+    }
+
     private static MessageDurableRecord Record() => new(
         MessageProviders.Teams,
         "tenant-a",

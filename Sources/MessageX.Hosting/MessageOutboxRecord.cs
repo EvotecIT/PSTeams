@@ -29,6 +29,30 @@ public sealed class MessageOutboxRecord {
         AvailableAt = availableAt;
     }
 
+    /// <summary>Reconstructs an outbox record whose stored coordinates must already be canonical.</summary>
+    public static MessageOutboxRecord FromStoredCoordinates(
+        string provider,
+        string installationId,
+        string deduplicationKey,
+        string operation,
+        string payloadType,
+        byte[] safePayload,
+        DateTimeOffset availableAt) {
+        MessageDurableValidation.RequiredOpaque(provider, nameof(provider));
+        MessageDurableValidation.RequiredOpaque(installationId, nameof(installationId));
+        MessageDurableValidation.RequiredOpaque(deduplicationKey, nameof(deduplicationKey));
+        MessageDurableValidation.RequiredOpaque(operation, nameof(operation), 128);
+        MessageDurableValidation.RequiredOpaque(payloadType, nameof(payloadType));
+        return new MessageOutboxRecord(
+            provider,
+            installationId,
+            deduplicationKey,
+            operation,
+            payloadType,
+            safePayload,
+            availableAt);
+    }
+
     /// <summary>Stable provider identifier.</summary>
     public string Provider { get; }
 
