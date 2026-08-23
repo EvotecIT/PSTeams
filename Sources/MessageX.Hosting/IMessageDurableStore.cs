@@ -5,7 +5,10 @@ public interface IMessageDurableStore {
     /// <summary>Creates or upgrades the store schema idempotently.</summary>
     Task InitializeAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Atomically accepts a new provider-and-installation-scoped work item or returns its existing state.</summary>
+    /// <summary>
+    /// Atomically accepts a new provider-and-installation-scoped work item or returns its existing state.
+    /// Provider, installation, and deduplication coordinates use ordinal, case-sensitive equality.
+    /// </summary>
     Task<MessageDurableAcceptance> AcceptInboxAsync(
         MessageDurableRecord record,
         CancellationToken cancellationToken = default);
@@ -32,7 +35,11 @@ public interface IMessageDurableStore {
         MessageOutboxBatch? outbox = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Schedules another inbox attempt or atomically dead-letters the item.</summary>
+    /// <summary>
+    /// Schedules another inbox attempt or atomically dead-letters the item. Permanent failures dead-letter
+    /// immediately. Transient failures retry only while the current one-based lease attempt is less than
+    /// <paramref name="maximumAttempts"/>; equality dead-letters the item.
+    /// </summary>
     Task<MessageDurableFailureResult> FailInboxAsync(
         string recordId,
         string leaseToken,
@@ -62,7 +69,11 @@ public interface IMessageDurableStore {
         string leaseToken,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Schedules another outbound attempt or atomically dead-letters the operation.</summary>
+    /// <summary>
+    /// Schedules another outbound attempt or atomically dead-letters the operation. Permanent failures dead-letter
+    /// immediately. Transient failures retry only while the current one-based lease attempt is less than
+    /// <paramref name="maximumAttempts"/>; equality dead-letters the operation.
+    /// </summary>
     Task<MessageDurableFailureResult> FailOutboxAsync(
         string recordId,
         string leaseToken,

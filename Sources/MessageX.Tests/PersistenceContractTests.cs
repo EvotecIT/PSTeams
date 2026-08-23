@@ -48,6 +48,20 @@ public sealed class PersistenceContractTests {
             MessageRouteKind.Event,
             MessageEventKind.Unknown));
         Assert.Throws<ArgumentOutOfRangeException>(() => MessageRoute.ForEvent((MessageEventKind)999));
+        foreach (var coordinates in new[] {
+                     (MessageRouteKind.Event, MessageEventKind.ReactionChanged, (string?)null),
+                     (MessageRouteKind.Mention, MessageEventKind.AppMentioned, (string?)null),
+                     (MessageRouteKind.DirectMessage, MessageEventKind.MessageReceived, (string?)null),
+                     (MessageRouteKind.Action, MessageEventKind.ActionInvoked, "approve"),
+                     (MessageRouteKind.Submission, MessageEventKind.ModalSubmitted, "approval"),
+                     (MessageRouteKind.Autocomplete, MessageEventKind.AutocompleteRequested, "search")
+                 }) {
+            Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+                coordinates.Item1,
+                coordinates.Item2,
+                coordinates.Item3,
+                "unexpected"));
+        }
     }
 
     [Fact]

@@ -1,6 +1,9 @@
 namespace MessageX.Hosting;
 
-/// <summary>Provider-and-installation-scoped idempotent acceptance outcome.</summary>
+/// <summary>
+/// Provider-and-installation-scoped idempotent acceptance outcome using ordinal, case-sensitive provider,
+/// installation, and deduplication coordinates.
+/// </summary>
 public enum MessageDurableAcceptanceStatus {
     /// <summary>A new durable work item was committed.</summary>
     Accepted = 0,

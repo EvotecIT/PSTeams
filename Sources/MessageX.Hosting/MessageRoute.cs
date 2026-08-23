@@ -91,13 +91,13 @@ public sealed class MessageRoute {
         MessageEventKind eventKind,
         string? name = null,
         string? qualifier = null) => kind switch {
-            MessageRouteKind.Event when name is null => ForEvent(eventKind),
+            MessageRouteKind.Event when name is null && qualifier is null => ForEvent(eventKind),
             MessageRouteKind.Command when eventKind == MessageEventKind.CommandInvoked => ForCommand(name!, qualifier),
-            MessageRouteKind.Mention when eventKind == MessageEventKind.AppMentioned && name is null => ForMention(),
-            MessageRouteKind.DirectMessage when eventKind == MessageEventKind.MessageReceived && name is null => ForDirectMessage(),
-            MessageRouteKind.Action when eventKind == MessageEventKind.ActionInvoked => ForAction(name!),
-            MessageRouteKind.Submission when eventKind == MessageEventKind.ModalSubmitted => ForSubmission(name!),
-            MessageRouteKind.Autocomplete when eventKind == MessageEventKind.AutocompleteRequested => ForAutocomplete(name!),
+            MessageRouteKind.Mention when eventKind == MessageEventKind.AppMentioned && name is null && qualifier is null => ForMention(),
+            MessageRouteKind.DirectMessage when eventKind == MessageEventKind.MessageReceived && name is null && qualifier is null => ForDirectMessage(),
+            MessageRouteKind.Action when eventKind == MessageEventKind.ActionInvoked && qualifier is null => ForAction(name!),
+            MessageRouteKind.Submission when eventKind == MessageEventKind.ModalSubmitted && qualifier is null => ForSubmission(name!),
+            MessageRouteKind.Autocomplete when eventKind == MessageEventKind.AutocompleteRequested && qualifier is null => ForAutocomplete(name!),
             _ => throw new ArgumentException("The durable route coordinates do not describe a valid MessageX route.")
         };
 
