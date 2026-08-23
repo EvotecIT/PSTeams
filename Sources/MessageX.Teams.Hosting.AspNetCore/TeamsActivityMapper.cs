@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Globalization;
+using System.Text.Json;
 using MessageX.Core;
 using MessageX.Hosting;
 using Microsoft.Teams.Apps;
@@ -12,6 +14,8 @@ namespace MessageX.Teams.Hosting.AspNetCore;
 internal static class TeamsActivityMapper {
     private const int MaximumCoordinateLength = 256;
     private const int MaximumTextLength = 32 * 1024;
+    private const int MaximumAdaptiveInputs = 64;
+    private const int MaximumAdaptiveInputValueLength = 4096;
 
     public static string MapInstallationId(string installationId) =>
         NormalizeRequired(installationId, nameof(installationId));
@@ -73,6 +77,7 @@ internal static class TeamsActivityMapper {
             null,
             Array.Empty<string>(),
             Array.Empty<string>(),
+            EmptyInputs,
             verifiedSource);
     }
 
@@ -92,6 +97,7 @@ internal static class TeamsActivityMapper {
             null,
             Array.Empty<string>(),
             Array.Empty<string>(),
+            EmptyInputs,
             verifiedSource);
 
     public static TeamsInboundDispatch MapMessageDelete(
@@ -110,6 +116,7 @@ internal static class TeamsActivityMapper {
             null,
             Array.Empty<string>(),
             Array.Empty<string>(),
+            EmptyInputs,
             verifiedSource);
 
     public static TeamsInboundDispatch MapReaction(
@@ -128,6 +135,7 @@ internal static class TeamsActivityMapper {
             null,
             NormalizeReactions(activity.ReactionsAdded),
             NormalizeReactions(activity.ReactionsRemoved),
+            EmptyInputs,
             verifiedSource);
 
     public static TeamsInboundDispatch MapAdaptiveCardAction(
@@ -144,6 +152,7 @@ internal static class TeamsActivityMapper {
             installationId,
             receivedAt,
             actionName,
+            NormalizeAdaptiveInputs(activity.Value?.Action?.Data),
             verifiedSource);
     }
 
@@ -152,6 +161,7 @@ internal static class TeamsActivityMapper {
         string installationId,
         DateTimeOffset receivedAt,
         string actionName,
+        IReadOnlyDictionary<string, string?>? inputData = null,
         CoreActivity? verifiedSource = null) {
         ArgumentNullException.ThrowIfNull(activity);
         actionName = NormalizeRequired(actionName, nameof(actionName));
@@ -166,6 +176,7 @@ internal static class TeamsActivityMapper {
             actionName,
             Array.Empty<string>(),
             Array.Empty<string>(),
+            inputData ?? EmptyInputs,
             verifiedSource);
     }
 
@@ -180,6 +191,7 @@ internal static class TeamsActivityMapper {
         string? actionName,
         IReadOnlyList<string> reactionsAdded,
         IReadOnlyList<string> reactionsRemoved,
+        IReadOnlyDictionary<string, string?> inputData,
         CoreActivity? verifiedSource) {
         ArgumentNullException.ThrowIfNull(activity);
         var safeInstallationId = NormalizeRequired(installationId, nameof(installationId));
@@ -225,7 +237,8 @@ internal static class TeamsActivityMapper {
             channelId,
             locale,
             reactionsAdded,
-            reactionsRemoved);
+            reactionsRemoved,
+            inputData);
         var envelope = new MessageEventEnvelope<TeamsInboundActivity>(
             MessageProviders.Teams,
             safeInstallationId,
@@ -336,6 +349,49 @@ internal static class TeamsActivityMapper {
                 .Where(reaction => reaction is not null)
                 .Cast<string>()
                 .ToArray();
+
+    internal static IReadOnlyDictionary<string, string?> NormalizeAdaptiveInputs(
+        IReadOnlyDictionary<string, object>? values) {
+        if (values is null || values.Count == 0) {
+            return EmptyInputs;
+        }
+        if (values.Count > MaximumAdaptiveInputs) {
+            throw new ArgumentException("Adaptive Card input data exceeds its supported shape.", nameof(values));
+        }
+        var normalized = new Dictionary<string, string?>(values.Count, StringComparer.Ordinal);
+        foreach (var pair in values.OrderBy(static pair => pair.Key, StringComparer.Ordinal)) {
+            var key = NormalizeRequired(pair.Key, "adaptiveInputName");
+            var value = NormalizeAdaptiveInputValue(pair.Value);
+            if (!normalized.TryAdd(key, value)) {
+                throw new ArgumentException("Adaptive Card input names must be unique.", nameof(values));
+            }
+        }
+        return normalized;
+    }
+
+    private static string? NormalizeAdaptiveInputValue(object? value) {
+        string? text = value switch {
+            null => null,
+            string stringValue => stringValue,
+            bool booleanValue => booleanValue ? "true" : "false",
+            byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal =>
+                ((IFormattable)value).ToString(null, CultureInfo.InvariantCulture),
+            JsonElement element when element.ValueKind == JsonValueKind.Null => null,
+            JsonElement element when element.ValueKind == JsonValueKind.String => element.GetString(),
+            JsonElement element when element.ValueKind is JsonValueKind.True or JsonValueKind.False =>
+                element.GetBoolean() ? "true" : "false",
+            JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetRawText(),
+            _ => throw new ArgumentException("Adaptive Card inputs must be scalar values.", nameof(value))
+        };
+        if (text is not null &&
+            (text.Length > MaximumAdaptiveInputValueLength || text.IndexOf('\0') >= 0)) {
+            throw new ArgumentException("Adaptive Card input values exceed their safe boundary.", nameof(value));
+        }
+        return text;
+    }
+
+    private static readonly IReadOnlyDictionary<string, string?> EmptyInputs =
+        new Dictionary<string, string?>(StringComparer.Ordinal);
 
     private static DateTimeOffset? ParseTimestamp(string? value) =>
         DateTimeOffset.TryParse(

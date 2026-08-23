@@ -13,6 +13,7 @@ public static class TeamsBotApplicationExtensions {
     /// </summary>
     /// <param name="application">Microsoft Teams SDK application that owns HTTP authentication and parsing.</param>
     /// <param name="acceptance">Configured volatile or durable MessageX ingress acceptance boundary.</param>
+    /// <param name="router">MessageX handler registry used for synchronous Adaptive Card actions.</param>
     /// <param name="installationResolver">Host-owned mapping from verified Teams coordinates to installation identity.</param>
     /// <returns>The supplied Microsoft Teams application.</returns>
     public static TeamsBotApplication UseMessageXHosting(
@@ -59,7 +60,7 @@ public static class TeamsBotApplicationExtensions {
             acceptance,
             cancellationToken));
         application.OnAdaptiveCardAction(async (context, cancellationToken) => {
-            var result = await DispatchAsync(
+            var result = await DispatchAdaptiveCardAsync(
                 TeamsActivityMapper.MapAdaptiveCardAction(
                     context.Activity,
                     ResolveInstallation(context.Activity, installationResolver),
@@ -68,7 +69,7 @@ public static class TeamsBotApplicationExtensions {
                 acceptance,
                 router,
                 cancellationToken).ConfigureAwait(false);
-            return CreateInvokeResponse(result.HandlerResult?.Acknowledgement);
+            return CreateInvokeResponse(result?.HandlerResult?.Acknowledgement);
         });
 
         var sdkActivityHandler = application.OnActivity ??
@@ -96,7 +97,7 @@ public static class TeamsBotApplicationExtensions {
         }
     }
 
-    private static async Task<MessageDispatchResult> DispatchAsync(
+    internal static async Task<MessageDispatchResult?> DispatchAdaptiveCardAsync(
         TeamsInboundDispatch dispatch,
         IMessageIngressAcceptance acceptance,
         MessageRouter router,
@@ -108,7 +109,7 @@ public static class TeamsBotApplicationExtensions {
             requiresSynchronousDispatch: true);
         var accepted = await acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
         if (accepted == MessageIngressEnqueueStatus.Duplicate) {
-            return MessageDispatchResult.NotMatched();
+            return null;
         }
         if (accepted != MessageIngressEnqueueStatus.Accepted) {
             throw new InvalidOperationException("The MessageX Teams ingress boundary is unavailable.");

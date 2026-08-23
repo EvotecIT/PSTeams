@@ -311,6 +311,37 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.NotEqual(first.Envelope?.DeduplicationKey, second.Envelope?.DeduplicationKey);
     }
 
+    [Fact]
+    public void InstallationOwnerSelectionFollowsInteractionContextAndConfiguredOwner() {
+        const string direct = """
+            {
+              "id":"100000000000000051","application_id":"100000000000000052","type":2,
+              "token":"token","context":1,"user":{"id":"100000000000000053"},
+              "authorizing_integration_owners":{"0":"100000000000000054","1":"100000000000000055"},
+              "data":{"name":"status","type":1}
+            }
+            """;
+        var signature = Sign(Timestamp, direct);
+
+        var userOwned = DiscordInteractionReceiver.Receive(
+            Request(direct),
+            PublicKeyHex,
+            signature,
+            Timestamp,
+            expectedInstallationOwnerId: "100000000000000055");
+        var wrongGuildOwner = DiscordInteractionReceiver.Receive(
+            Request(direct),
+            PublicKeyHex,
+            signature,
+            Timestamp,
+            expectedInstallationOwnerId: "100000000000000054");
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, userOwned.Status);
+        Assert.Equal("100000000000000055", userOwned.Envelope?.Payload.InstallationOwnerId);
+        Assert.Equal(MessageReceiveFailureKind.Unauthorized, wrongGuildOwner.FailureKind);
+        Assert.Equal(403, wrongGuildOwner.Acknowledgement.StatusCode);
+    }
+
     private static MessageReceiveResult<DiscordInboundInteraction> Receive(string json) {
         var signature = Sign(Timestamp, json);
         return DiscordInteractionReceiver.Receive(

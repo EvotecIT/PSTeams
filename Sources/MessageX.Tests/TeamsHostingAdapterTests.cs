@@ -135,6 +135,67 @@ public sealed class TeamsHostingAdapterTests {
     }
 
     [Fact]
+    public async Task AdaptiveCardDispatchReturnsHandlerAcknowledgementAndTreatsReplayAsSuccess() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<IMessageDurableStore>(store);
+        services.AddMessageXTeamsHosting();
+        services.AddMessageXDurableIngress();
+        using var provider = services.BuildServiceProvider();
+        var router = provider.GetRequiredService<MessageRouter>();
+        router.OnAction<TeamsInboundActivity>("approve-request", (_, _) =>
+            Task.FromResult(MessageHandlerResult.Respond(new MessageAcknowledgement(
+                202,
+                "application/json",
+                System.Text.Encoding.UTF8.GetBytes("{\"accepted\":true}")))));
+        var dispatch = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request");
+
+        var first = await TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            dispatch,
+            provider.GetRequiredService<IMessageIngressAcceptance>(),
+            router,
+            TestContext.Current.CancellationToken);
+        var duplicate = await TeamsBotApplicationExtensions.DispatchAdaptiveCardAsync(
+            dispatch,
+            provider.GetRequiredService<IMessageIngressAcceptance>(),
+            router,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(202, first?.HandlerResult?.Acknowledgement?.StatusCode);
+        Assert.Null(duplicate);
+    }
+
+    [Fact]
+    public void AdaptiveCardInputsAreBoundedAndSurviveDurableRestoration() {
+        var inputs = TeamsActivityMapper.NormalizeAdaptiveInputs(new Dictionary<string, object> {
+            ["approved"] = true,
+            ["count"] = JsonDocument.Parse("42").RootElement.Clone(),
+            ["note"] = "ready"
+        });
+        var dispatch = TeamsActivityMapper.MapAdaptiveCardActionCore(
+            Message("channel"),
+            "tenant-installation",
+            ReceivedAt,
+            "approve-request",
+            inputs);
+        var codec = new TeamsInboundActivityDurableCodec();
+
+        var restored = codec.Decode(codec.Encode(dispatch.Route, dispatch.Envelope));
+
+        Assert.Equal("true", restored.Payload.InputData["approved"]);
+        Assert.Equal("42", restored.Payload.InputData["count"]);
+        Assert.Equal("ready", restored.Payload.InputData["note"]);
+        Assert.Throws<ArgumentException>(() => TeamsActivityMapper.NormalizeAdaptiveInputs(
+            new Dictionary<string, object> { ["nested"] = new { unsafeValue = true } }));
+    }
+
+    [Fact]
     public void TransientSdkActivityIsExcludedFromDefaultPersistence() {
         var dispatch = TeamsActivityMapper.MapMessage(
             Message("personal"),
@@ -164,6 +225,10 @@ public sealed class TeamsHostingAdapterTests {
             "tenant-installation",
             ReceivedAt);
 
+        await TeamsBotApplicationExtensions.DispatchAsync(
+            dispatch,
+            provider.GetRequiredService<IMessageIngressAcceptance>(),
+            TestContext.Current.CancellationToken);
         await TeamsBotApplicationExtensions.DispatchAsync(
             dispatch,
             provider.GetRequiredService<IMessageIngressAcceptance>(),

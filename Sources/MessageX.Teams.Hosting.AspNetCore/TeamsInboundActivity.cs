@@ -15,7 +15,8 @@ public sealed class TeamsInboundActivity {
         string? channelId,
         string? locale,
         IReadOnlyList<string> reactionsAdded,
-        IReadOnlyList<string> reactionsRemoved) {
+        IReadOnlyList<string> reactionsRemoved,
+        IReadOnlyDictionary<string, string?>? inputData = null) {
         Kind = kind;
         Activity = activity;
         Text = text;
@@ -26,6 +27,9 @@ public sealed class TeamsInboundActivity {
         Locale = locale;
         ReactionsAdded = reactionsAdded;
         ReactionsRemoved = reactionsRemoved;
+        InputData = inputData is null
+            ? new Dictionary<string, string?>(StringComparer.Ordinal)
+            : new Dictionary<string, string?>(inputData, StringComparer.Ordinal);
     }
 
     /// <summary>Adapted activity shape.</summary>
@@ -54,6 +58,9 @@ public sealed class TeamsInboundActivity {
 
     /// <summary>Reaction types removed by this activity.</summary>
     public IReadOnlyList<string> ReactionsRemoved { get; }
+
+    /// <summary>Bounded scalar Adaptive Card input values, keyed by the submitted input identifier.</summary>
+    public IReadOnlyDictionary<string, string?> InputData { get; }
 
     /// <summary>
     /// Verified Microsoft SDK activity for synchronous handler use. It is null after durable restoration and intentionally excluded from persistence.

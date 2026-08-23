@@ -31,7 +31,8 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             ChannelId = envelope.Payload.ChannelId,
             Locale = envelope.Payload.Locale,
             ReactionsAdded = envelope.Payload.ReactionsAdded.ToArray(),
-            ReactionsRemoved = envelope.Payload.ReactionsRemoved.ToArray()
+            ReactionsRemoved = envelope.Payload.ReactionsRemoved.ToArray(),
+            InputData = new Dictionary<string, string?>(envelope.Payload.InputData, StringComparer.Ordinal)
         };
         return new MessageDurableRecord(
             envelope.Provider,
@@ -72,7 +73,8 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             projection.ChannelId,
             projection.Locale,
             projection.ReactionsAdded ?? Array.Empty<string>(),
-            projection.ReactionsRemoved ?? Array.Empty<string>());
+            projection.ReactionsRemoved ?? Array.Empty<string>(),
+            projection.InputData);
         Validate(payload, record.Route);
         return projection.Metadata.Restore(record, payload);
     }
@@ -87,6 +89,7 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
             !IsCoordinate(payload.Locale) ||
             !AreCoordinates(payload.ReactionsAdded) ||
             !AreCoordinates(payload.ReactionsRemoved) ||
+            !AreInputsSafe(payload.InputData) ||
             !RouteMatches(payload, route)) {
             throw new MessageDurablePayloadException("The Teams durable payload is unsafe or does not match its route.");
         }
@@ -114,6 +117,13 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
     private static bool AreCoordinates(IReadOnlyList<string>? values) =>
         values is not null && values.Count <= 100 && values.All(IsRequiredCoordinate);
 
+    private static bool AreInputsSafe(IReadOnlyDictionary<string, string?>? values) =>
+        values is not null &&
+        values.Count <= 64 &&
+        values.All(static pair =>
+            IsRequiredCoordinate(pair.Key) &&
+            (pair.Value is null || pair.Value.Length <= 4096 && pair.Value.IndexOf('\0') < 0));
+
     private static bool IsRequiredCoordinate(string? value) =>
         IsCoordinate(value) && !string.IsNullOrWhiteSpace(value);
 
@@ -134,5 +144,6 @@ public sealed class TeamsInboundActivityDurableCodec : IMessageDurableCodec<Team
         public string? Locale { get; set; }
         public string[]? ReactionsAdded { get; set; }
         public string[]? ReactionsRemoved { get; set; }
+        public Dictionary<string, string?>? InputData { get; set; }
     }
 }
