@@ -183,6 +183,37 @@ public sealed class DiscordInteractionReceiverTests {
     }
 
     [Fact]
+    public async Task QualifiedDiscordCommandFallsBackToOrdinaryCommandRegistration() {
+        const string json = """
+            {"id":"100000000000000081","application_id":"100000000000000082","type":2,"token":"t","user":{"id":"100000000000000083"},"data":{"name":"status","type":1}}
+            """;
+        var result = Receive(json);
+        var router = new MessageRouter();
+        router.OnCommand<DiscordInboundInteraction>("status", (_, _) =>
+            Task.FromResult(MessageHandlerResult.Completed()));
+
+        var dispatch = await router.DispatchAsync(
+            result.Route!,
+            result.Envelope!,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("1", result.Route?.Qualifier);
+        Assert.True(dispatch.RouteMatched);
+    }
+
+    [Fact]
+    public void AutocompleteChoicesRejectNumbersOutsideDiscordSafeRange() {
+        const long maximum = 9007199254740992L;
+
+        Assert.NotNull(DiscordAutocompleteChoice.FromInteger("maximum", maximum));
+        Assert.NotNull(DiscordAutocompleteChoice.FromNumber("minimum", -maximum));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DiscordAutocompleteChoice.FromInteger("too-large", maximum + 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DiscordAutocompleteChoice.FromNumber("too-small", -9007199254740994D));
+    }
+
+    [Fact]
     public void InvalidSignatureStaleTimestampAndWrongContentTypeFailClosed() {
         const string json = "{\"type\":1}";
         var signature = Sign(Timestamp, json);

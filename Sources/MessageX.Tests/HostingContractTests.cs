@@ -165,6 +165,7 @@ public sealed class HostingContractTests {
         var router = new MessageRouter();
         router.OnAction<TestPayload>("approve", (_, _) => Task.FromResult(MessageHandlerResult.Completed()));
         router.OnAction<TestPayload>("APPROVE", (_, _) => Task.FromResult(MessageHandlerResult.Ignored()));
+        router.OnCommand<TestPayload>("inspect", (_, _) => Task.FromResult(MessageHandlerResult.Ignored()));
         router.OnCommand<TestPayload>("inspect", "2", (_, _) => Task.FromResult(MessageHandlerResult.Completed()));
         router.OnCommand<TestPayload>("inspect", "3", (_, _) => Task.FromResult(MessageHandlerResult.Ignored()));
 

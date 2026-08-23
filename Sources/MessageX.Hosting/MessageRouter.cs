@@ -71,6 +71,13 @@ public sealed class MessageRouter {
         IHandlerRegistration? registration;
         lock (_sync) {
             _handlers.TryGetValue(HandlerKey.Create<TProviderPayload>(route), out registration);
+            if (registration is null &&
+                route.Kind == MessageRouteKind.Command &&
+                route.Qualifier is not null) {
+                _handlers.TryGetValue(
+                    HandlerKey.Create<TProviderPayload>(MessageRoute.ForCommand(route.Name!)),
+                    out registration);
+            }
         }
         if (registration is null) {
             return MessageDispatchResult.NotMatched();
