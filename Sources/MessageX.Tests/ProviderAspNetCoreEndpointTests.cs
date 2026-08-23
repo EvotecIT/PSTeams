@@ -143,7 +143,7 @@ public sealed class ProviderAspNetCoreEndpointTests {
             TestContext.Current.CancellationToken);
         await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
             duplicate,
-            new DiscordEndpointConfiguration("application-a", DiscordPublicKey),
+            DiscordConfiguration(),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
