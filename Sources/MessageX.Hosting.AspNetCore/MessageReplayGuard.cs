@@ -63,7 +63,7 @@ public sealed class MessageReplayGuard {
         }
     }
 
-    /// <summary>Releases a reservation when accepted synchronous work cannot begin.</summary>
+    /// <summary>Releases a reserved coordinate when accepted synchronous work cannot be dispatched.</summary>
     public void Release<TProviderPayload>(MessageReceiveResult<TProviderPayload> result) {
         ArgumentNullException.ThrowIfNull(result);
         if (result.Envelope is null) {

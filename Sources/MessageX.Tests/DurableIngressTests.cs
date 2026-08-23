@@ -71,6 +71,35 @@ public sealed class DurableIngressTests {
     }
 
     [Fact]
+    public async Task FailedSynchronousDispatchReleasesReplayReservationForProviderRetry() {
+        using var database = new TemporaryDatabase();
+        using var store = new SqliteMessageDurableStore(database.Path);
+        using var provider = Services(store, includeCodec: true).BuildServiceProvider();
+        var attempts = 0;
+        provider.GetRequiredService<MessageRouter>().OnCommand<TestPayload>("status", (_, _) => {
+            if (Interlocked.Increment(ref attempts) == 1) {
+                throw new InvalidOperationException("transient synchronous failure");
+            }
+            return Task.FromResult(MessageHandlerResult.Completed());
+        });
+        var result = MessageReceiveResult<TestPayload>.Dispatch(
+            MessageRoute.ForCommand("status"),
+            Envelope("synchronous-retry"),
+            MessageAcknowledgement.Empty(StatusCodes.Status200OK),
+            requiresSynchronousDispatch: true);
+        var processor = provider.GetRequiredService<MessageReceiveResultProcessor>();
+        var first = ResponseContext();
+        var retry = ResponseContext();
+
+        await processor.ProcessAsync(first.Response, result, TestContext.Current.CancellationToken);
+        await processor.ProcessAsync(retry.Response, result, TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status500InternalServerError, first.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, retry.Response.StatusCode);
+        Assert.Equal(2, Volatile.Read(ref attempts));
+    }
+
+    [Fact]
     public async Task MissingOrCoordinateChangingCodecFailsBeforeProviderSuccess() {
         using var database = new TemporaryDatabase();
         using var store = new SqliteMessageDurableStore(database.Path);

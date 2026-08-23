@@ -15,12 +15,12 @@ public sealed class MessageReceiveResultProcessor {
     public MessageReceiveResultProcessor(
         IMessageIngressAcceptance acceptance,
         MessageAcknowledgementWriter writer,
-        MessageReplayGuard replayGuard,
-        MessageRouter router) : this(
+        MessageRouter router,
+        MessageReplayGuard replayGuard) : this(
             acceptance,
             writer,
-            replayGuard,
             router,
+            replayGuard,
             new MessageSynchronousDispatchGate(
                 MessageXHostingAspNetCoreOptions.DefaultSynchronousDispatchCapacity)) {
     }
@@ -30,13 +30,13 @@ public sealed class MessageReceiveResultProcessor {
     public MessageReceiveResultProcessor(
         IMessageIngressAcceptance acceptance,
         MessageAcknowledgementWriter writer,
-        MessageReplayGuard replayGuard,
         MessageRouter router,
+        MessageReplayGuard replayGuard,
         MessageSynchronousDispatchGate synchronousDispatchGate) {
         _acceptance = acceptance ?? throw new ArgumentNullException(nameof(acceptance));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-        _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _router = router ?? throw new ArgumentNullException(nameof(router));
+        _replayGuard = replayGuard ?? throw new ArgumentNullException(nameof(replayGuard));
         _synchronousDispatchGate = synchronousDispatchGate ??
             throw new ArgumentNullException(nameof(synchronousDispatchGate));
     }
@@ -97,6 +97,7 @@ public sealed class MessageReceiveResultProcessor {
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             throw;
         } catch {
+            _replayGuard.Release(result);
             await _writer.WriteAsync(
                 response,
                 MessageAcknowledgement.Empty(StatusCodes.Status500InternalServerError),

@@ -58,6 +58,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         }
         using var deliveryCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var renewal = RenewUntilCanceledAsync(lease, deliveryCancellation.Token);
+        await Task.Yield();
         Task delivery;
         try {
             delivery = handler.DeliverAsync(lease.Record, deliveryCancellation.Token) ??

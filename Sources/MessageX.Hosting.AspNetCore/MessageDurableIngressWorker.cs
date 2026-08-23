@@ -34,9 +34,9 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        try {
-            await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
-            while (!stoppingToken.IsCancellationRequested) {
+        while (!stoppingToken.IsCancellationRequested) {
+            try {
+                await _initializer.EnsureInitializedAsync(stoppingToken).ConfigureAwait(false);
                 if (_payloadTypes.Length == 0) {
                     await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
                     continue;
@@ -54,11 +54,15 @@ internal sealed class MessageDurableIngressWorker : BackgroundService {
                 }
                 await Task.WhenAll(leases.Select(lease => ProcessAsync(lease, stoppingToken)))
                     .ConfigureAwait(false);
+            } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                return;
+            } catch {
+                _health.Unavailable(_timeProvider.GetUtcNow());
+                var delay = _options.RetryDelay > TimeSpan.Zero
+                    ? _options.RetryDelay
+                    : _options.PollInterval;
+                await Task.Delay(delay, _timeProvider, stoppingToken).ConfigureAwait(false);
             }
-        } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-        } catch {
-            _health.Unavailable(_timeProvider.GetUtcNow());
-            throw;
         }
     }
 
