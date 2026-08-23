@@ -1,0 +1,36 @@
+namespace MessageX.Hosting.AspNetCore;
+
+/// <summary>Configures durable inbox leasing and bounded retry behavior.</summary>
+public sealed class MessageXDurableIngressOptions {
+    /// <summary>Default terminal-record retention and deduplication window.</summary>
+    public static readonly TimeSpan DefaultTerminalRetention = TimeSpan.FromDays(7);
+
+    /// <summary>Maximum inbox items claimed in one storage transaction.</summary>
+    public int ClaimBatchSize { get; set; } = 16;
+
+    /// <summary>Time after which an unfinished claim can be recovered by another worker.</summary>
+    public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>Delay used when no durable inbox item is available.</summary>
+    public TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>Delay before retrying a failed handler.</summary>
+    public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Maximum processing attempts before an inbox item is dead-lettered, including bounded handoff attempts when
+    /// no worker has registered the retained route.
+    /// </summary>
+    public int MaximumAttempts { get; set; } = 5;
+
+    /// <summary>
+    /// Retention for completed and dead-lettered records. This is also the durable inbox deduplication window.
+    /// </summary>
+    public TimeSpan TerminalRetention { get; set; } = DefaultTerminalRetention;
+
+    /// <summary>Interval between bounded terminal-record cleanup passes.</summary>
+    public TimeSpan CleanupInterval { get; set; } = TimeSpan.FromHours(1);
+
+    /// <summary>Maximum terminal inbox and outbox records deleted per table in one cleanup pass.</summary>
+    public int CleanupBatchSize { get; set; } = 1000;
+}

@@ -8,6 +8,9 @@ using MessageX.Discord;
 namespace MessageX.Tests;
 
 public sealed class DiscordLifecycleClientTests {
+    private static readonly TimeSpan StagedMutationTimeout = TimeSpan.FromMilliseconds(1000);
+    private static readonly TimeSpan StagedVerificationDuration = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan MaximumSharedTimeoutRemainder = TimeSpan.FromMilliseconds(850);
     private static readonly Uri WebhookUri = new(
         "https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456");
 
@@ -213,7 +216,7 @@ public sealed class DiscordLifecycleClientTests {
     [Fact]
     public async Task BotDeleteAppliesOneTimeoutAcrossOwnershipAndDeletion() {
         using var handler = new StagedOwnershipTimeoutHandler();
-        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(600) };
+        using var httpClient = new HttpClient(handler) { Timeout = StagedMutationTimeout };
         using var client = new DiscordBotLifecycleClient(
             DiscordConnection.ForBotToken("discord-super-secret-token-value"),
             httpClient);
@@ -225,7 +228,7 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal(MessageErrorKind.Transient, exception.Kind);
         Assert.Contains("timed out", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(2, handler.RequestCount);
-        Assert.True(handler.SecondRequestDuration < TimeSpan.FromMilliseconds(500));
+        Assert.True(handler.SecondRequestDuration < MaximumSharedTimeoutRemainder);
     }
 
     [Fact]
@@ -504,7 +507,7 @@ public sealed class DiscordLifecycleClientTests {
             CancellationToken cancellationToken) {
             RequestCount++;
             if (RequestCount == 1) {
-                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                await Task.Delay(StagedVerificationDuration, cancellationToken);
                 return Response(HttpStatusCode.OK, "{\"id\":\"423456789012345678\"}");
             }
 

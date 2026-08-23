@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "messagex.core": {
+        "type": "Project"
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.hosting.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )"
+        }
+      },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Slack": "[0.1.0, )"
+        }
+      }
+    },
+    "net8.0": {
+      "messagex.core": {
+        "type": "Project"
+      },
+      "messagex.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.hosting.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )"
+        }
+      },
+      "messagex.slack": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Core": "[0.1.0, )"
+        }
+      },
+      "messagex.slack.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "MessageX.Hosting": "[0.1.0, )",
+          "MessageX.Slack": "[0.1.0, )"
+        }
+      }
+    }
+  }
+}

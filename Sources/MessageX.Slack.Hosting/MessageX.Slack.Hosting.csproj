@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX Slack Hosting</Title>
+    <Description>Verified Slack Events API, interaction, and durable hosting adapters for MessageX.</Description>
+    <AssemblyName>MessageX.Slack.Hosting</AssemblyName>
+    <PackageId>MessageX.Slack.Hosting</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
+    <ProjectReference Include="..\MessageX.Slack\MessageX.Slack.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>
+

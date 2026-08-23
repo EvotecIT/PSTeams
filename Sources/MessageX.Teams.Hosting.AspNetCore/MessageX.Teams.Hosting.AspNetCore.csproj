@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Title>MessageX Teams ASP.NET Core Hosting</Title>
+    <Description>Thin Microsoft Teams SDK hosting adapter for MessageX.</Description>
+    <AssemblyName>MessageX.Teams.Hosting.AspNetCore</AssemblyName>
+    <PackageId>MessageX.Teams.Hosting.AspNetCore</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Teams.Apps" />
+    <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
+    <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
+    <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

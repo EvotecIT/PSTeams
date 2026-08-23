@@ -4,8 +4,16 @@
   "ExpectedVersionMap": {
     "MessageX.Core": "0.1.X",
     "MessageX.Discord": "0.1.X",
+    "MessageX.Discord.Hosting": "0.1.X",
+    "MessageX.Discord.Hosting.AspNetCore": "0.1.X",
+    "MessageX.Hosting": "0.1.X",
+    "MessageX.Hosting.AspNetCore": "0.1.X",
+    "MessageX.Persistence.DbaClientX": "0.1.X",
     "MessageX.Slack": "0.1.X",
-    "MessageX.Teams": "0.1.X"
+    "MessageX.Slack.Hosting": "0.1.X",
+    "MessageX.Slack.Hosting.AspNetCore": "0.1.X",
+    "MessageX.Teams": "0.1.X",
+    "MessageX.Teams.Hosting.AspNetCore": "0.1.X"
   },
   "ExpectedVersionMapAsInclude": true,
   "ExpectedVersionMapUseWildcards": false,

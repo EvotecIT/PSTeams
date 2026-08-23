@@ -1,0 +1,309 @@
+using MessageX.Hosting;
+
+namespace MessageX.Tests;
+
+public sealed class PersistenceContractTests {
+    [Fact]
+    public void DurableRouteKindNumericValuesRemainStable() {
+        Assert.Equal(0, (int)MessageRouteKind.Event);
+        Assert.Equal(1, (int)MessageRouteKind.Command);
+        Assert.Equal(2, (int)MessageRouteKind.Mention);
+        Assert.Equal(3, (int)MessageRouteKind.DirectMessage);
+        Assert.Equal(4, (int)MessageRouteKind.Action);
+        Assert.Equal(5, (int)MessageRouteKind.Submission);
+        Assert.Equal(6, (int)MessageRouteKind.Autocomplete);
+    }
+    [Theory]
+    [InlineData(MessageRouteKind.Event, MessageEventKind.ReactionChanged, null)]
+    [InlineData(MessageRouteKind.Command, MessageEventKind.CommandInvoked, "status")]
+    [InlineData(MessageRouteKind.Mention, MessageEventKind.AppMentioned, null)]
+    [InlineData(MessageRouteKind.DirectMessage, MessageEventKind.MessageReceived, null)]
+    [InlineData(MessageRouteKind.Action, MessageEventKind.ActionInvoked, "approve")]
+    [InlineData(MessageRouteKind.Submission, MessageEventKind.ModalSubmitted, "approval")]
+    [InlineData(MessageRouteKind.Autocomplete, MessageEventKind.AutocompleteRequested, "search")]
+    public void DurableRouteCoordinatesRoundTripOnlyTruthfulClassifications(
+        MessageRouteKind kind,
+        MessageEventKind eventKind,
+        string? name) {
+        var route = MessageRoute.FromDurableCoordinates(kind, eventKind, name);
+
+        Assert.Equal(kind, route.Kind);
+        Assert.Equal(eventKind, route.EventKind);
+        Assert.Equal(name, route.Name);
+    }
+
+    [Fact]
+    public void DurableCommandRouteCoordinatesPreserveProviderQualifier() {
+        var route = MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "inspect",
+            "2");
+
+        Assert.Equal("inspect", route.Name);
+        Assert.Equal("2", route.Qualifier);
+    }
+
+    [Fact]
+    public void DurableRouteCoordinatesRejectMismatchedKindsNamesAndEvents() {
+        Assert.ThrowsAny<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.MessageReceived,
+            "status"));
+        Assert.ThrowsAny<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Mention,
+            MessageEventKind.AppMentioned,
+            "unexpected"));
+        Assert.ThrowsAny<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Event,
+            MessageEventKind.Unknown));
+        Assert.Throws<ArgumentOutOfRangeException>(() => MessageRoute.ForEvent((MessageEventKind)999));
+        foreach (var coordinates in new[] {
+                     (MessageRouteKind.Event, MessageEventKind.ReactionChanged, (string?)null),
+                     (MessageRouteKind.Mention, MessageEventKind.AppMentioned, (string?)null),
+                     (MessageRouteKind.DirectMessage, MessageEventKind.MessageReceived, (string?)null),
+                     (MessageRouteKind.Action, MessageEventKind.ActionInvoked, "approve"),
+                     (MessageRouteKind.Submission, MessageEventKind.ModalSubmitted, "approval"),
+                     (MessageRouteKind.Autocomplete, MessageEventKind.AutocompleteRequested, "search")
+                 }) {
+            Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+                coordinates.Item1,
+                coordinates.Item2,
+                coordinates.Item3,
+                "unexpected"));
+        }
+    }
+
+    [Fact]
+    public void DurableInboxRecordOwnsBoundedIndependentSafeProjection() {
+        var payload = new byte[] { 1, 2, 3 };
+        var record = new MessageDurableRecord(
+            MessageProviders.Slack,
+            " installation-a ",
+            " event-1 ",
+            MessageRoute.ForMention(),
+            new DateTimeOffset(2026, 8, 22, 19, 0, 0, TimeSpan.Zero),
+            " slack.event.v1 ",
+            payload);
+        payload[0] = 9;
+        var copy = record.CopyPayload();
+        copy[1] = 9;
+
+        Assert.Equal(new byte[] { 1, 2, 3 }, record.CopyPayload());
+        Assert.Equal("installation-a", record.InstallationId);
+        Assert.Equal("event-1", record.DeduplicationKey);
+        Assert.Equal("slack.event.v1", record.PayloadType);
+        Assert.Throws<ArgumentException>(() => new MessageDurableRecord(
+            MessageProviders.Slack,
+            "installation-a",
+            "event-2",
+            MessageRoute.ForMention(),
+            DateTimeOffset.UtcNow,
+            "slack.event.v1",
+            new byte[(1024 * 1024) + 1]));
+    }
+
+    [Fact]
+    public void TransactionalOutboxRecordOwnsBoundedIndependentProjectionWithoutCredentials() {
+        var payload = new byte[] { 4, 5, 6 };
+        var record = new MessageOutboxRecord(
+            MessageProviders.Discord,
+            "application-a",
+            "reply-event-1",
+            "send-message",
+            "discord.send.v1",
+            payload,
+            new DateTimeOffset(2026, 8, 22, 19, 1, 0, TimeSpan.Zero));
+        payload[0] = 9;
+        var copy = record.CopyPayload();
+        copy[1] = 9;
+
+        Assert.Equal(new byte[] { 4, 5, 6 }, record.CopyPayload());
+        Assert.Equal("application-a", record.InstallationId);
+        Assert.Equal("send-message", record.Operation);
+        Assert.DoesNotContain("token", record.GetType().GetProperties().Select(property => property.Name),
+            StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret", record.GetType().GetProperties().Select(property => property.Name),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DurableLeasesRequireOneBasedAttemptsAndOpaqueCoordinates() {
+        var record = Record();
+        var lease = new MessageDurableLease(
+            "record-1",
+            "lease-1",
+            new DateTimeOffset(2026, 8, 22, 19, 5, 0, TimeSpan.Zero),
+            1,
+            record,
+            TimeSpan.FromMinutes(1));
+
+        Assert.Equal(1, lease.AttemptCount);
+        Assert.Equal(TimeSpan.FromMinutes(1), lease.LeaseDuration);
+        Assert.Same(record, lease.Record);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MessageDurableLease(
+            "record-1",
+            "lease-1",
+            DateTimeOffset.UtcNow,
+            0,
+            record));
+        Assert.Throws<ArgumentException>(() => new MessageDurableLease(
+            " record-1",
+            "lease-1",
+            DateTimeOffset.UtcNow,
+            1,
+            record));
+        Assert.Throws<ArgumentException>(() => new MessageOutboxLease(
+            "record-1",
+            "lease-1 ",
+            DateTimeOffset.UtcNow,
+            1,
+            OutboxRecord()));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MessageDurableLease(
+            "record-1",
+            "lease-1",
+            DateTimeOffset.UtcNow,
+            1,
+            record,
+            TimeSpan.Zero));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MessageLeaseRenewal(
+            DateTimeOffset.UtcNow,
+            TimeSpan.Zero));
+        Assert.Throws<ArgumentException>(() => new MessageDurableAcceptance(
+            " record-1",
+            MessageDurableAcceptanceStatus.Accepted));
+    }
+
+    [Fact]
+    public void TransactionalOutboxBatchIsImmutableAndBounded() {
+        var source = new List<MessageOutboxRecord> { OutboxRecord() };
+        var batch = new MessageOutboxBatch(source);
+        source.Clear();
+
+        Assert.Single(batch);
+        Assert.Throws<ArgumentException>(() => new MessageOutboxBatch(
+            Enumerable.Range(0, MessageOutboxBatch.MaximumCount + 1)
+                .Select(index => OutboxRecord($"reply-{index}"))));
+        Assert.Throws<ArgumentException>(() => new MessageOutboxBatch(new[] {
+            OutboxRecord("duplicate"),
+            OutboxRecord("duplicate")
+        }));
+        Assert.Equal(2, new MessageOutboxBatch(new[] {
+            OutboxRecord("duplicate"),
+            new MessageOutboxRecord(
+                MessageProviders.Discord,
+                "APPLICATION-A",
+                "duplicate",
+                "send-message",
+                "discord.send.v1",
+                Array.Empty<byte>(),
+                new DateTimeOffset(2026, 8, 22, 19, 1, 0, TimeSpan.Zero))
+        }).Count);
+    }
+
+    [Fact]
+    public void DurableCommandCoordinatesMustAlreadyBeCanonical() {
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            " status",
+            "1"));
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "status",
+            "1 "));
+        var route = MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Command,
+            MessageEventKind.CommandInvoked,
+            "status",
+            "1");
+
+        Assert.Equal("status", route.Name);
+        Assert.Equal("1", route.Qualifier);
+    }
+
+    [Fact]
+    public void DurableAutocompleteCoordinatesMustAlreadyBeCanonical() {
+        Assert.Throws<ArgumentException>(() => MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Autocomplete,
+            MessageEventKind.AutocompleteRequested,
+            " search"));
+        Assert.Equal("search", MessageRoute.FromDurableCoordinates(
+            MessageRouteKind.Autocomplete,
+            MessageEventKind.AutocompleteRequested,
+            "search").Name);
+    }
+
+    [Fact]
+    public void OpaqueActionRoutesSupportSlackActionIdBoundary() {
+        Assert.Equal(new string('a', 255), MessageRoute.ForAction(new string('a', 255)).Name);
+        Assert.Throws<ArgumentException>(() => MessageRoute.ForAction(new string('a', 256)));
+    }
+
+    [Fact]
+    public void StoredRecordsRejectCoordinatesThatWouldBeNormalized() {
+        Assert.Throws<ArgumentException>(() => MessageDurableRecord.FromStoredCoordinates(
+            MessageProviders.Teams,
+            " installation-a",
+            "event-1",
+            MessageRoute.ForDirectMessage(),
+            DateTimeOffset.UtcNow,
+            "teams.activity.v1",
+            Array.Empty<byte>()));
+        Assert.Throws<ArgumentException>(() => MessageOutboxRecord.FromStoredCoordinates(
+            MessageProviders.Teams,
+            "installation-a",
+            "event-1",
+            "send ",
+            "teams.send.v1",
+            Array.Empty<byte>(),
+            DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public void DurableMetadataRejectsCapabilitiesAndMismatchedMessageHierarchy() {
+        var record = Record();
+        var metadata = new MessageDurableEnvelopeMetadata {
+            Conversation = new MessageDurableReference {
+                Provider = MessageProviders.Teams,
+                InstallationId = "tenant-a",
+                ConversationId = "conversation-a",
+                ConversationKind = MessageConversationKind.Channel
+            },
+            Message = new MessageDurableReference {
+                Provider = MessageProviders.Teams,
+                InstallationId = "tenant-a",
+                ConversationId = "conversation-b",
+                ConversationKind = MessageConversationKind.Channel,
+                MessageId = "message-1"
+            }
+        };
+
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+        metadata.Message!.ConversationId = "conversation-a";
+        metadata.Message.Capabilities = MessageCapabilities.Reply;
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+        metadata.Message.Capabilities = MessageCapabilities.None;
+        metadata.ScopeId = "scope-a";
+        Assert.Throws<MessageDurablePayloadException>(() => metadata.Restore(record, "payload"));
+    }
+
+    private static MessageDurableRecord Record() => new(
+        MessageProviders.Teams,
+        "tenant-a",
+        "activity-1",
+        MessageRoute.ForDirectMessage(),
+        new DateTimeOffset(2026, 8, 22, 19, 0, 0, TimeSpan.Zero),
+        "teams.message.v1",
+        Array.Empty<byte>());
+
+    private static MessageOutboxRecord OutboxRecord(string deduplicationKey = "reply-event-1") => new(
+        MessageProviders.Discord,
+        "application-a",
+        deduplicationKey,
+        "send-message",
+        "discord.send.v1",
+        Array.Empty<byte>(),
+        new DateTimeOffset(2026, 8, 22, 19, 1, 0, TimeSpan.Zero));
+}

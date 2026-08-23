@@ -146,9 +146,14 @@ MessageX/
     MessageX.Teams/
     MessageX.Teams.Graph/
     MessageX.Slack/
+    MessageX.Slack.Hosting/
+    MessageX.Slack.Hosting.AspNetCore/
     MessageX.Discord/
+    MessageX.Discord.Hosting/
+    MessageX.Discord.Hosting.AspNetCore/
     MessageX.Hosting/
     MessageX.Hosting.AspNetCore/
+    MessageX.Teams.Hosting.AspNetCore/
     MessageX.Persistence.DbaClientX/
     MessageX.PowerShell/
     MessageX.Tests/
@@ -170,10 +175,15 @@ The final shape should stay proportional to delivered capability. Projects shoul
 | `MessageX.Core` | Small shared contracts, capability metadata, delivery results, common errors, event envelopes | `net472;net8.0;net10.0` |
 | `MessageX.Teams` | Workflows, Teams bot/agent protocol, Activities, Adaptive Cards, Teams targets and events | `net472;net8.0;net10.0` |
 | `MessageX.Teams.Graph` | Optional adapter to published GraphEssentialsX capabilities | Match usable GraphEssentialsX targets |
-| `MessageX.Slack` | Incoming webhooks, Web API, Block Kit, Events API, interactions, Socket Mode | `net472;net8.0;net10.0` |
-| `MessageX.Discord` | Incoming webhooks, bot REST API, embeds/components, interactions, Gateway | `net472;net8.0;net10.0` |
+| `MessageX.Slack` | Incoming webhooks, Web API, Block Kit, and outbound lifecycle without hosting dependencies | `net472;net8.0;net10.0` |
+| `MessageX.Slack.Hosting` | Host-neutral Slack signing, Events API/interactions, and safe durable codecs | `net472;net8.0;net10.0` |
+| `MessageX.Slack.Hosting.AspNetCore` | Trusted installation-bound Slack HTTP endpoints | `net8.0;net10.0` |
+| `MessageX.Discord` | Incoming webhooks, bot REST API, embeds/components, lifecycle, and Ed25519 verification without hosting dependencies | `net472;net8.0;net10.0` |
+| `MessageX.Discord.Hosting` | Host-neutral Discord interaction receiving and safe durable codecs | `net472;net8.0;net10.0` |
+| `MessageX.Discord.Hosting.AspNetCore` | Trusted installation-bound Discord HTTP endpoints | `net8.0;net10.0` |
 | `MessageX.Hosting` | Host-neutral routing, handler contracts, acknowledgement and dispatch pipeline | `net472;net8.0;net10.0` |
 | `MessageX.Hosting.AspNetCore` | HTTP endpoints, middleware, health checks, dependency injection, hosted services | `net8.0;net10.0` |
+| `MessageX.Teams.Hosting.AspNetCore` | Thin Microsoft Teams SDK adapter over shared volatile or durable ingress | `net8.0;net10.0` |
 | `MessageX.Persistence.DbaClientX` | Optional durable installations, references, deduplication, cursors, and outbox state | Match usable DbaClientX targets |
 | `MessageX.PowerShell` | Compiled thin cmdlets and PowerShell-facing type surface | `net472;net8.0;net10.0` |
 | `MessageX` PowerShell module | Bundled module selected correctly for Windows PowerShell and PowerShell 7 | PowerShell 5.1 and supported PowerShell 7 releases |
@@ -334,9 +344,9 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### Inbound events and interactions
 
-- [ ] Verify HTTP requests from the raw body with timestamp replay protection and HMAC-SHA256.
+- [x] Verify HTTP requests from the raw body with timestamp replay protection and HMAC-SHA256.
 - [ ] Support URL verification, Events API envelopes, retries, and event deduplication.
-- [ ] Support app mentions, direct messages, subscribed channel messages, slash commands, shortcuts, buttons, selections, and modal submissions.
+- [x] Support app mentions, direct messages, subscribed channel messages, slash commands, shortcuts, buttons, selections, and modal submissions.
 - [ ] Acknowledge valid commands and interactions within Slack's deadline, then continue work asynchronously.
 - [ ] Support HTTP Events API as the primary production path.
 - [ ] Add Socket Mode for local, on-premises, and firewall-constrained services.
@@ -378,10 +388,10 @@ PowerShell should expose simple synchronous command behavior to users while the 
 
 ### HTTP interactions
 
-- [ ] Verify `X-Signature-Ed25519` and `X-Signature-Timestamp` against the raw request body before parsing.
+- [x] Verify `X-Signature-Ed25519` and `X-Signature-Timestamp` against the raw request body before parsing.
 - [x] Keep Bouncy Castle types internal to MessageX.Discord.
-- [ ] Respond to endpoint validation pings.
-- [ ] Support commands, message/user commands, components, autocomplete, and modal submissions.
+- [x] Respond to endpoint validation pings.
+- [x] Support commands, message/user commands, components, autocomplete, and modal submissions.
 - [ ] Send or defer the initial response within the provider deadline and manage the limited follow-up token lifetime explicitly.
 - [ ] Support editing and deleting original and follow-up interaction responses.
 
@@ -925,13 +935,26 @@ Current Phase 4 source and packed-artifact contracts are complete. Live provider
 
 ### Phase 5 - Inbound interactions and service hosting
 
-- [ ] Implement MessageX.Hosting routing and handler contracts.
-- [ ] Implement ASP.NET Core raw-body receivers, verification, acknowledgement, queueing, and health checks.
-- [ ] Deliver Teams bot/agent events, Slack Events API/interactions, and Discord HTTP interactions.
-- [ ] Add DbaClientX persistence for installations, deduplication, references, and outbox state.
-- [ ] Add restart, replay, duplicate, failure, and multi-installation tests.
+- [x] Implement MessageX.Hosting routing and handler contracts.
+- [x] Implement provider-neutral ASP.NET Core bounded raw-body ingress, acknowledgements, queueing, dispatch workers, dependency injection, and payload-free health state.
+- [x] Implement Slack Events API/interactions and Discord HTTP interactions with verified raw-request handling and safe acknowledgements.
+- [x] Integrate verified Microsoft Teams SDK message, update, delete, reaction, and Adaptive Card action activities through a thin modern-.NET MessageX hosting adapter.
+- [ ] Expand Teams installation, membership, and other provider lifecycle events only where they earn truthful shared event contracts.
+- [x] Add provider-neutral durable inbox, idempotency, lease, retry/dead-letter, and outbox contracts with a thin DbaClientX SQLite adapter.
+- [x] Commit verified work before provider success acknowledgements when durable ingress is enabled; return a retryable failure when durable acceptance is unavailable.
+- [x] Persist safe versioned Slack, Discord, and Teams projections without raw requests, signing material, credentials, response URLs, trigger IDs, interaction tokens, or Microsoft SDK activity objects.
+- [x] Prove restart recovery, replay and duplicate suppression, lease renewal/loss, handler failure isolation, and provider/installation isolation with real SQLite and signed endpoint tests.
+- [x] Suppress replay through both volatile and durable ingress, bind Slack and Discord payload identity to trusted endpoint installation configuration, and resolve Teams installation identity per verified activity.
+- [x] Commit handler-produced safe outbound work atomically with durable inbox completion and deliver it through registered outbox payload owners with lease renewal and bounded retry.
+- [ ] Add provider response clients and secure transient-capability owners for Slack response URLs/trigger IDs and Discord interaction tokens; durable codecs intentionally do not persist these secrets.
+- [ ] Replace the current empty Discord autocomplete acknowledgement with an immediate application-owned autocomplete response contract.
+- [ ] Support editing and deleting original/follow-up provider interaction responses after the response capability boundary is implemented.
 
-**Exit:** one service can securely host interactive applications for Teams, Slack, and Discord over HTTP.
+The Phase 5 source candidate now keeps Microsoft-owned Teams authentication and request parsing at the host boundary, while MessageX owns shared routing, Slack and Discord verification, installation binding, volatile replay suppression, durable acceptance, dispatch, transactional outbox delivery, and safe provider projections. The PowerShell module remains a thin outbound and lifecycle surface; provider hosting packages are optional, and outbound provider packages retain `net472` without acquiring the service-hosting stack.
+
+The consolidated candidate passes 329 contracts on .NET 8 and .NET 10 on Windows and 329 on .NET 10 on Linux, with zero-warning `net472`, `net8.0`, and `net10.0` builds. PowerForge produces 12 coordinated 0.1.0 NuGet packages and 12 release archives, while the exact packed PSTeams artifact passes 69 PowerShell contracts on both PowerShell 7 and Windows PowerShell 5.1 and exports the same 98 commands from the `Core-net10.0` and `Default` payloads respectively. These are local artifacts only; no package has been published and no live provider has been called.
+
+**Exit:** one service can securely receive, deduplicate, durably route, and run handlers for Teams, Slack, and Discord HTTP events. Complete provider interaction responses remain an explicit follow-on gate before interactive applications are declared end to end.
 
 ### Phase 6 - Persistent realtime conversations
 
