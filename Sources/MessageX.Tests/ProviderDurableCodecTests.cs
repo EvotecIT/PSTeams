@@ -213,6 +213,71 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void ProviderCodecConstructorFailuresAndExactRoutesArePermanentPayloadErrors()
+    {
+        const string json = """
+            {
+              "type":"block_actions","team":{"id":"T123"},"user":{"id":"U123"},
+              "actions":[{"type":"button","action_id":"approve","value":"yes"}]
+            }
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var slackCodec = new SlackInteractionEventDurableCodec();
+        var valid = slackCodec.Encode(receive.Route!, receive.Envelope!);
+        var malformedJson = Encoding.UTF8.GetString(valid.CopyPayload()).Replace(
+            "\"actionId\":\"approve\"",
+            "\"actionId\":null",
+            StringComparison.Ordinal);
+        var malformed = new MessageDurableRecord(
+            valid.Provider,
+            valid.InstallationId,
+            valid.DeduplicationKey,
+            valid.Route,
+            valid.ReceivedAt,
+            valid.PayloadType,
+            Encoding.UTF8.GetBytes(malformedJson));
+        var changedRoute = new MessageDurableRecord(
+            valid.Provider,
+            valid.InstallationId,
+            valid.DeduplicationKey,
+            MessageRoute.ForAction("APPROVE"),
+            valid.ReceivedAt,
+            valid.PayloadType,
+            valid.CopyPayload());
+
+        Assert.Throws<MessageDurablePayloadException>(() => slackCodec.Decode(malformed));
+        Assert.Throws<MessageDurablePayloadException>(() => slackCodec.Decode(changedRoute));
+    }
+
+    [Fact]
+    public void DiscordCodecBoundsTheCompleteProjection()
+    {
+        var largeValue = new string('a', 1_048_200);
+        var json = $$"""
+            {
+              "id":"100000000000000001","application_id":"100000000000000002","type":2,
+              "token":"interaction-secret","channel_id":"100000000000000004",
+              "user":{"id":"100000000000000005"},
+              "data":{"name":"status","type":1,"options":[{"name":"target","value":"{{largeValue}}"}]}
+            }
+            """;
+        var receive = DiscordInteractionReceiver.Receive(
+            Request("application/json", json, DateTimeOffset.FromUnixTimeSeconds(1787420400)),
+            Convert.ToHexString(DiscordPrivateKey.GeneratePublicKey().GetEncoded()),
+            DiscordSign(DiscordTimestamp, json),
+            DiscordTimestamp);
+        var codec = new DiscordInteractionDurableCodec();
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, receive.Status);
+        Assert.Throws<MessageDurablePayloadException>(() => codec.Encode(receive.Route!, receive.Envelope!));
+    }
+
+    [Fact]
     public void ProviderEndpointRegistrationIncludesOnlyItsOwnDurableCodecs()
     {
         var slack = new ServiceCollection().AddMessageXSlackAspNetCore().BuildServiceProvider();

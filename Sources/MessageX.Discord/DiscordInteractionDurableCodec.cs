@@ -6,6 +6,7 @@ namespace MessageX.Discord;
 /// <summary>Durable codec for verified Discord HTTP interactions.</summary>
 public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<DiscordInboundInteraction>
 {
+    private const int MaximumPayloadBytes = 1024 * 1024;
     private const string Discriminator = "discord.interaction.v1";
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -45,6 +46,11 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             ApplicationId = envelope.Payload.TransientContext.ApplicationId,
             Data = MessageDurableJsonProjection.CreateSafeClone(envelope.Payload.Data, ForbiddenProperties)
         };
+        var payload = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
+        if (payload.Length > MaximumPayloadBytes)
+        {
+            throw new MessageDurablePayloadException("The complete Discord durable projection exceeds 1 MiB.");
+        }
         return new MessageDurableRecord(
             envelope.Provider,
             envelope.InstallationId,
@@ -52,7 +58,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             route,
             envelope.ReceivedAt,
             Discriminator,
-            JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions));
+            payload);
     }
 
     /// <inheritdoc />
@@ -74,33 +80,44 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
                 record.CopyPayload(),
                 SerializerOptions) ?? throw new MessageDurablePayloadException("The Discord durable payload is empty.");
         }
-        catch (JsonException exception)
+        catch (Exception exception) when (IsProjectionException(exception))
         {
             throw new MessageDurablePayloadException("The Discord durable payload is malformed.", exception);
         }
-        if (projection.Metadata is null ||
-            !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
-            !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
-            !IsSafeOptional(projection.InstallationOwnerId, 256) ||
-            !IsSafeOptional(projection.Locale, 64) ||
-            !IsSafeOptional(projection.GuildLocale, 64) ||
-            projection.Context is < 0 or > 2 ||
-            projection.Data.ValueKind != JsonValueKind.Object ||
-            !DataMatches(projection.Kind, projection.Name!, projection.Data))
+        try
         {
-            throw new MessageDurablePayloadException("The Discord interaction durable payload is incomplete.");
+            if (projection.Metadata is null ||
+                !RouteMatches(projection.Kind, projection.Name, projection.CommandType, record.Route) ||
+                !DiscordSnowflake.TryNormalize(projection.ApplicationId, out var applicationId) ||
+                !IsSafeOptional(projection.InstallationOwnerId, 256) ||
+                !IsSafeOptional(projection.Locale, 64) ||
+                !IsSafeOptional(projection.GuildLocale, 64) ||
+                projection.Context is < 0 or > 2 ||
+                projection.Data.ValueKind != JsonValueKind.Object ||
+                !DataMatches(projection.Kind, projection.Name!, projection.Data))
+            {
+                throw new MessageDurablePayloadException("The Discord interaction durable payload is incomplete.");
+            }
+            var payload = new DiscordInboundInteraction(
+                projection.Kind,
+                projection.Name!,
+                projection.InstallationOwnerId,
+                projection.Locale,
+                projection.GuildLocale,
+                projection.Context,
+                projection.CommandType,
+                MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
+                new DiscordTransientInteractionContext(applicationId, null, null));
+            return projection.Metadata.Restore(record, payload);
         }
-        var payload = new DiscordInboundInteraction(
-            projection.Kind,
-            projection.Name!,
-            projection.InstallationOwnerId,
-            projection.Locale,
-            projection.GuildLocale,
-            projection.Context,
-            projection.CommandType,
-            MessageDurableJsonProjection.CreateSafeClone(projection.Data, ForbiddenProperties),
-            new DiscordTransientInteractionContext(applicationId, null, null));
-        return projection.Metadata.Restore(record, payload);
+        catch (MessageDurablePayloadException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsProjectionException(exception))
+        {
+            throw new MessageDurablePayloadException("The Discord durable payload is malformed.", exception);
+        }
     }
 
     private static bool RouteMatches(
@@ -110,7 +127,7 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
         MessageRoute route)
     {
         if (name is null || name.Length is 0 or > 128 || name.Any(char.IsControl) ||
-            !string.Equals(name.Trim(), route.Name, StringComparison.OrdinalIgnoreCase))
+            !RouteNameMatches(name.Trim(), route))
         {
             return false;
         }
@@ -126,6 +143,17 @@ public sealed class DiscordInteractionDurableCodec : IMessageDurableCodec<Discor
             _ => false
         };
     }
+
+    private static bool RouteNameMatches(string name, MessageRoute route) => route.NameComparison switch
+    {
+        MessageRouteNameComparison.Ordinal => string.Equals(name, route.Name, StringComparison.Ordinal),
+        MessageRouteNameComparison.OrdinalIgnoreCase =>
+            string.Equals(name, route.Name, StringComparison.OrdinalIgnoreCase),
+        _ => false
+    };
+
+    private static bool IsProjectionException(Exception exception) =>
+        exception is JsonException or ArgumentException or InvalidOperationException or NotSupportedException;
 
     private static bool IsSafeOptional(string? value, int maximumLength) =>
         value is null || (value.Length <= maximumLength && !value.Any(char.IsControl));

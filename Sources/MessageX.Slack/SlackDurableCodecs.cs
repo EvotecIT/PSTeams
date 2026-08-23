@@ -40,16 +40,28 @@ public sealed class SlackInboundEventDurableCodec : IMessageDurableCodec<SlackIn
     public MessageEventEnvelope<SlackInboundEvent> Decode(MessageDurableRecord record)
     {
         var projection = SlackDurableCodecJson.Decode<SlackEventProjection>(record, Discriminator);
-        var providerEvent = SlackDurableCodecValidation.NormalizeEvent(projection.ProviderEvent);
-        var eventType = SlackDurableCodecValidation.Required(projection.EventType, 256);
-        if (projection.Metadata is null || !SlackDurableCodecValidation.EventMatches(eventType, providerEvent, record.Route))
+        try
         {
-            throw new MessageDurablePayloadException("The Slack event durable payload is incomplete.");
+            var providerEvent = SlackDurableCodecValidation.NormalizeEvent(projection.ProviderEvent);
+            var eventType = SlackDurableCodecValidation.Required(projection.EventType, 256);
+            if (projection.Metadata is null ||
+                !SlackDurableCodecValidation.EventMatches(eventType, providerEvent, record.Route))
+            {
+                throw new MessageDurablePayloadException("The Slack event durable payload is incomplete.");
+            }
+            var payload = new SlackInboundEvent(eventType, providerEvent, providerEvent.Text,
+                SlackDurableCodecValidation.Optional(projection.RetryReason, 256),
+                SlackDurableCodecValidation.RetryNumber(projection.RetryNumber));
+            return projection.Metadata.Restore(record, payload);
         }
-        var payload = new SlackInboundEvent(eventType, providerEvent, providerEvent.Text,
-            SlackDurableCodecValidation.Optional(projection.RetryReason, 256),
-            SlackDurableCodecValidation.RetryNumber(projection.RetryNumber));
-        return projection.Metadata.Restore(record, payload);
+        catch (MessageDurablePayloadException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (SlackDurableCodecJson.IsProjectionException(exception))
+        {
+            throw new MessageDurablePayloadException("The Slack event durable payload is malformed.", exception);
+        }
     }
 }
 
@@ -87,28 +99,47 @@ public sealed class SlackInteractionEventDurableCodec : IMessageDurableCodec<Sla
     public MessageEventEnvelope<SlackInteractionEvent> Decode(MessageDurableRecord record)
     {
         var projection = SlackDurableCodecJson.Decode<SlackInteractionProjection>(record, Discriminator);
-        var name = SlackDurableCodecValidation.Required(projection.Name, 128);
-        var providerPayload = SlackDurableCodecValidation.NormalizeInteraction(projection.ProviderPayload);
-        if (projection.Metadata is null ||
-            !SlackDurableCodecValidation.InteractionMatches(projection.Kind, name, providerPayload, record.Route))
+        try
         {
-            throw new MessageDurablePayloadException("The Slack interaction durable payload is incomplete.");
+            var name = SlackDurableCodecValidation.Required(projection.Name, 128);
+            var providerPayload = SlackDurableCodecValidation.NormalizeInteraction(projection.ProviderPayload);
+            if (projection.Metadata is null ||
+                !SlackDurableCodecValidation.InteractionMatches(projection.Kind, name, providerPayload, record.Route))
+            {
+                throw new MessageDurablePayloadException("The Slack interaction durable payload is incomplete.");
+            }
+            var payload = new SlackInteractionEvent(projection.Kind, name,
+                SlackDurableCodecValidation.OptionalText(projection.Text, 40000), providerPayload,
+                SlackTransientInteractionContext.Unavailable);
+            return projection.Metadata.Restore(record, payload);
         }
-        var payload = new SlackInteractionEvent(projection.Kind, name,
-            SlackDurableCodecValidation.OptionalText(projection.Text, 40000), providerPayload,
-            SlackTransientInteractionContext.Unavailable);
-        return projection.Metadata.Restore(record, payload);
+        catch (MessageDurablePayloadException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (SlackDurableCodecJson.IsProjectionException(exception))
+        {
+            throw new MessageDurablePayloadException("The Slack interaction durable payload is malformed.", exception);
+        }
     }
 }
 
 internal static class SlackDurableCodecJson
 {
+    private const int MaximumPayloadBytes = 1024 * 1024;
     private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public static MessageDurableRecord Record<T>(MessageEventEnvelope<T> envelope, MessageRoute route,
-        string payloadType, object projection) => new(envelope.Provider, envelope.InstallationId,
-        envelope.DeduplicationKey, route, envelope.ReceivedAt, payloadType,
-        JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions));
+        string payloadType, object projection)
+    {
+        var payload = JsonSerializer.SerializeToUtf8Bytes(projection, SerializerOptions);
+        if (payload.Length > MaximumPayloadBytes)
+        {
+            throw new MessageDurablePayloadException("The complete Slack durable projection exceeds 1 MiB.");
+        }
+        return new MessageDurableRecord(envelope.Provider, envelope.InstallationId,
+            envelope.DeduplicationKey, route, envelope.ReceivedAt, payloadType, payload);
+    }
 
     public static T Decode<T>(MessageDurableRecord record, string payloadType) where T : class
     {
@@ -123,11 +154,14 @@ internal static class SlackDurableCodecJson
             return JsonSerializer.Deserialize<T>(record.CopyPayload(), SerializerOptions)
                 ?? throw new MessageDurablePayloadException("The Slack durable payload is empty.");
         }
-        catch (JsonException exception)
+        catch (Exception exception) when (IsProjectionException(exception))
         {
             throw new MessageDurablePayloadException("The Slack durable payload is malformed.", exception);
         }
     }
+
+    public static bool IsProjectionException(Exception exception) =>
+        exception is JsonException or ArgumentException or InvalidOperationException or NotSupportedException;
 }
 
 internal static class SlackDurableCodecValidation
@@ -168,16 +202,19 @@ internal static class SlackDurableCodecValidation
     public static bool InteractionMatches(SlackInteractionKind kind, string name,
         SlackInteractionPayload? providerPayload, MessageRoute route)
     {
-        if (!string.Equals(name, route.Name, StringComparison.OrdinalIgnoreCase)) return false;
         return kind switch
         {
-            SlackInteractionKind.SlashCommand => route.Kind == MessageRouteKind.Command && providerPayload is null,
-            SlackInteractionKind.Shortcut => route.Kind == MessageRouteKind.Action && providerPayload is not null &&
+            SlackInteractionKind.SlashCommand => route.Kind == MessageRouteKind.Command && providerPayload is null &&
+                string.Equals(name, route.Name, StringComparison.OrdinalIgnoreCase),
+            SlackInteractionKind.Shortcut => route.Kind == MessageRouteKind.Action &&
+                string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
                 providerPayload.Actions.Length == 0 && providerPayload.View is null,
-            SlackInteractionKind.BlockAction => route.Kind == MessageRouteKind.Action && providerPayload is not null &&
-                providerPayload.Actions.Length == 1 && providerPayload.View is null && providerPayload.Message is null &&
+            SlackInteractionKind.BlockAction => route.Kind == MessageRouteKind.Action &&
+                string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
+                providerPayload.Actions.Length == 1 && providerPayload.View is null &&
                 string.Equals(providerPayload.Actions[0].ActionId, name, StringComparison.Ordinal),
-            SlackInteractionKind.ViewSubmission => route.Kind == MessageRouteKind.Submission && providerPayload is not null &&
+            SlackInteractionKind.ViewSubmission => route.Kind == MessageRouteKind.Submission &&
+                string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
                 providerPayload.Actions.Length == 0 && providerPayload.Message is null && providerPayload.View is not null &&
                 string.Equals(providerPayload.View.CallbackId, name, StringComparison.Ordinal),
             _ => false
@@ -199,7 +236,7 @@ internal static class SlackDurableCodecValidation
         };
         if (expectedKind == MessageEventKind.Unknown || route.EventKind != expectedKind) return false;
         if (expectedKind == MessageEventKind.AppMentioned) return route.Kind == MessageRouteKind.Mention;
-        if (expectedKind == MessageEventKind.MessageReceived && providerEvent.ChannelType == "im")
+        if (expectedKind == MessageEventKind.MessageReceived && providerEvent.ChannelType is "im" or "mpim")
         {
             return route.Kind == MessageRouteKind.DirectMessage;
         }
