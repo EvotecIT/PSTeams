@@ -124,6 +124,7 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal("100000000000000005", result.Envelope?.SenderId);
         Assert.Equal(MessageConversationKind.Channel, result.Envelope?.Conversation?.ConversationKind);
         Assert.Equal(5, AckType(result.Acknowledgement));
+        Assert.False(result.RequiresSynchronousDispatch);
         Assert.Equal(interactionCreatedAt.AddMinutes(15), result.Envelope?.Payload.TransientContext.ExpiresAt);
         Assert.Equal("interaction-secret-token", result.Envelope?.Payload.TransientContext.Token);
         var persisted = JsonSerializer.Serialize(result.Envelope?.Payload);
@@ -152,6 +153,7 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(MessageConversationKind.DirectMessage, result.Envelope?.Conversation?.ConversationKind);
         Assert.Equal("100000000000000015", result.Envelope?.Message?.MessageId);
         Assert.Equal(6, AckType(result.Acknowledgement));
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Fact]
@@ -196,6 +198,7 @@ public sealed class DiscordInteractionReceiverTests {
         Assert.Equal(MessageRouteKind.Submission, modalResult.Route?.Kind);
         Assert.Equal(MessageEventKind.ModalSubmitted, modalResult.Envelope?.Kind);
         Assert.Equal(5, AckType(modalResult.Acknowledgement));
+        Assert.False(modalResult.RequiresSynchronousDispatch);
         Assert.Equal(MessageRouteKind.Autocomplete, autocompleteResult.Route?.Kind);
         Assert.Equal(MessageEventKind.AutocompleteRequested, autocompleteResult.Envelope?.Kind);
         Assert.True(autocompleteResult.RequiresSynchronousDispatch);

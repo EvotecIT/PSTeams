@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveExecuteAction
 ## SYNOPSIS
-Creates a Teams Universal Action with optional compatibility fallback.
+Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-TeamsAdaptiveExecuteAction [-Title] <string> [-Verb] <string> [-Id <string>]
 ```
 
 ## DESCRIPTION
-Creates a Teams Universal Action with optional compatibility fallback.
+Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ## EXAMPLES
 

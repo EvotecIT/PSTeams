@@ -55,7 +55,7 @@ public static class WebhookMessageRenderer {
     }
 
     internal static Dictionary<string, object?> RenderAdaptiveCard(TeamsAdaptiveCard card) {
-        TeamsAdaptiveCardValidation.Validate(card);
+        TeamsAdaptiveCardValidation.Validate(card, allowUniversalActions: false);
         Dictionary<string, object?>? msTeams = null;
         if (card.AllowImageExpand is not null || card.FullWidth || card.Mentions.Count > 0) {
             msTeams = new Dictionary<string, object?>();

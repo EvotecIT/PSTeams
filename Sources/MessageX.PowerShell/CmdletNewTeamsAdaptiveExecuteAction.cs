@@ -4,7 +4,7 @@ using MessageX.Teams;
 
 namespace MessageX.PowerShell;
 
-/// <summary>Creates a Teams Universal Action with optional compatibility fallback.</summary>
+/// <summary>Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.</summary>
 /// <example>
 /// <summary>Create an approval action with a submit fallback</summary>
 /// <code>$fallback = New-TeamsAdaptiveSubmitAction -Title 'Approve' -Data @{ action = 'approve' }; New-TeamsAdaptiveExecuteAction -Title 'Approve' -Verb 'approve' -Data @{ incident = 'INC-42' } -Fallback $fallback</code>

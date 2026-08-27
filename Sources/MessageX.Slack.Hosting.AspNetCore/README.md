@@ -17,4 +17,6 @@ Slack sends every installation of an application to the same configured request 
 
 Modal view submissions run inline so the registered submission handler can return Slack validation errors or another modal response on the original request. They use bounded process-local replay protection and are not persisted or replayed after a host restart. Other accepted Slack work uses the configured ingress acceptance boundary.
 
+Commands, shortcuts, and block actions remain deferred unless their registration selects `MessageDispatchMode.Synchronous`. Use that mode for handlers that call `SlackViewClient`, because Slack modal trigger identifiers expire around the acknowledgement deadline and cannot be moved through a durable queue.
+
 Slack response URLs and trigger IDs are available only to the initial volatile handler context. Durable codecs intentionally remove them; a secure provider response-capability owner is still required before durable follow-up responses are supported.

@@ -9,46 +9,109 @@ public sealed class MessageRouter {
     public void OnEvent<TProviderPayload>(
         MessageEventKind eventKind,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForEvent(eventKind), handler);
+        OnEvent(eventKind, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a handler for one provider-neutral event kind with an explicit dispatch mode.</summary>
+    public void OnEvent<TProviderPayload>(
+        MessageEventKind eventKind,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForEvent(eventKind), handler, dispatchMode);
 
     /// <summary>Registers a named command handler.</summary>
     public void OnCommand<TProviderPayload>(
         string name,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForCommand(name), handler);
+        OnCommand(name, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a named command handler with an explicit dispatch mode.</summary>
+    public void OnCommand<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForCommand(name), handler, dispatchMode);
 
     /// <summary>Registers a named command handler for one exact provider-native command variant.</summary>
     public void OnCommand<TProviderPayload>(
         string name,
         string qualifier,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForCommand(name, qualifier), handler);
+        OnCommand(name, qualifier, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a named command handler for one exact provider-native variant with an explicit dispatch mode.</summary>
+    public void OnCommand<TProviderPayload>(
+        string name,
+        string qualifier,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForCommand(name, qualifier), handler, dispatchMode);
 
     /// <summary>Registers an application-mention handler.</summary>
     public void OnMention<TProviderPayload>(MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForMention(), handler);
+        OnMention(handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers an application-mention handler with an explicit dispatch mode.</summary>
+    public void OnMention<TProviderPayload>(
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForMention(), handler, dispatchMode);
 
     /// <summary>Registers a direct-message handler.</summary>
     public void OnDirectMessage<TProviderPayload>(MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForDirectMessage(), handler);
+        OnDirectMessage(handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a direct-message handler with an explicit dispatch mode.</summary>
+    public void OnDirectMessage<TProviderPayload>(
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForDirectMessage(), handler, dispatchMode);
 
     /// <summary>Registers a named interactive-action handler.</summary>
     public void OnAction<TProviderPayload>(
         string name,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForAction(name), handler);
+        OnAction(name, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a named interactive-action handler with an explicit dispatch mode.</summary>
+    public void OnAction<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForAction(name), handler, dispatchMode);
 
     /// <summary>Registers a named modal or dialog submission handler.</summary>
     public void OnSubmission<TProviderPayload>(
         string name,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForSubmission(name), handler);
+        OnSubmission(name, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a named modal or dialog submission handler with an explicit dispatch mode.</summary>
+    public void OnSubmission<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForSubmission(name), handler, dispatchMode);
 
     /// <summary>Registers a named provider-native autocomplete handler.</summary>
     public void OnAutocomplete<TProviderPayload>(
         string name,
         MessageEventHandler<TProviderPayload> handler) =>
-        Register(MessageRoute.ForAutocomplete(name), handler);
+        OnAutocomplete(name, handler, MessageDispatchMode.Deferred);
+
+    /// <summary>Registers a named provider-native autocomplete handler with an explicit dispatch mode.</summary>
+    public void OnAutocomplete<TProviderPayload>(
+        string name,
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) =>
+        Register(MessageRoute.ForAutocomplete(name), handler, dispatchMode);
+
+    /// <summary>Gets the dispatch mode selected by the exact or fallback registration for a route.</summary>
+    public MessageDispatchMode GetDispatchMode<TProviderPayload>(MessageRoute route) {
+        if (route is null) {
+            throw new ArgumentNullException(nameof(route));
+        }
+        return FindRegistration<TProviderPayload>(route)?.DispatchMode ?? MessageDispatchMode.Deferred;
+    }
 
     /// <summary>Dispatches a verified event to an exact route and payload-type registration.</summary>
     public async Task<MessageDispatchResult> DispatchAsync<TProviderPayload>(
@@ -68,6 +131,18 @@ public sealed class MessageRouter {
         }
         cancellationToken.ThrowIfCancellationRequested();
 
+        var registration = FindRegistration<TProviderPayload>(route);
+        if (registration is null) {
+            return MessageDispatchResult.NotMatched();
+        }
+
+        var result = await registration
+            .InvokeAsync(route, envelope, cancellationToken)
+            .ConfigureAwait(false);
+        return MessageDispatchResult.Matched(result);
+    }
+
+    private IHandlerRegistration? FindRegistration<TProviderPayload>(MessageRoute route) {
         IHandlerRegistration? registration;
         lock (_sync) {
             _handlers.TryGetValue(HandlerKey.Create<TProviderPayload>(route), out registration);
@@ -79,21 +154,18 @@ public sealed class MessageRouter {
                     out registration);
             }
         }
-        if (registration is null) {
-            return MessageDispatchResult.NotMatched();
-        }
-
-        var result = await registration
-            .InvokeAsync(route, envelope, cancellationToken)
-            .ConfigureAwait(false);
-        return MessageDispatchResult.Matched(result);
+        return registration;
     }
 
     private void Register<TProviderPayload>(
         MessageRoute route,
-        MessageEventHandler<TProviderPayload> handler) {
+        MessageEventHandler<TProviderPayload> handler,
+        MessageDispatchMode dispatchMode) {
         if (handler is null) {
             throw new ArgumentNullException(nameof(handler));
+        }
+        if (!Enum.IsDefined(typeof(MessageDispatchMode), dispatchMode)) {
+            throw new ArgumentOutOfRangeException(nameof(dispatchMode));
         }
         var key = HandlerKey.Create<TProviderPayload>(route);
         lock (_sync) {
@@ -101,11 +173,13 @@ public sealed class MessageRouter {
                 throw new InvalidOperationException(
                     "A handler is already registered for this route and provider payload type.");
             }
-            _handlers.Add(key, new HandlerRegistration<TProviderPayload>(handler));
+            _handlers.Add(key, new HandlerRegistration<TProviderPayload>(handler, dispatchMode));
         }
     }
 
     private interface IHandlerRegistration {
+        MessageDispatchMode DispatchMode { get; }
+
         Task<MessageHandlerResult> InvokeAsync(
             MessageRoute route,
             object envelope,
@@ -115,9 +189,14 @@ public sealed class MessageRouter {
     private sealed class HandlerRegistration<TProviderPayload> : IHandlerRegistration {
         private readonly MessageEventHandler<TProviderPayload> _handler;
 
-        public HandlerRegistration(MessageEventHandler<TProviderPayload> handler) {
+        public HandlerRegistration(
+            MessageEventHandler<TProviderPayload> handler,
+            MessageDispatchMode dispatchMode) {
             _handler = handler;
+            DispatchMode = dispatchMode;
         }
+
+        public MessageDispatchMode DispatchMode { get; }
 
         public async Task<MessageHandlerResult> InvokeAsync(
             MessageRoute route,

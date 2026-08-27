@@ -273,6 +273,29 @@ public sealed class ProviderAspNetCoreEndpointTests {
     }
 
     [Fact]
+    public async Task SlackTriggerBearingCommandDispatchesInlineWithModalCapability() {
+        using var provider = SlackServices(capacity: 1).BuildServiceProvider();
+        string? triggerId = null;
+        provider.GetRequiredService<MessageRouter>().OnCommand<SlackInteractionEvent>(
+            "status",
+            (messageContext, _) => {
+                triggerId = messageContext.Envelope.Payload.TransientContext.TriggerId;
+                return Task.FromResult(MessageHandlerResult.Completed());
+            },
+            MessageDispatchMode.Synchronous);
+        var context = SlackSlashCommandContext();
+
+        await provider.GetRequiredService<SlackHttpEndpointHandler>().HandleInteractionsAsync(
+            context,
+            SlackConfiguration(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        Assert.Equal("trigger-command", triggerId);
+        Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
     public async Task DiscordAutocompleteHandlerProducesTheInitialChoicesInline() {
         using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
         var dispatchCount = 0;
@@ -316,6 +339,44 @@ public sealed class ProviderAspNetCoreEndpointTests {
         Assert.Equal(StatusCodes.Status200OK, duplicate.Response.StatusCode);
         Assert.Equal(ResponseBody(context), ResponseBody(duplicate));
         Assert.Equal(1, Volatile.Read(ref dispatchCount));
+        Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
+    }
+
+    [Fact]
+    public async Task DiscordCommandHandlerCanOpenModalInInitialResponse() {
+        using var provider = DiscordServices(capacity: 1).BuildServiceProvider();
+        provider.GetRequiredService<MessageRouter>().OnCommand<DiscordInboundInteraction>(
+            "status",
+            (_, _) => Task.FromResult(MessageHandlerResult.Respond(
+                DiscordInteractionAcknowledgement.Modal(new DiscordModalRequest {
+                    CustomId = "status-details",
+                    Title = "Status details",
+                    Components = {
+                        new DiscordActionRow {
+                            Components = {
+                                new DiscordTextInput {
+                                    CustomId = "reason",
+                                    Label = "Reason"
+                                }
+                            }
+                        }
+                    }
+                }))),
+            MessageDispatchMode.Synchronous);
+        const string json = """
+            {"id":"100000000000000091","application_id":"100000000000000002","type":2,"token":"token","guild_id":"100000000000000003","member":{"user":{"id":"100000000000000004"}},"authorizing_integration_owners":{"0":"100000000000000003"},"data":{"name":"status","type":1}}
+            """;
+        var context = DiscordContext(json);
+
+        await provider.GetRequiredService<DiscordHttpEndpointHandler>().HandleAsync(
+            context,
+            DiscordConfiguration(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        using var body = JsonDocument.Parse(ResponseBody(context));
+        Assert.Equal(9, body.RootElement.GetProperty("type").GetInt32());
+        Assert.Equal("status-details", body.RootElement.GetProperty("data").GetProperty("custom_id").GetString());
         Assert.Equal(0, provider.GetRequiredService<IMessageIngressQueue>().GetHealthSnapshot().Accepted);
     }
 
@@ -486,6 +547,15 @@ public sealed class ProviderAspNetCoreEndpointTests {
 
     private static DefaultHttpContext SlackInteractionContext(string json) {
         var form = "payload=" + Uri.EscapeDataString(json);
+        var body = Encoding.UTF8.GetBytes(form);
+        var context = Context(body, "application/x-www-form-urlencoded; charset=utf-8");
+        context.Request.Headers["X-Slack-Request-Timestamp"] = SlackTimestamp;
+        context.Request.Headers["X-Slack-Signature"] = SignSlack(form);
+        return context;
+    }
+
+    private static DefaultHttpContext SlackSlashCommandContext() {
+        const string form = "command=%2Fstatus&api_app_id=A1&team_id=T1&user_id=U1&trigger_id=trigger-command";
         var body = Encoding.UTF8.GetBytes(form);
         var context = Context(body, "application/x-www-form-urlencoded; charset=utf-8");
         context.Request.Headers["X-Slack-Request-Timestamp"] = SlackTimestamp;

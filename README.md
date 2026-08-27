@@ -17,7 +17,7 @@ Do not use `Install-Module PSTeams` as proof that the MessageX code is installed
 MessageX keeps one reusable C# owner for each capability and leaves PowerShell, ASP.NET Core, and product integrations as thin surfaces:
 
 - `MessageX.Core` owns delivery results, durable references, capability flags, errors, bounded provider data, and shared HTTP behavior.
-- `MessageX.Teams` owns Teams webhook payloads, Adaptive Cards, and current card actions.
+- `MessageX.Teams` owns Teams webhook payloads, Adaptive Cards, webhook-safe actions, and typed future bot-transport models.
 - `MessageX.Slack` owns Slack incoming webhooks, Web API messaging, Block Kit, file upload, and transient interaction responses.
 - `MessageX.Discord` owns Discord webhooks, bot REST messaging, embeds, attachments, components, and transient interaction responses.
 - `MessageX.Hosting` owns provider-neutral routing, acknowledgement deadlines, deduplication, queues, retries, and durable dispatch contracts.
@@ -32,11 +32,11 @@ Provider-native rich content stays provider-native. MessageX does not flatten Ad
 | Capability | Teams | Slack | Discord |
 | --- | --- | --- | --- |
 | Notification send | Workflow and incoming webhook | Incoming webhook and bot Web API | Incoming webhook and bot REST |
-| Rich content | Adaptive Cards, Universal Actions, legacy wrapper cards | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
+| Rich content | Adaptive Cards, webhook-safe actions, legacy wrapper cards | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
 | Message lifecycle | Workflow URLs remain send-only | Reply, update, delete, reactions | Reply, read, update, delete, reactions |
 | File delivery | Images and provider card media | Current external upload workflow | Multipart attachments |
 | Verified HTTP receive | Teams app activities and card actions | Events API, commands, actions, views | Commands, components, autocomplete, modals |
-| Interaction continuation | Adaptive `Action.Execute` and refresh contracts | Transient response URL and `views.open` | Follow-up, edit, and delete within token lifetime |
+| Interaction continuation | Verified app activity receipt; bot-owned outbound actions are deferred | Transient response URL and `views.open` | Follow-up, edit, and delete within token lifetime |
 | Durable hosting | Shared queue, replay, retry, dead-letter, health, DbaClientX adapter | Shared | Shared |
 | Realtime connection | Deferred | Socket Mode deferred | Gateway deferred |
 
@@ -55,27 +55,19 @@ $target = New-TeamsWebhookTarget `
     -Destination Channel `
     -DisplayName 'Release alerts'
 
-$refreshAction = New-TeamsAdaptiveExecuteAction `
-    -Title 'Refresh' `
-    -Verb 'refresh-build' `
-    -Data @{ buildId = 42 } `
-    -AssociatedInputs None
-$refresh = New-TeamsAdaptiveRefresh -Action $refreshAction
-$approve = New-TeamsAdaptiveExecuteAction `
-    -Title 'Approve' `
-    -Verb 'approve-build' `
-    -Data @{ buildId = 42 } `
-    -Fallback (New-TeamsAdaptiveSubmitAction -Title 'Approve' -Data @{ verb = 'approve-build'; buildId = 42 })
+$openBuild = New-TeamsAdaptiveOpenUrlAction `
+    -Title 'Open build' `
+    -Url 'https://example.com/build/42'
 
-$card = New-TeamsAdaptiveCard -Version '1.5' -Refresh $refresh -Body @(
+$card = New-TeamsAdaptiveCard -Version '1.2' -Body @(
     New-TeamsAdaptiveTextBlock -Text 'Build 42 is ready' -Weight Bolder
-) -Actions $approve
+) -Actions $openBuild
 
-$message = New-TeamsMessage -Summary 'Build approval' -AdaptiveCard $card
+$message = New-TeamsMessage -Summary 'Build ready' -AdaptiveCard $card
 Send-TeamsMessage -Message $message -Target $target -PassThru
 ```
 
-Workflow URLs are send-only capabilities. They do not grant conversation reads, replies, updates, deletes, or inbound events.
+Workflow URLs are send-only capabilities. They do not grant conversation reads, replies, updates, deletes, or inbound events. `Action.Execute` and Adaptive Card refresh require a bot-owned outbound transport, so current Workflow and incoming-webhook targets reject those contracts before sending.
 
 ### Slack Block Kit and file upload
 
@@ -148,6 +140,17 @@ if (!result.IsSuccess) {
 ## Hosting
 
 The ASP.NET Core provider packages expose verified endpoints over the shared MessageX host. The host acknowledges within provider deadlines, bounds synchronous work, deduplicates retries, and can move asynchronous work into durable storage.
+
+Routes that must open a Slack or Discord modal use an explicit inline registration so the handler runs before the provider acknowledgement:
+
+```csharp
+router.OnAction<SlackInteractionEvent>(
+    "open-approval",
+    HandleApprovalAsync,
+    MessageDispatchMode.Synchronous);
+```
+
+Keep ordinary handlers deferred. Synchronous registrations use bounded process-local replay protection and cannot be persisted or replayed after restart.
 
 Transient Slack response URLs, Slack trigger IDs, and Discord interaction tokens never enter durable codecs. A restored durable event intentionally cannot use those short-lived capabilities.
 

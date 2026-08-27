@@ -24763,11 +24763,11 @@ reject duplicate signatures because an age window alone does not prevent replay.
       <command:verb>New</command:verb>
       <command:noun>TeamsAdaptiveExecuteAction</command:noun>
       <maml:description>
-        <maml:para>Creates a Teams Universal Action with optional compatibility fallback.</maml:para>
+        <maml:para>Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a Teams Universal Action with optional compatibility fallback.</maml:para>
+      <maml:para>Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">
@@ -24964,11 +24964,11 @@ reject duplicate signatures because an age window alone does not prevent replay.
       <command:verb>New</command:verb>
       <command:noun>TeamsAdaptiveRefresh</command:noun>
       <maml:description>
-        <maml:para>Creates an Adaptive Card refresh contract backed by Action.Execute.</maml:para>
+        <maml:para>Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates an Adaptive Card refresh contract backed by Action.Execute.</maml:para>
+      <maml:para>Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem parameterSetName="__AllParameterSets">

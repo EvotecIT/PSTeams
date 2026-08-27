@@ -224,7 +224,7 @@ New-TeamsAdaptiveColumnSet [-Columns <TeamsAdaptiveColumn[]>] [-Style <string>] 
 New-TeamsAdaptiveContainer [-Items <TeamsAdaptiveCardElement[]>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-VerticalContentAlignment <string>] [-Id <string>] [-Hidden] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [<CommonParameters>]
 
 ### [New-TeamsAdaptiveExecuteAction](New-TeamsAdaptiveExecuteAction.md)
-Creates a Teams Universal Action with optional compatibility fallback.
+Creates a Teams Universal Action model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ### [New-TeamsAdaptiveFact](New-TeamsAdaptiveFact.md)
 New-TeamsAdaptiveFact [-Title] <string> [-Value] <string> [<CommonParameters>]
@@ -251,7 +251,7 @@ New-TeamsAdaptiveMention [-Text] <string> [-UserPrincipalName] <string> [[-Name]
 New-TeamsAdaptiveOpenUrlAction [-Title] <string> [-Url] <string> [<CommonParameters>]
 
 ### [New-TeamsAdaptiveRefresh](New-TeamsAdaptiveRefresh.md)
-Creates an Adaptive Card refresh contract backed by Action.Execute.
+Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ### [New-TeamsAdaptiveRichTextBlock](New-TeamsAdaptiveRichTextBlock.md)
 New-TeamsAdaptiveRichTextBlock -Text <string[]> [-Color <string[]>] [-Subtle <bool[]>] [-Size <string[]>] [-Weight <string[]>] [-Highlight <bool[]>] [-Italic <bool[]>] [-StrikeThrough <bool[]>] [-FontType <string[]>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Id <string>] [-Hidden] [<CommonParameters>]

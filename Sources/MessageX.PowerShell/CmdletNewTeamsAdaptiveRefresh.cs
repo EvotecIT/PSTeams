@@ -3,7 +3,7 @@ using MessageX.Teams;
 
 namespace MessageX.PowerShell;
 
-/// <summary>Creates an Adaptive Card refresh contract backed by Action.Execute.</summary>
+/// <summary>Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.</summary>
 /// <example>
 /// <summary>Create a refresh action scoped to one Teams user</summary>
 /// <code>$action = New-TeamsAdaptiveExecuteAction -Title 'Refresh' -Verb 'refresh'; New-TeamsAdaptiveRefresh -Action $action -UserId '29:example-user-id'</code>

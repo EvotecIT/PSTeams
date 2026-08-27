@@ -5,43 +5,32 @@ namespace MessageX.Tests;
 
 public class WebhookMessageRendererTests {
     [Fact]
-    public void RenderSupportsTeamsUniversalActionsRefreshAndLegacyFallback() {
-        var request = new TeamsMessageRequest {
-            Summary = "Approval",
+    public void RenderRejectsUniversalActionsWithoutBotOwnedOutboundTransport() {
+        var executeRequest = new TeamsMessageRequest {
             AdaptiveCard = new TeamsAdaptiveCard {
                 Version = "1.5",
-                Refresh = new TeamsAdaptiveRefresh {
-                    Action = new TeamsAdaptiveExecuteAction {
-                        Verb = "refresh-status",
-                        AssociatedInputs = TeamsAdaptiveAssociatedInputs.None
-                    },
-                    UserIds = {
-                        "user-42"
-                    }
-                },
                 Actions = {
                     new TeamsAdaptiveExecuteAction {
                         Title = "Approve",
-                        Verb = "approve-build",
-                        Data = MessageDataValue.ParseJson("{\"buildId\":42}"),
-                        Fallback = new TeamsAdaptiveSubmitAction {
-                            Title = "Approve",
-                            Data = MessageDataValue.ParseJson("{\"verb\":\"approve-build\",\"buildId\":42}")
-                        }
+                        Verb = "approve-build"
                     }
                 }
             }
         };
+        var refreshRequest = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Refresh = new TeamsAdaptiveRefresh {
+                    Action = new TeamsAdaptiveExecuteAction { Verb = "refresh-status" }
+                }
+            }
+        };
 
-        var json = WebhookMessageRenderer.Render(request);
+        var execute = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(executeRequest));
+        var refresh = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(refreshRequest));
 
-        Assert.Contains("\"refresh\":{\"action\":{\"type\":\"Action.Execute\"", json);
-        Assert.Contains("\"verb\":\"refresh-status\"", json);
-        Assert.Contains("\"associatedInputs\":\"none\"", json);
-        Assert.Contains("\"userIds\":[\"user-42\"]", json);
-        Assert.Contains("\"verb\":\"approve-build\"", json);
-        Assert.Contains("\"data\":{\"buildId\":42}", json);
-        Assert.Contains("\"fallback\":{\"type\":\"Action.Submit\"", json);
+        Assert.Contains("bot-capable outbound transport", execute.Message, StringComparison.Ordinal);
+        Assert.Contains("bot-capable outbound transport", refresh.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -109,6 +98,36 @@ public class WebhookMessageRendererTests {
     }
 
     [Fact]
+    public void RenderRejectsUniversalActionsNestedInImageSetsAndShowCards() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Actions = {
+                    new TeamsAdaptiveShowCardAction {
+                        Card = new TeamsAdaptiveCard {
+                            Version = "1.5",
+                            Body = {
+                                new TeamsAdaptiveImageSet {
+                                    Images = {
+                                        new TeamsAdaptiveImage {
+                                            Url = "https://example.test/approval.png",
+                                            SelectAction = new TeamsAdaptiveExecuteAction { Verb = "approve" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+
+        Assert.Contains("bot-capable outbound transport", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RenderCapsTeamsRefreshUsersAtSixty() {
         var request = new TeamsMessageRequest {
             AdaptiveCard = new TeamsAdaptiveCard {
@@ -121,10 +140,10 @@ public class WebhookMessageRendererTests {
         foreach (var index in Enumerable.Range(0, 60)) {
             request.AdaptiveCard.Refresh.UserIds.Add("user-" + index);
         }
-        Assert.Contains("\"userIds\"", WebhookMessageRenderer.Render(request));
+        Assert.NotNull(TeamsLegacyAdaptiveNormalizer.Normalize(request.AdaptiveCard));
 
         request.AdaptiveCard.Refresh.UserIds.Add("user-60");
-        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+        Assert.Throws<ArgumentException>(() => TeamsLegacyAdaptiveNormalizer.Normalize(request.AdaptiveCard));
     }
 
     [Fact]

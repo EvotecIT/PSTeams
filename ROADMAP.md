@@ -10,7 +10,7 @@ Produce an unpublished, reproducible MessageX package set and PSTeams binary mod
 
 - [x] Provider-neutral delivery results, references, capabilities, error classification, HTTP configuration, and bounded provider data.
 - [x] Teams Workflow/incoming-webhook delivery and typed Adaptive Card composition.
-- [x] Teams Universal Actions (`Action.Execute`), refresh, associated inputs, and legacy `Action.Submit` fallback.
+- [x] Typed Teams Universal Action and refresh models with explicit rejection on webhook-only delivery.
 - [x] Verified Teams app HTTP activities and Adaptive Card action dispatch through durable hosting contracts.
 - [x] Slack incoming-webhook and bot Web API send, reply, update, delete, reactions, and conversation resolution.
 - [x] Slack Block Kit sections, dividers, headers, context, actions, buttons, modal inputs, and `views.open`.
@@ -40,13 +40,14 @@ Produce an unpublished, reproducible MessageX package set and PSTeams binary mod
 - [x] Run trim/AOT analysis and document that provider serialization is not trim/Native AOT compatible until it moves to source-generated JSON metadata.
 - [x] Complete security, public API, package-content, and dependency review.
 - [x] Complete one independent read-only local review of the frozen candidate and address validated findings.
-- [ ] Open a release-ready pull request and settle exact-head CI and review feedback.
+- [x] Open a release-ready pull request.
+- [ ] Settle exact-head CI and review feedback.
 
 ## Optional live proof before publication
 
 Live tests run only when the expected test installation and credentials are available. Missing credentials are a disclosed proof gap, not a reason to weaken local contracts.
 
-- [ ] Teams Workflow notification and Adaptive Card action round trip in the designated test tenant.
+- [ ] Teams Workflow notification with a webhook-supported Adaptive Card in the designated test tenant.
 - [ ] Slack bot send, lifecycle, external file upload, button response, and modal open in the designated test workspace.
 - [ ] Discord bot send, attachment, component/modal interaction, follow-up, edit, and delete in the designated test guild.
 - [ ] Verify negative authentication, scope/permission, expiry, replay, and rate-limit behavior without exposing response bodies or secrets.
@@ -82,7 +83,7 @@ The first package candidate intentionally uses verified HTTP receive paths. Thes
 
 - [ ] Slack Socket Mode: rotating URLs, envelope acknowledgement, reconnect overlap, health, and backpressure.
 - [ ] Discord Gateway: discovery, intents, identify, heartbeat, sequence tracking, resume, invalid sessions, and graceful shutdown.
-- [ ] Teams proactive delivery: trusted persisted service URL and conversation coordinates, installation lifecycle, restart proof, and update/delete ownership.
+- [ ] Teams bot-owned outbound delivery for Universal Actions, refresh, and proactive messages: trusted persisted service URL and conversation coordinates, installation lifecycle, restart proof, and update/delete ownership.
 - [ ] Multi-tenant Slack OAuth installation and token-rotation service contracts.
 - [ ] Additional Block Kit and Discord Components V2 elements driven by real consumers.
 - [ ] A thin `MessageX.Teams.Graph` adapter after GraphEssentialsX is packaged and a consumer needs it.

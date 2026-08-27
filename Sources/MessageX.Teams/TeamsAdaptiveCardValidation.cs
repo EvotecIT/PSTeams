@@ -3,18 +3,19 @@ namespace MessageX.Teams;
 internal static class TeamsAdaptiveCardValidation {
     private const int MaximumNestingDepth = 32;
 
-    public static void Validate(TeamsAdaptiveCard card) {
+    public static void Validate(TeamsAdaptiveCard card, bool allowUniversalActions = true) {
         if (card is null) {
             throw new ArgumentNullException(nameof(card));
         }
 
-        ValidateCard(card, new HashSet<TeamsAdaptiveCard>(), 0);
+        ValidateCard(card, new HashSet<TeamsAdaptiveCard>(), 0, allowUniversalActions);
     }
 
     private static void ValidateCard(
         TeamsAdaptiveCard card,
         HashSet<TeamsAdaptiveCard> visitedCards,
-        int depth) {
+        int depth,
+        bool allowUniversalActions) {
         if (depth > MaximumNestingDepth) {
             throw new ArgumentException("Adaptive Card nesting exceeds the supported depth.", nameof(card));
         }
@@ -30,6 +31,11 @@ internal static class TeamsAdaptiveCardValidation {
                 "Teams Universal Actions and refresh require Adaptive Card version 1.5 or later.",
                 nameof(card));
         }
+        if (usesUniversalActions && !allowUniversalActions) {
+            throw new ArgumentException(
+                "Teams webhook delivery does not support Action.Execute or refresh without a bot-capable outbound transport.",
+                nameof(card));
+        }
 
         if (card.Refresh is not null) {
             ValidateExecute(card.Refresh.Action, nameof(card.Refresh));
@@ -40,7 +46,7 @@ internal static class TeamsAdaptiveCardValidation {
                 ValidateExecute(execute, nameof(card.Actions));
             }
             if (action is TeamsAdaptiveShowCardAction { Card: not null } showCard) {
-                ValidateCard(showCard.Card, visitedCards, depth + 1);
+                ValidateCard(showCard.Card, visitedCards, depth + 1, allowUniversalActions);
             }
         }
 
@@ -65,6 +71,13 @@ internal static class TeamsAdaptiveCardValidation {
         switch (element) {
             case TeamsAdaptiveImage image when image.SelectAction is not null:
                 yield return image.SelectAction;
+                break;
+            case TeamsAdaptiveImageSet imageSet:
+                foreach (var image in imageSet.Images) {
+                    foreach (var action in EnumerateActions(image)) {
+                        yield return action;
+                    }
+                }
                 break;
             case TeamsAdaptiveActionSet actionSet:
                 foreach (var action in actionSet.Actions) {

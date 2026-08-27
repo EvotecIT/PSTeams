@@ -28,6 +28,7 @@ public sealed class SlackInteractionReceiverTests {
         Assert.DoesNotContain("secret", result.Envelope?.DeduplicationKey);
         Assert.Equal("C123", result.Envelope?.Conversation?.ConversationId);
         Assert.Equal("installation-1", result.Envelope?.Conversation?.InstallationId);
+        Assert.False(result.RequiresSynchronousDispatch);
         var persistedShape = JsonSerializer.Serialize(result.Envelope?.Payload);
         Assert.DoesNotContain("response_url", persistedShape, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("trigger-1", persistedShape, StringComparison.Ordinal);
@@ -77,6 +78,7 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("comment", result.Envelope?.Payload.ProviderPayload?.State[0].ActionId);
         Assert.Equal("ready", result.Envelope?.Payload.ProviderPayload?.State[0].Value);
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Theory]
@@ -298,6 +300,7 @@ public sealed class SlackInteractionReceiverTests {
               "callback_id":"inspect",
               "team":{"id":"T123"},
               "user":{"id":"U123"},
+              "trigger_id":"trigger-shortcut",
               "channel":{"id":"C123"},
               "message":{"ts":"1787418599.000200","text":"selected"}
             }
@@ -307,6 +310,7 @@ public sealed class SlackInteractionReceiverTests {
 
         Assert.Equal("1787418599.000200", result.Envelope?.Message?.MessageId);
         Assert.Equal("selected", result.Envelope?.Payload.ProviderPayload?.Message?.Text);
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Fact]

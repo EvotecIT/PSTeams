@@ -6,7 +6,7 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveRefresh
 ## SYNOPSIS
-Creates an Adaptive Card refresh contract backed by Action.Execute.
+Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ## SYNTAX
 ### __AllParameterSets
@@ -15,7 +15,7 @@ New-TeamsAdaptiveRefresh [-Action] <TeamsAdaptiveExecuteAction> [-UserId <string
 ```
 
 ## DESCRIPTION
-Creates an Adaptive Card refresh contract backed by Action.Execute.
+Creates an Adaptive Card refresh model for a bot-capable outbound transport. Current webhook targets reject it.
 
 ## EXAMPLES
 
