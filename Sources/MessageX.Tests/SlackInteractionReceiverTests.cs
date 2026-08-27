@@ -207,6 +207,28 @@ public sealed class SlackInteractionReceiverTests {
     }
 
     [Fact]
+    public void ViewClosedDispatchesTheRequestedCallbackWithoutSubmissionSemantics() {
+        const string payload = """
+            {
+              "type":"view_closed",
+              "team":{"id":"T123"},
+              "user":{"id":"U123"},
+              "view":{"callback_id":"approval","private_metadata":"case-42"}
+            }
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal(MessageRouteKind.Action, result.Route?.Kind);
+        Assert.Equal(MessageEventKind.ActionInvoked, result.Envelope?.Kind);
+        Assert.Equal(SlackInteractionKind.ViewClosed, result.Envelope?.Payload.Kind);
+        Assert.Equal("case-42", result.Envelope?.Payload.ProviderPayload?.View?.PrivateMetadata);
+        Assert.Empty(result.Envelope?.Payload.ProviderPayload?.View?.Values ?? Array.Empty<SlackViewStateInput>());
+        Assert.False(result.RequiresSynchronousDispatch);
+    }
+
+    [Fact]
     public void ViewSubmissionPreservesPrivateMetadataAndFileInputIds() {
         const string payload = """
             {"type":"view_submission","team":{"id":"T123"},"enterprise":{"id":"E123"},"user":{"id":"U123"},"view":{"callback_id":"approval","private_metadata":"case-42","state":{"values":{"documents":{"evidence":{"type":"file_input","files":[{"id":"F1"},{"id":"F2"}]}}}}}}

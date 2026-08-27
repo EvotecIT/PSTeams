@@ -33,7 +33,7 @@ internal static class TeamsAdaptiveCardValidation {
 
         if (card.Refresh is not null) {
             ValidateExecute(card.Refresh.Action, nameof(card.Refresh));
-            ValidateCoordinates(card.Refresh.UserIds, "refresh user identifiers");
+            ValidateCoordinates(card.Refresh.UserIds, "refresh user identifiers", 60);
         }
         foreach (var action in actions) {
             if (action is TeamsAdaptiveExecuteAction execute) {
@@ -63,6 +63,9 @@ internal static class TeamsAdaptiveCardValidation {
 
     private static IEnumerable<TeamsAdaptiveAction> EnumerateActions(TeamsAdaptiveCardElement element) {
         switch (element) {
+            case TeamsAdaptiveImage image when image.SelectAction is not null:
+                yield return image.SelectAction;
+                break;
             case TeamsAdaptiveActionSet actionSet:
                 foreach (var action in actionSet.Actions) {
                     yield return action;
@@ -107,9 +110,12 @@ internal static class TeamsAdaptiveCardValidation {
         }
     }
 
-    private static void ValidateCoordinates(IEnumerable<string> values, string label) {
+    private static void ValidateCoordinates(IEnumerable<string> values, string label, int maximumCount) {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in values) {
+            if (seen.Count >= maximumCount) {
+                throw new ArgumentException($"Teams {label} cannot contain more than {maximumCount} values.", label);
+            }
             if (string.IsNullOrWhiteSpace(value) || value.Length > 256 || value.Any(char.IsControl) || !seen.Add(value)) {
                 throw new ArgumentException($"Teams {label} must be unique bounded values.", label);
             }

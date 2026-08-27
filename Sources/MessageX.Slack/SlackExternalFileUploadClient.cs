@@ -213,6 +213,11 @@ public sealed class SlackExternalFileUploadClient : IDisposable {
         upload.InitialComment = ValidateText(upload.InitialComment, 4000, "initial comment");
         if (!string.IsNullOrWhiteSpace(upload.ConversationId)) {
             upload.ConversationId = SlackMessageTarget.ValidateConversationId(upload.ConversationId);
+            if (upload.ConversationId[0] is not ('C' or 'G' or 'D')) {
+                throw new ArgumentException(
+                    "Slack file shares require a channel, private-channel, direct-message, or multi-party direct-message identifier.",
+                    nameof(upload));
+            }
         }
         if (!string.IsNullOrWhiteSpace(upload.ThreadTimestamp)) {
             if (upload.ConversationId is null || SlackMessageValidator.ParseTimestamp(upload.ThreadTimestamp) is null) {

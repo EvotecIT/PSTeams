@@ -160,6 +160,9 @@ internal static class DiscordMessageValidator {
             select.MinimumValues > select.MaximumValues || select.MaximumValues > select.Options.Count) {
             throw new ArgumentException("Discord select minimum and maximum values are inconsistent.", nameof(select));
         }
+        if (select.Options.Count(static option => option.Default) > select.MaximumValues) {
+            throw new ArgumentException("Discord select defaults cannot exceed the maximum selected values.", nameof(select));
+        }
 
         var values = new HashSet<string>(StringComparer.Ordinal);
         foreach (var option in select.Options) {

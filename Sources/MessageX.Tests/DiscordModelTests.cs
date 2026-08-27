@@ -80,6 +80,27 @@ public sealed class DiscordModelTests {
     }
 
     [Fact]
+    public void RendererRejectsSelectDefaultsBeyondMaximumValues() {
+        var message = new DiscordMessageRequest();
+        message.Components.Add(new DiscordActionRow {
+            Components = {
+                new DiscordStringSelect {
+                    CustomId = "environment",
+                    MaximumValues = 1,
+                    Options = {
+                        new DiscordSelectOption { Label = "Test", Value = "test", Default = true },
+                        new DiscordSelectOption { Label = "Production", Value = "production", Default = true }
+                    }
+                }
+            }
+        });
+
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
     public void WebhookTargetsRejectCredentialExfiltrationUrisAndHideSecret() {
         Assert.Throws<ArgumentException>(() => DiscordMessageTarget.ForIncomingWebhook(
             new Uri("http://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456")));

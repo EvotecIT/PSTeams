@@ -97,6 +97,24 @@ public sealed class SlackExternalFileUploadClientTests {
         }, TestContext.Current.CancellationToken));
     }
 
+    [Theory]
+    [InlineData("U123ABC456")]
+    [InlineData("W123ABC456")]
+    public async Task UploadRejectsUserIdentifiersBeforeTransferringContent(string conversationId) {
+        using var handler = new SequenceHandler(Array.Empty<HttpResponseMessage>());
+        using var client = CreateClient(handler);
+        using var content = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UploadAsync(new SlackFileUploadRequest {
+            Content = content,
+            Length = content.Length,
+            FileName = "evidence.bin",
+            ConversationId = conversationId
+        }, TestContext.Current.CancellationToken));
+
+        Assert.Empty(handler.Requests);
+    }
+
     private static SlackExternalFileUploadClient CreateClient(HttpMessageHandler handler) => new(
         SlackConnection.ForBotToken("xoxb-test-token"),
         new HttpClient(handler),

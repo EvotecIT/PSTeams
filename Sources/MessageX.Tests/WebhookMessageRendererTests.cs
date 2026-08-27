@@ -89,6 +89,45 @@ public class WebhookMessageRendererTests {
     }
 
     [Fact]
+    public void RenderValidatesUniversalActionsOnImageSelectActions() {
+        var versioned = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Body = {
+                    new TeamsAdaptiveImage {
+                        Url = "https://example.test/approval.png",
+                        SelectAction = new TeamsAdaptiveExecuteAction { Verb = "approve" }
+                    }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(versioned));
+
+        versioned.AdaptiveCard!.Version = "1.5";
+        ((TeamsAdaptiveExecuteAction)((TeamsAdaptiveImage)versioned.AdaptiveCard.Body[0]).SelectAction!).Verb = string.Empty;
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(versioned));
+    }
+
+    [Fact]
+    public void RenderCapsTeamsRefreshUsersAtSixty() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Refresh = new TeamsAdaptiveRefresh {
+                    Action = new TeamsAdaptiveExecuteAction { Verb = "refresh" }
+                }
+            }
+        };
+        foreach (var index in Enumerable.Range(0, 60)) {
+            request.AdaptiveCard.Refresh.UserIds.Add("user-" + index);
+        }
+        Assert.Contains("\"userIds\"", WebhookMessageRenderer.Render(request));
+
+        request.AdaptiveCard.Refresh.UserIds.Add("user-60");
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+    }
+
+    [Fact]
     public void RenderRejectsRecursiveShowCardGraphs() {
         var card = new TeamsAdaptiveCard();
         card.Actions.Add(new TeamsAdaptiveShowCardAction {

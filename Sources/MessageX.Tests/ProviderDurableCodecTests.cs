@@ -120,6 +120,28 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackClosedModalCodecRetainsCallbackAndSafeMetadata()
+    {
+        const string json = """
+            {"type":"view_closed","team":{"id":"T123"},"user":{"id":"U123"},"view":{"callback_id":"approval","private_metadata":"case-42"}}
+            """;
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(receive.Route!, receive.Envelope!));
+
+        Assert.Equal(SlackInteractionKind.ViewClosed, decoded.Payload.Kind);
+        Assert.Equal("approval", decoded.Payload.ProviderPayload?.View?.CallbackId);
+        Assert.Equal("case-42", decoded.Payload.ProviderPayload?.View?.PrivateMetadata);
+        Assert.Empty(decoded.Payload.ProviderPayload?.View?.Values ?? Array.Empty<SlackViewStateInput>());
+    }
+
+    [Fact]
     public void SlackRichTextInputSurvivesDurableRoundTripWithoutCapabilities()
     {
         const string json = """

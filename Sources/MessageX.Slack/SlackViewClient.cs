@@ -73,9 +73,9 @@ public sealed class SlackViewClient : IDisposable {
                 RetryAfter = SlackHttpResponseSupport.ReadRetryAfter(response)
             };
             if (!accepted) {
-                result.ErrorKind = parsed.Ok || !parsed.IsValid
-                    ? MessageErrorKind.Transient
-                    : SlackHttpResponseSupport.Classify((int)response.StatusCode, code);
+                result.ErrorKind = !response.IsSuccessStatusCode || parsed.IsValid && !parsed.Ok
+                    ? SlackHttpResponseSupport.Classify((int)response.StatusCode, code)
+                    : MessageErrorKind.Transient;
                 result.ErrorMessage = code is null
                     ? $"Slack views.open returned HTTP status {(int)response.StatusCode}."
                     : $"Slack Web API rejected views.open with '{code}'.";

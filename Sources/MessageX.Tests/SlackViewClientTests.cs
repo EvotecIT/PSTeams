@@ -97,6 +97,32 @@ public sealed class SlackViewClientTests {
         Assert.Null(handler.Uri);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, MessageErrorKind.Authentication)]
+    [InlineData(HttpStatusCode.Forbidden, MessageErrorKind.Authorization)]
+    [InlineData(HttpStatusCode.TooManyRequests, MessageErrorKind.RateLimited)]
+    public async Task OpenModalClassifiesHttpFailuresEvenWhenBodyIsInvalid(
+        HttpStatusCode statusCode,
+        MessageErrorKind expected) {
+        using var handler = new RecordingHandler(statusCode, "not-json");
+        using var client = new SlackViewClient(
+            SlackConnection.ForBotToken("xoxb-test-token"),
+            new HttpClient(handler),
+            disposeHttpClient: true);
+
+        var result = await client.OpenModalAsync(
+            new SlackTransientInteractionContext("trigger-42", null),
+            new SlackModalView {
+                CallbackId = "approval",
+                Title = SlackTextObject.Plain("Approval"),
+                Blocks = { new SlackDividerBlock() }
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(expected, result.ErrorKind);
+    }
+
     private sealed class RecordingHandler : HttpMessageHandler {
         private readonly HttpStatusCode _statusCode;
         private readonly string _responseBody;

@@ -207,6 +207,13 @@ public static class SlackInteractionReceiver {
                 kind = SlackInteractionKind.ViewSubmission;
                 route = MessageRoute.ForSubmission(name);
                 providerPayload = new SlackInteractionPayload(null, view, null);
+            } else if (string.Equals(type, "view_closed", StringComparison.Ordinal)) {
+                if (!TryReadViewSubmission(root, out name, out var view)) {
+                    return Reject(400, MessageReceiveFailureKind.Malformed);
+                }
+                kind = SlackInteractionKind.ViewClosed;
+                route = MessageRoute.ForAction(name);
+                providerPayload = new SlackInteractionPayload(null, view, null);
             } else {
                 return MessageReceiveResult<SlackInteractionEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
@@ -737,7 +744,8 @@ public static class SlackInteractionReceiver {
 
     private static bool IsRouteName(string value, SlackInteractionKind kind) =>
         value.Length > 0 &&
-        value.Length <= (kind is SlackInteractionKind.BlockAction or SlackInteractionKind.ViewSubmission ? 255 : 128) &&
+        value.Length <= (kind is SlackInteractionKind.BlockAction or SlackInteractionKind.ViewSubmission or
+            SlackInteractionKind.ViewClosed ? 255 : 128) &&
         !value.Any(char.IsControl);
 
     private static bool IsForm(string contentType) {

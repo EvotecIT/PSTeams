@@ -265,7 +265,7 @@ internal static class SlackDurableCodecValidation
         SlackViewSubmissionInput? view = null;
         if (value.View is not null)
         {
-            view = new SlackViewSubmissionInput(Required(value.View.CallbackId, 128),
+            view = new SlackViewSubmissionInput(Required(value.View.CallbackId, 255),
                 value.View.Values.Select(NormalizeViewValue).ToArray(),
                 OptionalText(value.View.PrivateMetadata, 3000));
         }
@@ -310,6 +310,13 @@ internal static class SlackDurableCodecValidation
                 string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
                 providerPayload.Actions.Length == 0 && providerPayload.Message is null &&
                 providerPayload.State.Length == 0 && providerPayload.View is not null &&
+                string.Equals(providerPayload.View.CallbackId, name, StringComparison.Ordinal),
+            SlackInteractionKind.ViewClosed => route.Kind == MessageRouteKind.Action &&
+                text is null &&
+                string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
+                providerPayload.Actions.Length == 0 && providerPayload.Message is null &&
+                providerPayload.State.Length == 0 && providerPayload.View is not null &&
+                providerPayload.View.Values.Length == 0 &&
                 string.Equals(providerPayload.View.CallbackId, name, StringComparison.Ordinal),
             _ => false
         };
@@ -447,7 +454,8 @@ internal static class SlackDurableCodecValidation
     }
 
     public static string InteractionName(SlackInteractionKind kind, string? value) =>
-        Required(value, kind == SlackInteractionKind.BlockAction ? 255 : 128);
+        Required(value, kind is SlackInteractionKind.BlockAction or SlackInteractionKind.ViewSubmission or
+            SlackInteractionKind.ViewClosed ? 255 : 128);
 
     public static string? OptionalText(string? value, int maximumLength)
     {

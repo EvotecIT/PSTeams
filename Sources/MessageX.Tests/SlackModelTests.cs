@@ -182,6 +182,37 @@ public sealed class SlackModelTests {
     }
 
     [Fact]
+    public void ModalRendererRequiresSubmitForInputsAndRejectsButtonsAsInputElements() {
+        var missingSubmit = new SlackModalView {
+            CallbackId = "approval",
+            Title = SlackTextObject.Plain("Approval"),
+            Blocks = {
+                new SlackInputBlock {
+                    Label = SlackTextObject.Plain("Reason"),
+                    Element = new SlackPlainTextInputElement { ActionId = "reason" }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => SlackModalRenderer.RenderOpen("trigger", missingSubmit));
+
+        var buttonInput = new SlackModalView {
+            CallbackId = "approval",
+            Title = SlackTextObject.Plain("Approval"),
+            Submit = SlackTextObject.Plain("Submit"),
+            Blocks = {
+                new SlackInputBlock {
+                    Label = SlackTextObject.Plain("Decision"),
+                    Element = new SlackButtonElement {
+                        Text = SlackTextObject.Plain("Approve"),
+                        ActionId = "approve"
+                    }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => SlackModalRenderer.RenderOpen("trigger", buttonInput));
+    }
+
+    [Fact]
     public void WebhookCredentialIsNotAVisibleTargetProperty() {
         var publicProperties = typeof(SlackMessageTarget).GetProperties()
             .Where(property => property.GetMethod?.IsPublic == true)

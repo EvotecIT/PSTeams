@@ -258,5 +258,29 @@ Describe 'Legacy adaptive leaf migration cmdlets' {
 
         { New-AdaptiveActionSet { $legacyShowCard } } |
             Should -Throw '*dictionary-shaped Action.ShowCard card*'
+
+        $legacyExecute = [ordered]@{
+            type = 'Action.Execute'
+            id = 'approve-action'
+            title = 'Approve'
+            verb = 'approve'
+            associatedInputs = 'none'
+            data = [ordered]@{ incident = 'INC-42' }
+            fallback = [ordered]@{
+                type = 'Action.Submit'
+                id = 'approve-fallback'
+                title = 'Approve'
+                data = [ordered]@{ incident = 'INC-42'; legacy = $true }
+            }
+        }
+        $executeSet = New-AdaptiveActionSet { $legacyExecute }
+        $execute = $executeSet.Actions[0]
+
+        $execute.Id | Should -Be 'approve-action'
+        $execute.Verb | Should -Be 'approve'
+        $execute.AssociatedInputs.ToString() | Should -Be 'None'
+        $execute.Data.GetProperty('incident').GetString() | Should -Be 'INC-42'
+        $execute.Fallback.Id | Should -Be 'approve-fallback'
+        $execute.Fallback.Data.GetProperty('legacy').GetBoolean() | Should -BeTrue
     }
 }

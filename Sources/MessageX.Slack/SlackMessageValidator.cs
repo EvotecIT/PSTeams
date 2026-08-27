@@ -43,6 +43,9 @@ internal static class SlackMessageValidator {
         if (view.Blocks.Count is < 1 or > 100) {
             throw new ArgumentException("Slack modal views require one to one hundred blocks.", nameof(view));
         }
+        if (view.Submit is null && view.Blocks.Any(static block => block is SlackInputBlock)) {
+            throw new ArgumentException("Slack modal views containing input blocks require a submit label.", nameof(view));
+        }
         foreach (var block in view.Blocks) {
             ValidateBlock(block, allowInput: true);
         }
@@ -131,6 +134,9 @@ internal static class SlackMessageValidator {
             throw new ArgumentException("Slack element collections cannot contain null values.", nameof(element));
         }
         if (element is SlackButtonElement button) {
+            if (allowTextInput) {
+                throw new ArgumentException("Slack input blocks require an input-capable element.", nameof(element));
+            }
             ValidatePlainText(button.Text, 75, "Slack button text");
             ValidateIdentifier(button.ActionId, 255, "Slack button action identifiers");
             if (button.Value?.Length > 2000 || button.Value?.Any(char.IsControl) == true ||

@@ -47,7 +47,7 @@ public sealed class CmdletNewAdaptiveActionSet : PSCmdlet {
 
     private static bool TryCreateAction(IDictionary dictionary, out TeamsAdaptiveAction action) {
         action = null!;
-        var type = GetDictionaryString(dictionary, "type") ?? GetDictionaryString(dictionary, "Type");
+        var type = GetDictionaryString(dictionary, "type");
         var title = GetDictionaryString(dictionary, "title") ?? string.Empty;
 
         switch (type) {
@@ -58,19 +58,40 @@ public sealed class CmdletNewAdaptiveActionSet : PSCmdlet {
                 };
                 return true;
             case "Action.Submit":
-                action = new TeamsAdaptiveSubmitAction {
-                    Title = title
-                };
+                action = CreateSubmitAction(dictionary, title);
                 return true;
             case "Action.Execute":
                 var verb = GetDictionaryString(dictionary, "verb");
                 if (string.IsNullOrWhiteSpace(verb)) {
                     return false;
                 }
-                action = new TeamsAdaptiveExecuteAction {
+                var execute = new TeamsAdaptiveExecuteAction {
+                    Id = GetDictionaryString(dictionary, "id"),
                     Title = title,
-                    Verb = verb!
+                    Verb = verb!,
+                    Data = GetDictionaryData(dictionary, "data")
                 };
+                var associatedInputs = GetDictionaryString(dictionary, "associatedInputs");
+                var parsedInputs = TeamsAdaptiveAssociatedInputs.Auto;
+                if (associatedInputs is not null &&
+                    !Enum.TryParse(associatedInputs, ignoreCase: true, out parsedInputs)) {
+                    throw new InvalidOperationException(
+                        "Action.Execute associatedInputs must be 'auto' or 'none'.");
+                }
+                if (associatedInputs is not null) {
+                    execute.AssociatedInputs = parsedInputs;
+                }
+                if (TryGetDictionaryValue(dictionary, "fallback", out var fallbackValue) && fallbackValue is not null) {
+                    if (fallbackValue is not IDictionary fallbackDictionary ||
+                        !string.Equals(GetDictionaryString(fallbackDictionary, "type"), "Action.Submit", StringComparison.OrdinalIgnoreCase)) {
+                        throw new InvalidOperationException(
+                            "Action.Execute fallback must be an Action.Submit dictionary.");
+                    }
+                    execute.Fallback = CreateSubmitAction(
+                        fallbackDictionary,
+                        GetDictionaryString(fallbackDictionary, "title") ?? title);
+                }
+                action = execute;
                 return true;
             case "Action.ToggleVisibility":
                 var toggle = new TeamsAdaptiveToggleVisibilityAction {
@@ -104,10 +125,35 @@ public sealed class CmdletNewAdaptiveActionSet : PSCmdlet {
     }
 
     private static string? GetDictionaryString(IDictionary dictionary, string key) {
-        if (!dictionary.Contains(key)) {
+        return TryGetDictionaryValue(dictionary, key, out var value)
+            ? value?.ToString()
+            : null;
+    }
+
+    private static TeamsAdaptiveSubmitAction CreateSubmitAction(IDictionary dictionary, string title) => new() {
+        Id = GetDictionaryString(dictionary, "id"),
+        Title = title,
+        Data = GetDictionaryData(dictionary, "data")
+    };
+
+    private static MessageDataValue? GetDictionaryData(IDictionary dictionary, string key) {
+        if (!TryGetDictionaryValue(dictionary, key, out var value) || value is null) {
             return null;
         }
+        if (value is not IDictionary data) {
+            throw new InvalidOperationException($"{key} must be a dictionary-shaped JSON object.");
+        }
+        return PowerShellMessageDataValueConverter.FromDictionary(data);
+    }
 
-        return dictionary[key]?.ToString();
+    private static bool TryGetDictionaryValue(IDictionary dictionary, string key, out object? value) {
+        foreach (DictionaryEntry entry in dictionary) {
+            if (string.Equals(entry.Key?.ToString(), key, StringComparison.OrdinalIgnoreCase)) {
+                value = entry.Value;
+                return true;
+            }
+        }
+        value = null;
+        return false;
     }
 }
