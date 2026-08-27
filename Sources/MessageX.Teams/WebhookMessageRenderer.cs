@@ -55,6 +55,7 @@ public static class WebhookMessageRenderer {
     }
 
     internal static Dictionary<string, object?> RenderAdaptiveCard(TeamsAdaptiveCard card) {
+        TeamsAdaptiveCardValidation.Validate(card);
         Dictionary<string, object?>? msTeams = null;
         if (card.AllowImageExpand is not null || card.FullWidth || card.Mentions.Count > 0) {
             msTeams = new Dictionary<string, object?>();
@@ -82,6 +83,7 @@ public static class WebhookMessageRenderer {
             ["verticalContentAlignment"] = EmptyToNull(card.VerticalContentAlignment),
             ["backgroundImage"] = TeamsLegacyAdaptiveNormalizer.Normalize(card.BackgroundImage),
             ["selectAction"] = card.SelectAction is null ? null : RenderAdaptiveAction(card.SelectAction),
+            ["refresh"] = card.Refresh is null ? null : RenderAdaptiveRefresh(card.Refresh),
             ["body"] = card.Body.Select(RenderAdaptiveElement).ToArray(),
             ["actions"] = card.Actions.Count == 0 ? null : card.Actions.Select(RenderAdaptiveAction).ToArray(),
             ["msteams"] = msTeams
@@ -375,6 +377,22 @@ public static class WebhookMessageRenderer {
     }
 
     private static Dictionary<string, object?> RenderAdaptiveAction(TeamsAdaptiveAction action) {
+        if (action is TeamsAdaptiveExecuteAction executeAction) {
+            return new Dictionary<string, object?> {
+                ["type"] = executeAction.Type,
+                ["id"] = EmptyToNull(executeAction.Id),
+                ["title"] = EmptyToNull(executeAction.Title),
+                ["verb"] = executeAction.Verb,
+                ["data"] = executeAction.Data,
+                ["associatedInputs"] = executeAction.AssociatedInputs == TeamsAdaptiveAssociatedInputs.None
+                    ? "none"
+                    : "auto",
+                ["fallback"] = executeAction.Fallback is null
+                    ? null
+                    : RenderAdaptiveAction(executeAction.Fallback)
+            };
+        }
+
         if (action is TeamsAdaptiveOpenUrlAction openUrlAction) {
             return new Dictionary<string, object?> {
                 ["type"] = openUrlAction.Type,
@@ -397,7 +415,8 @@ public static class WebhookMessageRenderer {
             return new Dictionary<string, object?> {
                 ["type"] = submitAction.Type,
                 ["id"] = EmptyToNull(submitAction.Id),
-                ["title"] = EmptyToNull(submitAction.Title)
+                ["title"] = EmptyToNull(submitAction.Title),
+                ["data"] = submitAction.Data
             };
         }
 
@@ -412,6 +431,11 @@ public static class WebhookMessageRenderer {
 
         throw new NotSupportedException($"Adaptive action '{action.GetType().Name}' is not supported by the webhook renderer yet.");
     }
+
+    private static Dictionary<string, object?> RenderAdaptiveRefresh(TeamsAdaptiveRefresh refresh) => new() {
+        ["action"] = RenderAdaptiveAction(refresh.Action),
+        ["userIds"] = refresh.UserIds.Count == 0 ? null : refresh.UserIds.ToArray()
+    };
 
     private static string? EmptyToNull(string? value) {
         return string.IsNullOrWhiteSpace(value) ? null : value;

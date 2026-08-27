@@ -26,7 +26,8 @@ public sealed class SlackModelTests {
             MessageCapabilities.Reply |
             MessageCapabilities.Update |
             MessageCapabilities.Delete |
-            MessageCapabilities.React,
+            MessageCapabilities.React |
+            MessageCapabilities.UploadFile,
             target.Capabilities);
         foreach (var providerId in new[] {
             "C0123456789",
@@ -58,6 +59,7 @@ public sealed class SlackModelTests {
             MessageCapabilities.Update |
             MessageCapabilities.Delete |
             MessageCapabilities.React |
+            MessageCapabilities.UploadFile |
             MessageCapabilities.ResolveConversation,
             connection.Capabilities);
         Assert.Throws<ArgumentException>(() => SlackConnection.ForBotToken(
@@ -117,6 +119,66 @@ public sealed class SlackModelTests {
         Assert.False(root.GetProperty("blocks")[0].GetProperty("text").TryGetProperty("verbatim", out _));
         Assert.False(root.GetProperty("blocks")[1].TryGetProperty("block_id", out _));
         Assert.False(json.Contains("WebhookUri", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void RendererSupportsHeadersContextButtonsAndAccessories() {
+        var message = new SlackMessageRequest { Text = "Build approval" };
+        message.Blocks.Add(new SlackHeaderBlock { Text = SlackTextObject.Plain("Build approval") });
+        message.Blocks.Add(new SlackSectionBlock {
+            Text = SlackTextObject.Markdown("Build *42* is ready"),
+            Accessory = new SlackButtonElement {
+                Text = SlackTextObject.Plain("Open"),
+                ActionId = "open-build",
+                Url = new Uri("https://example.com/build/42")
+            }
+        });
+        message.Blocks.Add(new SlackActionsBlock {
+            Elements = {
+                new SlackButtonElement {
+                    Text = SlackTextObject.Plain("Approve"),
+                    ActionId = "approve-build",
+                    Value = "42",
+                    Style = SlackButtonStyle.Primary
+                },
+                new SlackButtonElement {
+                    Text = SlackTextObject.Plain("Reject"),
+                    ActionId = "reject-build",
+                    Value = "42",
+                    Style = SlackButtonStyle.Danger
+                }
+            }
+        });
+        message.Blocks.Add(new SlackContextBlock {
+            Elements = {
+                SlackTextObject.Markdown("Requested by *CI*")
+            }
+        });
+
+        var json = SlackJsonSerializer.Serialize(
+            message,
+            SlackMessageTarget.ForConversation("C0123456789"));
+        using var document = JsonDocument.Parse(json);
+        var blocks = document.RootElement.GetProperty("blocks");
+
+        Assert.Equal("header", blocks[0].GetProperty("type").GetString());
+        Assert.Equal("button", blocks[1].GetProperty("accessory").GetProperty("type").GetString());
+        Assert.Equal("primary", blocks[2].GetProperty("elements")[0].GetProperty("style").GetString());
+        Assert.Equal("danger", blocks[2].GetProperty("elements")[1].GetProperty("style").GetString());
+        Assert.Equal("mrkdwn", blocks[3].GetProperty("elements")[0].GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public void MessageRendererRejectsModalInputBlocks() {
+        var message = new SlackMessageRequest { Text = "fallback" };
+        message.Blocks.Add(new SlackInputBlock {
+            Label = SlackTextObject.Plain("Reason"),
+            Element = new SlackPlainTextInputElement { ActionId = "reason" }
+        });
+
+        Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(
+            message,
+            SlackMessageTarget.ForConversation("C0123456789")));
     }
 
     [Fact]

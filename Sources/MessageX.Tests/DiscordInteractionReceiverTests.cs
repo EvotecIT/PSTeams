@@ -17,6 +17,55 @@ public sealed class DiscordInteractionReceiverTests {
         PrivateKey.GeneratePublicKey().GetEncoded());
 
     [Fact]
+    public void ModalAcknowledgementRendersTypedTextInputs() {
+        var modal = new DiscordModalRequest {
+            CustomId = "approval-details",
+            Title = "Approval details",
+            Components = {
+                new DiscordActionRow {
+                    Components = {
+                        new DiscordTextInput {
+                            CustomId = "reason",
+                            Label = "Reason",
+                            Style = DiscordTextInputStyle.Paragraph,
+                            MaximumLength = 500,
+                            Placeholder = "Why should this be approved?"
+                        }
+                    }
+                }
+            }
+        };
+
+        var acknowledgement = DiscordInteractionAcknowledgement.Modal(modal);
+        using var document = JsonDocument.Parse(acknowledgement.CopyBody());
+        var root = document.RootElement;
+
+        Assert.Equal(9, root.GetProperty("type").GetInt32());
+        Assert.Equal("approval-details", root.GetProperty("data").GetProperty("custom_id").GetString());
+        var input = root.GetProperty("data").GetProperty("components")[0].GetProperty("components")[0];
+        Assert.Equal(4, input.GetProperty("type").GetInt32());
+        Assert.Equal(2, input.GetProperty("style").GetInt32());
+        Assert.Equal(500, input.GetProperty("max_length").GetInt32());
+    }
+
+    [Fact]
+    public void ModalAcknowledgementRejectsMessageComponents() {
+        var modal = new DiscordModalRequest {
+            CustomId = "approval-details",
+            Title = "Approval details",
+            Components = {
+                new DiscordActionRow {
+                    Components = {
+                        new DiscordButton { Label = "Approve", CustomId = "approve" }
+                    }
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => DiscordInteractionAcknowledgement.Modal(modal));
+    }
+
+    [Fact]
     public void FixedIndependentPingVectorReturnsPongWithoutDispatch() {
         const string publicKey = "79B5562E8FE654F94078B112E8A98BA7901F853AE695BED7E0E3910BAD049664";
         const string signature = "7FB1DF4757DE1D90C78D7AC9CAA2FD7B00B003DAFB9E49C24C49833E71559EC9" +

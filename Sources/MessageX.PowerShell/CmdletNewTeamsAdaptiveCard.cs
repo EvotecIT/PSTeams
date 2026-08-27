@@ -19,6 +19,9 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
     public string Version { get; set; } = "1.2";
 
     [Parameter(Mandatory = false)]
+    public TeamsAdaptiveRefresh? Refresh { get; set; }
+
+    [Parameter(Mandatory = false)]
     public string? FallbackText { get; set; }
 
     [Parameter(Mandatory = false)]
@@ -90,6 +93,7 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
                 SelectActionUrl,
                 SelectActionTitle,
                 SelectActionTargetElement),
+            Refresh = Refresh,
             AllowImageExpand = AllowImageExpand.IsPresent ? true : null,
             FullWidth = FullWidth.IsPresent
         };

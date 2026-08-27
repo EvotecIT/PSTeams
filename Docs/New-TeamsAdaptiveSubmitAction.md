@@ -6,26 +6,42 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveSubmitAction
 ## SYNOPSIS
-New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [<CommonParameters>]
+New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [-Data <IDictionary>] [<CommonParameters>]
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [<CommonParameters>]
+New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [-Data <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [<CommonParameters>]
+New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [-Data <IDictionary>] [<CommonParameters>]
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveSubmitAction -Id 'Value'
+New-TeamsAdaptiveSubmitAction -Data @{}
 ```
 
 
 ## PARAMETERS
+
+### -Data
+Specifies one or more values for data.
+
+```yaml
+Type: IDictionary
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -Id
 Specifies a value for id.

@@ -36,6 +36,7 @@ public static class TeamsLegacyAdaptiveNormalizer {
         }
 
         if (value is TeamsAdaptiveCard card) {
+            TeamsAdaptiveCardValidation.Validate(card);
             return new Dictionary<string, object?> {
                 ["$schema"] = card.Schema,
                 ["type"] = card.Type,
@@ -49,7 +50,15 @@ public static class TeamsLegacyAdaptiveNormalizer {
                 ["verticalContentAlignment"] = EmptyToNull(card.VerticalContentAlignment),
                 ["backgroundImage"] = Normalize(card.BackgroundImage),
                 ["selectAction"] = Normalize(card.SelectAction),
+                ["refresh"] = Normalize(card.Refresh),
                 ["msteams"] = BuildMsTeams(card)
+            };
+        }
+
+        if (value is TeamsAdaptiveRefresh refresh) {
+            return new Dictionary<string, object?> {
+                ["action"] = Normalize(refresh.Action),
+                ["userIds"] = refresh.UserIds.Count == 0 ? null : Normalize(refresh.UserIds)
             };
         }
 
@@ -260,11 +269,26 @@ public static class TeamsLegacyAdaptiveNormalizer {
             };
         }
 
+        if (value is TeamsAdaptiveExecuteAction executeAction) {
+            return new Dictionary<string, object?> {
+                ["type"] = executeAction.Type,
+                ["id"] = EmptyToNull(executeAction.Id),
+                ["title"] = EmptyToNull(executeAction.Title),
+                ["verb"] = executeAction.Verb,
+                ["data"] = executeAction.Data,
+                ["associatedInputs"] = executeAction.AssociatedInputs == TeamsAdaptiveAssociatedInputs.None
+                    ? "none"
+                    : "auto",
+                ["fallback"] = Normalize(executeAction.Fallback)
+            };
+        }
+
         if (value is TeamsAdaptiveSubmitAction submitAction) {
             return new Dictionary<string, object?> {
                 ["type"] = submitAction.Type,
                 ["id"] = EmptyToNull(submitAction.Id),
-                ["title"] = EmptyToNull(submitAction.Title)
+                ["title"] = EmptyToNull(submitAction.Title),
+                ["data"] = submitAction.Data
             };
         }
 

@@ -11,17 +11,17 @@ Creates a Slack Block Kit section.
 ## SYNTAX
 ### Markdown (Default)
 ```powershell
-New-SlackSection [[-Markdown] <string>] [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [<CommonParameters>]
+New-SlackSection [[-Markdown] <string>] [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [-Accessory <SlackBlockElement>] [<CommonParameters>]
 ```
 
 ### PlainText
 ```powershell
-New-SlackSection [-PlainText] <string> [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [<CommonParameters>]
+New-SlackSection [-PlainText] <string> [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [-Accessory <SlackBlockElement>] [<CommonParameters>]
 ```
 
 ### Typed
 ```powershell
-New-SlackSection [-TextObject] <SlackTextObject> [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [<CommonParameters>]
+New-SlackSection [-TextObject] <SlackTextObject> [-Fields <SlackTextObject[]>] [-BlockId <string>] [-Expand] [-Accessory <SlackBlockElement>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,11 +31,27 @@ Creates a Slack Block Kit section.
 
 ### EXAMPLE 1
 ```powershell
-New-SlackSection -BlockId 'Value'
+New-SlackSection -Accessory 'Value'
 ```
 
 
 ## PARAMETERS
+
+### -Accessory
+Optional interactive accessory such as a button.
+
+```yaml
+Type: SlackBlockElement
+Parameter Sets: Markdown, PlainText, Typed
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -BlockId
 Optional unique Slack block identifier.

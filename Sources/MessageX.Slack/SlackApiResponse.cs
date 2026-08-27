@@ -15,6 +15,8 @@ internal sealed class SlackApiResponse {
 
     public string? Timestamp { get; private set; }
 
+    public string? ViewId { get; private set; }
+
     public bool? NoOp { get; private set; }
 
     public bool? AlreadyOpen { get; private set; }
@@ -40,6 +42,9 @@ internal sealed class SlackApiResponse {
                 Error = error,
                 Channel = ReadChannel(root),
                 Timestamp = ReadString(root, "ts"),
+                ViewId = root.TryGetProperty("view", out var view) && view.ValueKind == JsonValueKind.Object
+                    ? ReadString(view, "id")
+                    : null,
                 NoOp = ReadBoolean(root, "no_op"),
                 AlreadyOpen = ReadBoolean(root, "already_open")
             };

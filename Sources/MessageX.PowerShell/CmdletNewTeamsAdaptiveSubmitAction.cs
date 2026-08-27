@@ -1,4 +1,5 @@
 using System.Management.Automation;
+using System.Collections;
 using MessageX.Teams;
 
 namespace MessageX.PowerShell;
@@ -12,10 +13,14 @@ public sealed class CmdletNewTeamsAdaptiveSubmitAction : PSCmdlet {
     [Parameter(Mandatory = false)]
     public string? Id { get; set; }
 
+    [Parameter(Mandatory = false)]
+    public IDictionary? Data { get; set; }
+
     protected override void ProcessRecord() {
         WriteObject(new TeamsAdaptiveSubmitAction {
             Id = Id,
-            Title = Title
+            Title = Title,
+            Data = PowerShellMessageDataValueConverter.FromDictionary(Data)
         });
     }
 }

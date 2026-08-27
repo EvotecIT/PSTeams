@@ -11,7 +11,7 @@ Creates a provider-native Discord message.
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-DiscordMessage [[-Content] <string>] [-Embeds <DiscordEmbed[]>] [-Attachments <DiscordAttachment[]>] [-AllowedMentions <DiscordAllowedMentions>] [-ReplyToMessageId <string>] [-AllowMissingReply] [-Nonce <string>] [-EnforceNonce] [-WebhookUsername <string>] [-WebhookAvatarUrl <uri>] [-TextToSpeech] [<CommonParameters>]
+New-DiscordMessage [[-Content] <string>] [-Embeds <DiscordEmbed[]>] [-Attachments <DiscordAttachment[]>] [-Components <DiscordActionRow[]>] [-AllowedMentions <DiscordAllowedMentions>] [-ReplyToMessageId <string>] [-AllowMissingReply] [-Nonce <string>] [-EnforceNonce] [-WebhookUsername <string>] [-WebhookAvatarUrl <uri>] [-TextToSpeech] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -64,6 +64,22 @@ Files uploaded with the message.
 
 ```yaml
 Type: DiscordAttachment[]
+Parameter Sets: __AllParameterSets
+Aliases: None
+Possible values:
+
+Required: False
+Position: named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Components
+Interactive Discord action rows.
+
+```yaml
+Type: DiscordActionRow[]
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:

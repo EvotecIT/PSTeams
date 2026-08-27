@@ -13,4 +13,7 @@ public sealed class SlackSectionBlock : SlackBlock {
 
     /// <summary>Whether Slack should initially expand the section text.</summary>
     public bool? Expand { get; set; }
+
+    /// <summary>Optional interactive accessory such as a button.</summary>
+    public SlackBlockElement? Accessory { get; set; }
 }

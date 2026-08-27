@@ -18,6 +18,10 @@ public sealed class CmdletNewDiscordMessage : PSCmdlet {
     [Parameter(Mandatory = false)]
     public DiscordAttachment[] Attachments { get; set; } = Array.Empty<DiscordAttachment>();
 
+    /// <summary>Interactive Discord action rows.</summary>
+    [Parameter(Mandatory = false)]
+    public DiscordActionRow[] Components { get; set; } = Array.Empty<DiscordActionRow>();
+
     /// <summary>Explicit mention policy. Defaults to notifying nobody.</summary>
     [Parameter(Mandatory = false)]
     public DiscordAllowedMentions? AllowedMentions { get; set; }
@@ -71,6 +75,11 @@ public sealed class CmdletNewDiscordMessage : PSCmdlet {
         foreach (var attachment in Attachments ?? Array.Empty<DiscordAttachment>()) {
             if (attachment is not null) {
                 message.Attachments.Add(attachment);
+            }
+        }
+        foreach (var component in Components ?? Array.Empty<DiscordActionRow>()) {
+            if (component is not null) {
+                message.Components.Add(component);
             }
         }
         WriteObject(message);

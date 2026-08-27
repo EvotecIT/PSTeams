@@ -25,6 +25,7 @@ public sealed class SlackConnection : IProviderCapabilities {
         MessageCapabilities.Update |
         MessageCapabilities.Delete |
         MessageCapabilities.React |
+        MessageCapabilities.UploadFile |
         MessageCapabilities.ResolveConversation;
 
     internal string BotToken => _botToken;

@@ -34,4 +34,7 @@ public sealed class DiscordMessageRequest {
 
     /// <summary>Files uploaded with the message.</summary>
     public IList<DiscordAttachment> Attachments { get; } = new List<DiscordAttachment>();
+
+    /// <summary>Interactive action rows containing buttons or select menus.</summary>
+    public IList<DiscordActionRow> Components { get; } = new List<DiscordActionRow>();
 }

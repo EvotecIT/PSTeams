@@ -9,8 +9,9 @@ internal static class DiscordMessageValidator {
             throw new ArgumentNullException(nameof(message));
         }
         ValidateTarget(target);
-        if (string.IsNullOrWhiteSpace(message.Content) && message.Embeds.Count == 0 && message.Attachments.Count == 0) {
-            throw new ArgumentException("A Discord message requires content, an embed, or an attachment.", nameof(message));
+        if (string.IsNullOrWhiteSpace(message.Content) && message.Embeds.Count == 0 &&
+            message.Attachments.Count == 0 && message.Components.Count == 0) {
+            throw new ArgumentException("A Discord message requires content, an embed, an attachment, or components.", nameof(message));
         }
         if (message.Content?.Length > 2000) {
             throw new ArgumentException("Discord message content cannot exceed 2000 characters.", nameof(message));
@@ -45,6 +46,12 @@ internal static class DiscordMessageValidator {
             (!string.IsNullOrWhiteSpace(message.Nonce) || message.EnforceNonce)) {
             throw new ArgumentException("Discord nonce options require an authenticated bot target.", nameof(message));
         }
+        if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook &&
+            message.Components.Count > 0 && !target.SupportsInteractiveComponents) {
+            throw new ArgumentException(
+                "Discord interactive components require a bot target or an application-owned interaction webhook.",
+                nameof(message));
+        }
         if (!string.IsNullOrWhiteSpace(message.ReplyToMessageId)) {
             if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook) {
                 throw new ArgumentException("Discord incoming webhooks do not accept message reply references.", nameof(message));
@@ -68,8 +75,129 @@ internal static class DiscordMessageValidator {
             totalEmbedCharacters += ValidateEmbed(embed);
         }
         ValidateAttachmentReferences(message);
+        ValidateMessageComponents(message.Components);
         if (totalEmbedCharacters > 6000) {
             throw new ArgumentException("Discord embed text cannot exceed 6000 characters per message.", nameof(message));
+        }
+    }
+
+    internal static void ValidateMessageComponents(IEnumerable<DiscordActionRow> rows) {
+        ValidateComponents(rows, modal: false);
+    }
+
+    internal static void ValidateModal(DiscordModalRequest modal) {
+        if (modal is null) {
+            throw new ArgumentNullException(nameof(modal));
+        }
+        ValidateBoundedText(modal.CustomId, 100, "Discord modal custom identifiers");
+        ValidateBoundedText(modal.Title, 45, "Discord modal titles");
+        ValidateComponents(modal.Components, modal: true);
+    }
+
+    private static void ValidateComponents(IEnumerable<DiscordActionRow> source, bool modal) {
+        if (source is null) {
+            throw new ArgumentNullException(nameof(source));
+        }
+        var rows = source.ToArray();
+        if (rows.Length > 5 || (modal && rows.Length == 0)) {
+            throw new ArgumentException("Discord component layouts support one to five rows.", nameof(source));
+        }
+        var customIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var row in rows) {
+            if (row is null || row.Components.Count == 0 || row.Components.Count > 5 ||
+                row.Components.Any(static component => component is null)) {
+                throw new ArgumentException("Discord action rows require one to five components.", nameof(source));
+            }
+
+            if (modal) {
+                if (row.Components.Count != 1 || row.Components[0] is not DiscordTextInput textInput) {
+                    throw new ArgumentException("Discord modal rows must contain exactly one text input.", nameof(source));
+                }
+                ValidateTextInput(textInput, customIds);
+                continue;
+            }
+
+            if (row.Components.All(static component => component is DiscordButton)) {
+                foreach (var button in row.Components.Cast<DiscordButton>()) {
+                    ValidateButton(button, customIds);
+                }
+                continue;
+            }
+            if (row.Components.Count == 1 && row.Components[0] is DiscordStringSelect select) {
+                ValidateStringSelect(select, customIds);
+                continue;
+            }
+            throw new ArgumentException(
+                "Discord message rows must contain only buttons or one string select menu.",
+                nameof(source));
+        }
+    }
+
+    private static void ValidateButton(DiscordButton button, HashSet<string> customIds) {
+        ValidateBoundedText(button.Label, 80, "Discord button labels");
+        if (button.Style == DiscordButtonStyle.Link) {
+            if (button.Url is null || !string.IsNullOrWhiteSpace(button.CustomId)) {
+                throw new ArgumentException("Discord link buttons require a URL and cannot set a custom identifier.", nameof(button));
+            }
+            ValidateHttpsUri(button.Url, "Discord link button URLs");
+            return;
+        }
+        if (button.Style is < DiscordButtonStyle.Primary or > DiscordButtonStyle.Danger || button.Url is not null) {
+            throw new ArgumentException("Discord interactive buttons require a supported non-link style.", nameof(button));
+        }
+        ValidateUniqueCustomId(button.CustomId, customIds, nameof(button));
+    }
+
+    private static void ValidateStringSelect(DiscordStringSelect select, HashSet<string> customIds) {
+        ValidateUniqueCustomId(select.CustomId, customIds, nameof(select));
+        if (select.Options.Count is < 1 or > 25 || select.Options.Any(static option => option is null)) {
+            throw new ArgumentException("Discord string selects require one to twenty-five options.", nameof(select));
+        }
+        if (select.Placeholder is not null) {
+            ValidateBoundedText(select.Placeholder, 150, "Discord select placeholders");
+        }
+        if (select.MinimumValues < 0 || select.MaximumValues < 1 ||
+            select.MinimumValues > select.MaximumValues || select.MaximumValues > select.Options.Count) {
+            throw new ArgumentException("Discord select minimum and maximum values are inconsistent.", nameof(select));
+        }
+
+        var values = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var option in select.Options) {
+            ValidateBoundedText(option.Label, 100, "Discord select option labels");
+            ValidateBoundedText(option.Value, 100, "Discord select option values");
+            if (!values.Add(option.Value)) {
+                throw new ArgumentException("Discord select option values must be unique.", nameof(select));
+            }
+            if (option.Description is not null) {
+                ValidateBoundedText(option.Description, 100, "Discord select option descriptions");
+            }
+        }
+    }
+
+    private static void ValidateTextInput(DiscordTextInput input, HashSet<string> customIds) {
+        ValidateUniqueCustomId(input.CustomId, customIds, nameof(input));
+        ValidateBoundedText(input.Label, 45, "Discord text input labels");
+        if (input.Style is not DiscordTextInputStyle.Short and not DiscordTextInputStyle.Paragraph ||
+            input.MinimumLength is < 0 or > 4000 || input.MaximumLength is < 1 or > 4000 ||
+            input.MinimumLength is not null && input.MaximumLength is not null &&
+            input.MinimumLength > input.MaximumLength) {
+            throw new ArgumentException("Discord text input length or style settings are invalid.", nameof(input));
+        }
+        if (input.Value?.Length > 4000 || input.Placeholder?.Length > 100) {
+            throw new ArgumentException("Discord text input value or placeholder exceeds provider limits.", nameof(input));
+        }
+    }
+
+    private static void ValidateUniqueCustomId(string? value, HashSet<string> values, string parameterName) {
+        ValidateBoundedText(value, 100, "Discord component custom identifiers");
+        if (!values.Add(value!)) {
+            throw new ArgumentException("Discord component custom identifiers must be unique within a payload.", parameterName);
+        }
+    }
+
+    private static void ValidateBoundedText(string? value, int maximumLength, string label) {
+        if (string.IsNullOrWhiteSpace(value) || value!.Length > maximumLength || value.Any(char.IsControl)) {
+            throw new ArgumentException($"{label} must contain bounded non-control text.", nameof(value));
         }
     }
 

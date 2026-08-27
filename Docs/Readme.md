@@ -94,6 +94,9 @@ Creates a button for ListCard, HeroCard, and ThumbnailCard payloads.
 ### [New-CardListItem](New-CardListItem.md)
 Creates one Teams list-card item.
 
+### [New-DiscordActionRow](New-DiscordActionRow.md)
+Creates a Discord action row.
+
 ### [New-DiscordAllowedMentions](New-DiscordAllowedMentions.md)
 Creates an explicit Discord mention policy. The default policy notifies nobody.
 
@@ -102,6 +105,9 @@ Creates an in-memory Discord attachment from a file or byte array.
 
 ### [New-DiscordAuthor](New-DiscordAuthor.md)
 Creates Discord embed author metadata.
+
+### [New-DiscordButton](New-DiscordButton.md)
+Creates a Discord interactive or link button.
 
 ### [New-DiscordChannelTarget](New-DiscordChannelTarget.md)
 Creates a Discord bot channel target.
@@ -124,8 +130,20 @@ Creates Discord embed image or thumbnail media.
 ### [New-DiscordMessage](New-DiscordMessage.md)
 Creates a provider-native Discord message.
 
+### [New-DiscordModal](New-DiscordModal.md)
+Creates a Discord modal for an immediate interaction response.
+
 ### [New-DiscordSection](New-DiscordSection.md)
 Creates a rich Discord embed.
+
+### [New-DiscordSelectOption](New-DiscordSelectOption.md)
+Creates a Discord string-select option.
+
+### [New-DiscordStringSelect](New-DiscordStringSelect.md)
+Creates a Discord string select menu.
+
+### [New-DiscordTextInput](New-DiscordTextInput.md)
+Creates a Discord modal text input.
 
 ### [New-DiscordThreadTarget](New-DiscordThreadTarget.md)
 Creates a Discord bot thread-channel target.
@@ -136,8 +154,17 @@ Creates a Discord incoming-webhook target, optionally within an existing thread.
 ### [New-HeroCard](New-HeroCard.md)
 Creates or sends a Teams HeroCard payload.
 
+### [New-SlackActions](New-SlackActions.md)
+Creates a Slack Block Kit actions block.
+
+### [New-SlackButton](New-SlackButton.md)
+Creates a Slack Block Kit button.
+
 ### [New-SlackConnection](New-SlackConnection.md)
 Creates an authenticated Slack bot connection without exposing its token.
+
+### [New-SlackContext](New-SlackContext.md)
+Creates a Slack Block Kit text context row.
 
 ### [New-SlackConversationTarget](New-SlackConversationTarget.md)
 Creates a Slack channel, direct-message, multiparty-message, or user target.
@@ -145,8 +172,20 @@ Creates a Slack channel, direct-message, multiparty-message, or user target.
 ### [New-SlackDivider](New-SlackDivider.md)
 Creates a Slack Block Kit divider.
 
+### [New-SlackHeader](New-SlackHeader.md)
+Creates a Slack Block Kit header.
+
+### [New-SlackInput](New-SlackInput.md)
+Creates a Slack modal input block.
+
 ### [New-SlackMessage](New-SlackMessage.md)
 Creates a provider-native Slack message.
+
+### [New-SlackModal](New-SlackModal.md)
+Creates a typed Slack modal view.
+
+### [New-SlackPlainTextInput](New-SlackPlainTextInput.md)
+Creates a Slack modal plain-text input element.
 
 ### [New-SlackSection](New-SlackSection.md)
 Creates a Slack Block Kit section.
@@ -173,7 +212,7 @@ Creates a typed activity-title directive for connector-card sections.
 New-TeamsAdaptiveActionSet [-Actions <TeamsAdaptiveAction[]>] [<CommonParameters>]
 
 ### [New-TeamsAdaptiveCard](New-TeamsAdaptiveCard.md)
-New-TeamsAdaptiveCard [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
+New-TeamsAdaptiveCard [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-Refresh <TeamsAdaptiveRefresh>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
 
 ### [New-TeamsAdaptiveColumn](New-TeamsAdaptiveColumn.md)
 New-TeamsAdaptiveColumn [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-Items <TeamsAdaptiveCardElement[]>] [<CommonParameters>]
@@ -183,6 +222,9 @@ New-TeamsAdaptiveColumnSet [-Columns <TeamsAdaptiveColumn[]>] [-Style <string>] 
 
 ### [New-TeamsAdaptiveContainer](New-TeamsAdaptiveContainer.md)
 New-TeamsAdaptiveContainer [-Items <TeamsAdaptiveCardElement[]>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-VerticalContentAlignment <string>] [-Id <string>] [-Hidden] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [<CommonParameters>]
+
+### [New-TeamsAdaptiveExecuteAction](New-TeamsAdaptiveExecuteAction.md)
+Creates a Teams Universal Action with optional compatibility fallback.
 
 ### [New-TeamsAdaptiveFact](New-TeamsAdaptiveFact.md)
 New-TeamsAdaptiveFact [-Title] <string> [-Value] <string> [<CommonParameters>]
@@ -208,6 +250,9 @@ New-TeamsAdaptiveMention [-Text] <string> [-UserPrincipalName] <string> [[-Name]
 ### [New-TeamsAdaptiveOpenUrlAction](New-TeamsAdaptiveOpenUrlAction.md)
 New-TeamsAdaptiveOpenUrlAction [-Title] <string> [-Url] <string> [<CommonParameters>]
 
+### [New-TeamsAdaptiveRefresh](New-TeamsAdaptiveRefresh.md)
+Creates an Adaptive Card refresh contract backed by Action.Execute.
+
 ### [New-TeamsAdaptiveRichTextBlock](New-TeamsAdaptiveRichTextBlock.md)
 New-TeamsAdaptiveRichTextBlock -Text <string[]> [-Color <string[]>] [-Subtle <bool[]>] [-Size <string[]>] [-Weight <string[]>] [-Highlight <bool[]>] [-Italic <bool[]>] [-StrikeThrough <bool[]>] [-FontType <string[]>] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [-Id <string>] [-Hidden] [<CommonParameters>]
 
@@ -217,7 +262,7 @@ New-TeamsAdaptiveRichTextBlock -Inlines <TeamsAdaptiveTextRun[]> [-Spacing <stri
 New-TeamsAdaptiveShowCardAction [-Title] <string> [-Id <string>] [-Card <TeamsAdaptiveCard>] [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
 
 ### [New-TeamsAdaptiveSubmitAction](New-TeamsAdaptiveSubmitAction.md)
-New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [<CommonParameters>]
+New-TeamsAdaptiveSubmitAction [-Title] <string> [-Id <string>] [-Data <IDictionary>] [<CommonParameters>]
 
 ### [New-TeamsAdaptiveTextBlock](New-TeamsAdaptiveTextBlock.md)
 New-TeamsAdaptiveTextBlock [-Text] <string> [-NoWrap] [-Size <string>] [-Weight <string>] [-Color <string>] [<CommonParameters>]
@@ -287,6 +332,9 @@ Resolves or opens a Slack direct-message conversation for explicit user identifi
 
 ### [Send-DiscordMessage](Send-DiscordMessage.md)
 Sends simple or typed messages through Discord incoming webhooks or authenticated bot REST.
+
+### [Send-SlackFile](Send-SlackFile.md)
+Uploads a file through Slack's external upload workflow.
 
 ### [Send-SlackMessage](Send-SlackMessage.md)
 Sends simple or typed messages through Slack incoming webhooks or the authenticated Web API.

@@ -21,7 +21,8 @@ public sealed class SlackMessageTarget : IProviderCapabilities {
             MessageCapabilities.Reply |
             MessageCapabilities.Update |
             MessageCapabilities.Delete |
-            MessageCapabilities.React,
+            MessageCapabilities.React |
+            MessageCapabilities.UploadFile,
         _ => MessageCapabilities.None
     };
 

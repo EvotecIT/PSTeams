@@ -44,7 +44,9 @@ public sealed class DiscordIncomingWebhookSender : IDiscordMessageSender, IDispo
         DiscordMessageValidator.Validate(message, target);
         using var operationCancellation = MessageHttpClientFactory.CreateOperationCancellation(_httpClient, cancellationToken);
         try {
-            using var request = new HttpRequestMessage(HttpMethod.Post, CreateExecutionUri(target)) {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                CreateExecutionUri(target, message.Components.Count > 0)) {
                 Content = DiscordHttpContentFactory.Create(message, target)
             };
             using var response = await _httpClient
@@ -64,11 +66,19 @@ public sealed class DiscordIncomingWebhookSender : IDiscordMessageSender, IDispo
         }
     }
 
-    internal static Uri CreateExecutionUri(DiscordMessageTarget target) {
+    internal static Uri CreateExecutionUri(DiscordMessageTarget target, bool withComponents = false) {
         var builder = new UriBuilder(target.WebhookUri!);
         var query = "wait=true";
         if (target.ThreadId is not null) {
             query += "&thread_id=" + Uri.EscapeDataString(target.ThreadId);
+        }
+        if (withComponents) {
+            if (!target.SupportsInteractiveComponents) {
+                throw new ArgumentException(
+                    "Discord interactive components require an application-owned webhook target.",
+                    nameof(target));
+            }
+            query += "&with_components=true";
         }
         builder.Query = query;
         return builder.Uri;

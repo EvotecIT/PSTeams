@@ -62,6 +62,16 @@ public sealed class CmdletNewAdaptiveActionSet : PSCmdlet {
                     Title = title
                 };
                 return true;
+            case "Action.Execute":
+                var verb = GetDictionaryString(dictionary, "verb");
+                if (string.IsNullOrWhiteSpace(verb)) {
+                    return false;
+                }
+                action = new TeamsAdaptiveExecuteAction {
+                    Title = title,
+                    Verb = verb!
+                };
+                return true;
             case "Action.ToggleVisibility":
                 var toggle = new TeamsAdaptiveToggleVisibilityAction {
                     Title = title

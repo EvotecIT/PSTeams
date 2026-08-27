@@ -55,6 +55,19 @@ public static class DiscordInteractionAcknowledgement {
         });
     }
 
+    /// <summary>Opens a typed modal as the immediate response to a command or component interaction.</summary>
+    public static MessageAcknowledgement Modal(DiscordModalRequest modal) {
+        DiscordMessageValidator.ValidateModal(modal);
+        return Create(new Dictionary<string, object?> {
+            ["type"] = 9,
+            ["data"] = new Dictionary<string, object?> {
+                ["custom_id"] = modal.CustomId,
+                ["title"] = modal.Title,
+                ["components"] = DiscordMessageRenderer.RenderComponents(modal.Components)
+            }
+        });
+    }
+
     private static MessageAcknowledgement Create(IReadOnlyDictionary<string, object?> payload) =>
         new(
             200,

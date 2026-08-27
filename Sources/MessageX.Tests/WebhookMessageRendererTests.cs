@@ -1,8 +1,106 @@
+using MessageX;
 using MessageX.Teams;
 
 namespace MessageX.Tests;
 
 public class WebhookMessageRendererTests {
+    [Fact]
+    public void RenderSupportsTeamsUniversalActionsRefreshAndLegacyFallback() {
+        var request = new TeamsMessageRequest {
+            Summary = "Approval",
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Refresh = new TeamsAdaptiveRefresh {
+                    Action = new TeamsAdaptiveExecuteAction {
+                        Verb = "refresh-status",
+                        AssociatedInputs = TeamsAdaptiveAssociatedInputs.None
+                    },
+                    UserIds = {
+                        "user-42"
+                    }
+                },
+                Actions = {
+                    new TeamsAdaptiveExecuteAction {
+                        Title = "Approve",
+                        Verb = "approve-build",
+                        Data = MessageDataValue.ParseJson("{\"buildId\":42}"),
+                        Fallback = new TeamsAdaptiveSubmitAction {
+                            Title = "Approve",
+                            Data = MessageDataValue.ParseJson("{\"verb\":\"approve-build\",\"buildId\":42}")
+                        }
+                    }
+                }
+            }
+        };
+
+        var json = WebhookMessageRenderer.Render(request);
+
+        Assert.Contains("\"refresh\":{\"action\":{\"type\":\"Action.Execute\"", json);
+        Assert.Contains("\"verb\":\"refresh-status\"", json);
+        Assert.Contains("\"associatedInputs\":\"none\"", json);
+        Assert.Contains("\"userIds\":[\"user-42\"]", json);
+        Assert.Contains("\"verb\":\"approve-build\"", json);
+        Assert.Contains("\"data\":{\"buildId\":42}", json);
+        Assert.Contains("\"fallback\":{\"type\":\"Action.Submit\"", json);
+    }
+
+    [Fact]
+    public void RenderRejectsUniversalActionsBelowAdaptiveCardVersion15() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Actions = {
+                    new TeamsAdaptiveExecuteAction {
+                        Title = "Approve",
+                        Verb = "approve-build"
+                    }
+                }
+            }
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+
+        Assert.Contains("version 1.5", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderValidatesUniversalActionsNestedInContainers() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Body = {
+                    new TeamsAdaptiveContainer {
+                        Items = {
+                            new TeamsAdaptiveActionSet {
+                                Actions = {
+                                    new TeamsAdaptiveExecuteAction {
+                                        Title = "Approve",
+                                        Verb = "approve-build"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+    }
+
+    [Fact]
+    public void RenderRejectsRecursiveShowCardGraphs() {
+        var card = new TeamsAdaptiveCard();
+        card.Actions.Add(new TeamsAdaptiveShowCardAction {
+            Card = card
+        });
+
+        var request = new TeamsMessageRequest { AdaptiveCard = card };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+        Assert.Contains("recursive", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void RenderUsesSummaryFallbacks() {
         var request = new TeamsMessageRequest {

@@ -149,6 +149,43 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal(expected, result.Status);
     }
 
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void ViewSubmissionEnforcesSlackCallbackIdBoundary(int length, MessageReceiveStatus expected) {
+        var callbackId = new string('c', length);
+        var payload = JsonSerializer.Serialize(new {
+            type = "view_submission",
+            team = new { id = "T1" },
+            user = new { id = "U1" },
+            view = new { callback_id = callbackId, state = new { values = new { } } }
+        });
+
+        Assert.Equal(expected, Receive(PayloadForm(payload)).Status);
+    }
+
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void ViewStateEnforcesSlackBlockIdBoundary(int length, MessageReceiveStatus expected) {
+        var blockId = new string('b', length);
+        var payload = JsonSerializer.Serialize(new {
+            type = "view_submission",
+            team = new { id = "T1" },
+            user = new { id = "U1" },
+            view = new {
+                callback_id = "approval",
+                state = new {
+                    values = new Dictionary<string, object> {
+                        [blockId] = new { choice = new { type = "plain_text_input", value = "ok" } }
+                    }
+                }
+            }
+        });
+
+        Assert.Equal(expected, Receive(PayloadForm(payload)).Status);
+    }
+
     [Fact]
     public void ViewSubmissionUsesDistinctSubmissionClassification() {
         const string payload = """
