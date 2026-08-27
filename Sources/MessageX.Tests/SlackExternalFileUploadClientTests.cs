@@ -25,7 +25,7 @@ public sealed class SlackExternalFileUploadClientTests {
             AlternativeText = "Build output",
             ConversationId = "C123ABC456",
             ThreadTimestamp = "1720000000.000100",
-            InitialComment = "Attached build output"
+            InitialComment = "Attached build output\nSecond line"
         }, TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -41,6 +41,7 @@ public sealed class SlackExternalFileUploadClientTests {
         Assert.Contains("\"length\":12", handler.Requests[0].Body);
         Assert.Contains("\"channel_id\":\"C123ABC456\"", handler.Requests[2].Body);
         Assert.Contains("\"thread_ts\":\"1720000000.000100\"", handler.Requests[2].Body);
+        Assert.Contains("\"initial_comment\":\"Attached build output\\nSecond line\"", handler.Requests[2].Body);
         Assert.True(content.CanRead);
     }
 
@@ -95,6 +96,22 @@ public sealed class SlackExternalFileUploadClientTests {
             Length = 2,
             FileName = "evidence.bin"
         }, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task UploadRejectsUnsafeControlCharactersInInitialComment() {
+        using var handler = new SequenceHandler(Array.Empty<HttpResponseMessage>());
+        using var client = CreateClient(handler);
+        using var content = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await Assert.ThrowsAsync<ArgumentException>(() => client.UploadAsync(new SlackFileUploadRequest {
+            Content = content,
+            Length = content.Length,
+            FileName = "evidence.bin",
+            InitialComment = "unsafe\0comment"
+        }, TestContext.Current.CancellationToken));
+
+        Assert.Empty(handler.Requests);
     }
 
     [Theory]

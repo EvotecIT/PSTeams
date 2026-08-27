@@ -147,6 +147,21 @@ public class WebhookMessageRendererTests {
     }
 
     [Fact]
+    public void RenderRejectsUndefinedAssociatedInputPolicies() {
+        var card = new TeamsAdaptiveCard {
+            Version = "1.5",
+            Actions = {
+                new TeamsAdaptiveExecuteAction {
+                    Verb = "approve",
+                    AssociatedInputs = (TeamsAdaptiveAssociatedInputs)42
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => TeamsLegacyAdaptiveNormalizer.Normalize(card));
+    }
+
+    [Fact]
     public void RenderRejectsRecursiveShowCardGraphs() {
         var card = new TeamsAdaptiveCard();
         card.Actions.Add(new TeamsAdaptiveShowCardAction {

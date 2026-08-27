@@ -169,6 +169,23 @@ public sealed class SlackModelTests {
     }
 
     [Fact]
+    public void RendererEnforcesSlackButtonUrlLength() {
+        var target = SlackMessageTarget.ForConversation("C0123456789");
+        var message = new SlackMessageRequest { Text = "Build approval" };
+        var button = new SlackButtonElement {
+            Text = SlackTextObject.Plain("Open"),
+            ActionId = "open-build",
+            Url = CreateUrlOfLength(3000)
+        };
+        message.Blocks.Add(new SlackActionsBlock { Elements = { button } });
+
+        Assert.NotNull(SlackJsonSerializer.Serialize(message, target));
+
+        button.Url = CreateUrlOfLength(3001);
+        Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(message, target));
+    }
+
+    [Fact]
     public void MessageRendererRejectsModalInputBlocks() {
         var message = new SlackMessageRequest { Text = "fallback" };
         message.Blocks.Add(new SlackInputBlock {
@@ -222,6 +239,11 @@ public sealed class SlackModelTests {
         Assert.DoesNotContain("WebhookUri", publicProperties);
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForIncomingWebhook(
             new Uri("relative/webhook", UriKind.Relative)));
+    }
+
+    private static Uri CreateUrlOfLength(int length) {
+        const string prefix = "https://example.com/";
+        return new Uri(prefix + new string('a', length - prefix.Length));
     }
 
     [Fact]

@@ -139,7 +139,7 @@ internal static class DiscordMessageValidator {
             if (button.Url is null || !string.IsNullOrWhiteSpace(button.CustomId)) {
                 throw new ArgumentException("Discord link buttons require a URL and cannot set a custom identifier.", nameof(button));
             }
-            ValidateHttpsUri(button.Url, "Discord link button URLs");
+            ValidateHttpsUri(button.Url, "Discord link button URLs", 512);
             return;
         }
         if (button.Style is < DiscordButtonStyle.Primary or > DiscordButtonStyle.Danger || button.Url is not null) {
@@ -366,9 +366,11 @@ internal static class DiscordMessageValidator {
         embed.Thumbnail is not null ||
         embed.Fields.Count > 0;
 
-    private static void ValidateHttpsUri(Uri uri, string label) {
-        if (!uri.IsAbsoluteUri || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)) {
-            throw new ArgumentException($"{label} must use absolute HTTPS URIs.", nameof(uri));
+    private static void ValidateHttpsUri(Uri uri, string label, int? maximumLength = null) {
+        if (!uri.IsAbsoluteUri || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+            maximumLength is not null && uri.AbsoluteUri.Length > maximumLength.Value) {
+            var lengthRequirement = maximumLength is null ? string.Empty : $" of at most {maximumLength.Value} characters";
+            throw new ArgumentException($"{label} must use absolute HTTPS URIs{lengthRequirement}.", nameof(uri));
         }
     }
 

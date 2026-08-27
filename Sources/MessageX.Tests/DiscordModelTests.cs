@@ -101,6 +101,26 @@ public sealed class DiscordModelTests {
     }
 
     [Fact]
+    public void RendererEnforcesDiscordLinkButtonUrlLength() {
+        var message = new DiscordMessageRequest();
+        var button = new DiscordButton {
+            Label = "Open build",
+            Style = DiscordButtonStyle.Link,
+            Url = CreateUrlOfLength(512)
+        };
+        message.Components.Add(new DiscordActionRow { Components = { button } });
+
+        Assert.NotNull(DiscordJsonSerializer.Serialize(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+
+        button.Url = CreateUrlOfLength(513);
+        Assert.Throws<ArgumentException>(() => DiscordJsonSerializer.Serialize(
+            message,
+            DiscordMessageTarget.ForChannel("123456789012345678")));
+    }
+
+    [Fact]
     public void WebhookTargetsRejectCredentialExfiltrationUrisAndHideSecret() {
         Assert.Throws<ArgumentException>(() => DiscordMessageTarget.ForIncomingWebhook(
             new Uri("http://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456")));
@@ -134,6 +154,11 @@ public sealed class DiscordModelTests {
         Assert.Equal(thread.ChannelId, thread.ThreadId);
         Assert.Equal(DiscordDeliveryMethod.BotDirectMessage, direct.DeliveryMethod);
         Assert.Equal("423456789012345678", direct.UserId);
+    }
+
+    private static Uri CreateUrlOfLength(int length) {
+        const string prefix = "https://example.com/";
+        return new Uri(prefix + new string('a', length - prefix.Length));
     }
 
     [Fact]

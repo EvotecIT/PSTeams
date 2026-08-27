@@ -210,7 +210,7 @@ public sealed class SlackExternalFileUploadClient : IDisposable {
         upload.Title = ValidateText(upload.Title, 255, "title");
         upload.AlternativeText = ValidateText(upload.AlternativeText, 1000, "alternative text");
         upload.SnippetType = ValidateText(upload.SnippetType, 50, "snippet type");
-        upload.InitialComment = ValidateText(upload.InitialComment, 4000, "initial comment");
+        upload.InitialComment = ValidateMessageText(upload.InitialComment, 4000, "initial comment");
         if (!string.IsNullOrWhiteSpace(upload.ConversationId)) {
             upload.ConversationId = SlackMessageTarget.ValidateConversationId(upload.ConversationId);
             if (upload.ConversationId[0] is not ('C' or 'G' or 'D')) {
@@ -235,6 +235,15 @@ public sealed class SlackExternalFileUploadClient : IDisposable {
         if ((required && string.IsNullOrWhiteSpace(normalized)) ||
             normalized?.Length > maximumLength || normalized?.Any(char.IsControl) == true) {
             throw new ArgumentException($"Slack {label} must be bounded non-control text.", label);
+        }
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? ValidateMessageText(string? value, int maximumLength, string label) {
+        var normalized = value?.Trim();
+        if (normalized?.Length > maximumLength ||
+            normalized?.Any(static character => char.IsControl(character) && character is not '\r' and not '\n' and not '\t') == true) {
+            throw new ArgumentException($"Slack {label} must be bounded message text.", label);
         }
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }

@@ -379,7 +379,7 @@ public sealed class DiscordLifecycleClientTests {
     [InlineData(true)]
     public async Task WebhookMutationUsesOneTimeoutAcrossVerificationAndMutation(bool delete) {
         using var handler = new StagedWebhookMutationTimeoutHandler();
-        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(600) };
+        using var httpClient = new HttpClient(handler) { Timeout = StagedMutationTimeout };
         using var client = new DiscordWebhookLifecycleClient(
             DiscordMessageTarget.ForIncomingWebhook(WebhookUri, "123456789012345679"),
             httpClient);
@@ -396,7 +396,7 @@ public sealed class DiscordLifecycleClientTests {
         Assert.Equal(MessageErrorKind.Transient, exception.Kind);
         Assert.Contains("timed out", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(2, handler.RequestCount);
-        Assert.True(handler.SecondRequestDuration < TimeSpan.FromMilliseconds(500));
+        Assert.True(handler.SecondRequestDuration < MaximumSharedTimeoutRemainder);
     }
 
     [Fact]
@@ -532,7 +532,7 @@ public sealed class DiscordLifecycleClientTests {
             CancellationToken cancellationToken) {
             RequestCount++;
             if (RequestCount == 1) {
-                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                await Task.Delay(StagedVerificationDuration, cancellationToken);
                 return Response(
                     HttpStatusCode.OK,
                     "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345679\"}");

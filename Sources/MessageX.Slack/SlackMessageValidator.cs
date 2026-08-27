@@ -144,8 +144,9 @@ internal static class SlackMessageValidator {
                 throw new ArgumentException("Slack button value or accessibility label exceeds provider limits.", nameof(element));
             }
             if (button.Url is not null && (!button.Url.IsAbsoluteUri ||
-                !string.Equals(button.Url.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))) {
-                throw new ArgumentException("Slack button URLs must be absolute HTTPS URIs.", nameof(element));
+                !string.Equals(button.Url.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                button.Url.AbsoluteUri.Length > 3000)) {
+                throw new ArgumentException("Slack button URLs must be absolute HTTPS URIs of at most 3000 characters.", nameof(element));
             }
             if (button.Style is < SlackButtonStyle.Default or > SlackButtonStyle.Danger) {
                 throw new ArgumentException("Slack button style is invalid.", nameof(element));

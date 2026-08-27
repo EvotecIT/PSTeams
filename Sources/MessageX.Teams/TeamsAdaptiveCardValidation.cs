@@ -115,6 +115,9 @@ internal static class TeamsAdaptiveCardValidation {
                 "Teams Action.Execute verbs must contain 1 to 64 non-control characters.",
                 parameterName);
         }
+        if (action.AssociatedInputs is not TeamsAdaptiveAssociatedInputs.Auto and not TeamsAdaptiveAssociatedInputs.None) {
+            throw new ArgumentException("Teams Action.Execute associated-input policies must be auto or none.", parameterName);
+        }
         if (action.Data is not null && action.Data.Kind != MessageDataValueKind.Object) {
             throw new ArgumentException("Teams Action.Execute data must be a JSON object.", parameterName);
         }
