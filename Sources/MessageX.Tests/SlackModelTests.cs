@@ -26,7 +26,8 @@ public sealed class SlackModelTests {
             MessageCapabilities.Reply |
             MessageCapabilities.Update |
             MessageCapabilities.Delete |
-            MessageCapabilities.React,
+            MessageCapabilities.React |
+            MessageCapabilities.UploadFile,
             target.Capabilities);
         foreach (var providerId in new[] {
             "C0123456789",
@@ -58,6 +59,7 @@ public sealed class SlackModelTests {
             MessageCapabilities.Update |
             MessageCapabilities.Delete |
             MessageCapabilities.React |
+            MessageCapabilities.UploadFile |
             MessageCapabilities.ResolveConversation,
             connection.Capabilities);
         Assert.Throws<ArgumentException>(() => SlackConnection.ForBotToken(
@@ -120,6 +122,114 @@ public sealed class SlackModelTests {
     }
 
     [Fact]
+    public void RendererSupportsHeadersContextButtonsAndAccessories() {
+        var message = new SlackMessageRequest { Text = "Build approval" };
+        message.Blocks.Add(new SlackHeaderBlock { Text = SlackTextObject.Plain("Build approval") });
+        message.Blocks.Add(new SlackSectionBlock {
+            Text = SlackTextObject.Markdown("Build *42* is ready"),
+            Accessory = new SlackButtonElement {
+                Text = SlackTextObject.Plain("Open"),
+                ActionId = "open-build",
+                Url = new Uri("https://example.com/build/42")
+            }
+        });
+        message.Blocks.Add(new SlackActionsBlock {
+            Elements = {
+                new SlackButtonElement {
+                    Text = SlackTextObject.Plain("Approve"),
+                    ActionId = "approve-build",
+                    Value = "42",
+                    Style = SlackButtonStyle.Primary
+                },
+                new SlackButtonElement {
+                    Text = SlackTextObject.Plain("Reject"),
+                    ActionId = "reject-build",
+                    Value = "42",
+                    Style = SlackButtonStyle.Danger
+                }
+            }
+        });
+        message.Blocks.Add(new SlackContextBlock {
+            Elements = {
+                SlackTextObject.Markdown("Requested by *CI*")
+            }
+        });
+
+        var json = SlackJsonSerializer.Serialize(
+            message,
+            SlackMessageTarget.ForConversation("C0123456789"));
+        using var document = JsonDocument.Parse(json);
+        var blocks = document.RootElement.GetProperty("blocks");
+
+        Assert.Equal("header", blocks[0].GetProperty("type").GetString());
+        Assert.Equal("button", blocks[1].GetProperty("accessory").GetProperty("type").GetString());
+        Assert.Equal("primary", blocks[2].GetProperty("elements")[0].GetProperty("style").GetString());
+        Assert.Equal("danger", blocks[2].GetProperty("elements")[1].GetProperty("style").GetString());
+        Assert.Equal("mrkdwn", blocks[3].GetProperty("elements")[0].GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public void RendererEnforcesSlackButtonUrlLength() {
+        var target = SlackMessageTarget.ForConversation("C0123456789");
+        var message = new SlackMessageRequest { Text = "Build approval" };
+        var button = new SlackButtonElement {
+            Text = SlackTextObject.Plain("Open"),
+            ActionId = "open-build",
+            Url = CreateUrlOfLength(3000)
+        };
+        message.Blocks.Add(new SlackActionsBlock { Elements = { button } });
+
+        Assert.NotNull(SlackJsonSerializer.Serialize(message, target));
+
+        button.Url = CreateUrlOfLength(3001);
+        Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(message, target));
+    }
+
+    [Fact]
+    public void MessageRendererRejectsModalInputBlocks() {
+        var message = new SlackMessageRequest { Text = "fallback" };
+        message.Blocks.Add(new SlackInputBlock {
+            Label = SlackTextObject.Plain("Reason"),
+            Element = new SlackPlainTextInputElement { ActionId = "reason" }
+        });
+
+        Assert.Throws<ArgumentException>(() => SlackJsonSerializer.Serialize(
+            message,
+            SlackMessageTarget.ForConversation("C0123456789")));
+    }
+
+    [Fact]
+    public void ModalRendererRequiresSubmitForInputsAndRejectsButtonsAsInputElements() {
+        var missingSubmit = new SlackModalView {
+            CallbackId = "approval",
+            Title = SlackTextObject.Plain("Approval"),
+            Blocks = {
+                new SlackInputBlock {
+                    Label = SlackTextObject.Plain("Reason"),
+                    Element = new SlackPlainTextInputElement { ActionId = "reason" }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => SlackModalRenderer.RenderOpen("trigger", missingSubmit));
+
+        var buttonInput = new SlackModalView {
+            CallbackId = "approval",
+            Title = SlackTextObject.Plain("Approval"),
+            Submit = SlackTextObject.Plain("Submit"),
+            Blocks = {
+                new SlackInputBlock {
+                    Label = SlackTextObject.Plain("Decision"),
+                    Element = new SlackButtonElement {
+                        Text = SlackTextObject.Plain("Approve"),
+                        ActionId = "approve"
+                    }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => SlackModalRenderer.RenderOpen("trigger", buttonInput));
+    }
+
+    [Fact]
     public void WebhookCredentialIsNotAVisibleTargetProperty() {
         var publicProperties = typeof(SlackMessageTarget).GetProperties()
             .Where(property => property.GetMethod?.IsPublic == true)
@@ -129,6 +239,11 @@ public sealed class SlackModelTests {
         Assert.DoesNotContain("WebhookUri", publicProperties);
         Assert.Throws<ArgumentException>(() => SlackMessageTarget.ForIncomingWebhook(
             new Uri("relative/webhook", UriKind.Relative)));
+    }
+
+    private static Uri CreateUrlOfLength(int length) {
+        const string prefix = "https://example.com/";
+        return new Uri(prefix + new string('a', length - prefix.Length));
     }
 
     [Fact]

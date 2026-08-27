@@ -11,6 +11,7 @@ public sealed class TeamsAdaptiveCard {
     public string? VerticalContentAlignment { get; set; }
     public TeamsAdaptiveBackgroundImage? BackgroundImage { get; set; }
     public TeamsAdaptiveAction? SelectAction { get; set; }
+    public TeamsAdaptiveRefresh? Refresh { get; set; }
     public bool? AllowImageExpand { get; set; }
     public bool FullWidth { get; set; }
     public List<TeamsAdaptiveCardElement> Body { get; } = new();

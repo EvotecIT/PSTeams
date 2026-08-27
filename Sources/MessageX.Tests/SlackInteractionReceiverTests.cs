@@ -28,6 +28,7 @@ public sealed class SlackInteractionReceiverTests {
         Assert.DoesNotContain("secret", result.Envelope?.DeduplicationKey);
         Assert.Equal("C123", result.Envelope?.Conversation?.ConversationId);
         Assert.Equal("installation-1", result.Envelope?.Conversation?.InstallationId);
+        Assert.False(result.RequiresSynchronousDispatch);
         var persistedShape = JsonSerializer.Serialize(result.Envelope?.Payload);
         Assert.DoesNotContain("response_url", persistedShape, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("trigger-1", persistedShape, StringComparison.Ordinal);
@@ -77,6 +78,7 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal("comment", result.Envelope?.Payload.ProviderPayload?.State[0].ActionId);
         Assert.Equal("ready", result.Envelope?.Payload.ProviderPayload?.State[0].Value);
         Assert.Equal("trigger-2", result.Envelope?.Payload.TransientContext.TriggerId);
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Theory]
@@ -149,6 +151,43 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal(expected, result.Status);
     }
 
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void ViewSubmissionEnforcesSlackCallbackIdBoundary(int length, MessageReceiveStatus expected) {
+        var callbackId = new string('c', length);
+        var payload = JsonSerializer.Serialize(new {
+            type = "view_submission",
+            team = new { id = "T1" },
+            user = new { id = "U1" },
+            view = new { callback_id = callbackId, state = new { values = new { } } }
+        });
+
+        Assert.Equal(expected, Receive(PayloadForm(payload)).Status);
+    }
+
+    [Theory]
+    [InlineData(255, MessageReceiveStatus.DispatchReady)]
+    [InlineData(256, MessageReceiveStatus.Rejected)]
+    public void ViewStateEnforcesSlackBlockIdBoundary(int length, MessageReceiveStatus expected) {
+        var blockId = new string('b', length);
+        var payload = JsonSerializer.Serialize(new {
+            type = "view_submission",
+            team = new { id = "T1" },
+            user = new { id = "U1" },
+            view = new {
+                callback_id = "approval",
+                state = new {
+                    values = new Dictionary<string, object> {
+                        [blockId] = new { choice = new { type = "plain_text_input", value = "ok" } }
+                    }
+                }
+            }
+        });
+
+        Assert.Equal(expected, Receive(PayloadForm(payload)).Status);
+    }
+
     [Fact]
     public void ViewSubmissionUsesDistinctSubmissionClassification() {
         const string payload = """
@@ -167,6 +206,28 @@ public sealed class SlackInteractionReceiverTests {
         Assert.Equal(MessageEventKind.ModalSubmitted, result.Envelope?.Kind);
         Assert.Equal(SlackInteractionKind.ViewSubmission, result.Envelope?.Payload.Kind);
         Assert.True(result.RequiresSynchronousDispatch);
+    }
+
+    [Fact]
+    public void ViewClosedDispatchesTheRequestedCallbackWithoutSubmissionSemantics() {
+        const string payload = """
+            {
+              "type":"view_closed",
+              "team":{"id":"T123"},
+              "user":{"id":"U123"},
+              "view":{"callback_id":"approval","private_metadata":"case-42"}
+            }
+            """;
+
+        var result = Receive(PayloadForm(payload));
+
+        Assert.Equal(MessageReceiveStatus.DispatchReady, result.Status);
+        Assert.Equal(MessageRouteKind.Action, result.Route?.Kind);
+        Assert.Equal(MessageEventKind.ActionInvoked, result.Envelope?.Kind);
+        Assert.Equal(SlackInteractionKind.ViewClosed, result.Envelope?.Payload.Kind);
+        Assert.Equal("case-42", result.Envelope?.Payload.ProviderPayload?.View?.PrivateMetadata);
+        Assert.Empty(result.Envelope?.Payload.ProviderPayload?.View?.Values ?? Array.Empty<SlackViewStateInput>());
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Fact]
@@ -239,6 +300,7 @@ public sealed class SlackInteractionReceiverTests {
               "callback_id":"inspect",
               "team":{"id":"T123"},
               "user":{"id":"U123"},
+              "trigger_id":"trigger-shortcut",
               "channel":{"id":"C123"},
               "message":{"ts":"1787418599.000200","text":"selected"}
             }
@@ -248,6 +310,7 @@ public sealed class SlackInteractionReceiverTests {
 
         Assert.Equal("1787418599.000200", result.Envelope?.Message?.MessageId);
         Assert.Equal("selected", result.Envelope?.Payload.ProviderPayload?.Message?.Text);
+        Assert.False(result.RequiresSynchronousDispatch);
     }
 
     [Fact]

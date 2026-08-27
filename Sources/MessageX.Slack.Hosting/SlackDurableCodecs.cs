@@ -265,7 +265,7 @@ internal static class SlackDurableCodecValidation
         SlackViewSubmissionInput? view = null;
         if (value.View is not null)
         {
-            view = new SlackViewSubmissionInput(Required(value.View.CallbackId, 128),
+            view = new SlackViewSubmissionInput(Required(value.View.CallbackId, 255),
                 value.View.Values.Select(NormalizeViewValue).ToArray(),
                 OptionalText(value.View.PrivateMetadata, 3000));
         }
@@ -306,6 +306,12 @@ internal static class SlackDurableCodecValidation
                 providerPayload.Message is null &&
                 string.Equals(providerPayload.Actions[0].ActionId, name, StringComparison.Ordinal),
             SlackInteractionKind.ViewSubmission => route.Kind == MessageRouteKind.Submission &&
+                text is null &&
+                string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
+                providerPayload.Actions.Length == 0 && providerPayload.Message is null &&
+                providerPayload.State.Length == 0 && providerPayload.View is not null &&
+                string.Equals(providerPayload.View.CallbackId, name, StringComparison.Ordinal),
+            SlackInteractionKind.ViewClosed => route.Kind == MessageRouteKind.Action &&
                 text is null &&
                 string.Equals(name, route.Name, StringComparison.Ordinal) && providerPayload is not null &&
                 providerPayload.Actions.Length == 0 && providerPayload.Message is null &&
@@ -447,7 +453,8 @@ internal static class SlackDurableCodecValidation
     }
 
     public static string InteractionName(SlackInteractionKind kind, string? value) =>
-        Required(value, kind == SlackInteractionKind.BlockAction ? 255 : 128);
+        Required(value, kind is SlackInteractionKind.BlockAction or SlackInteractionKind.ViewSubmission or
+            SlackInteractionKind.ViewClosed ? 255 : 128);
 
     public static string? OptionalText(string? value, int maximumLength)
     {
@@ -473,7 +480,7 @@ internal static class SlackDurableCodecValidation
         {
             throw new MessageDurablePayloadException("The Slack action projection is malformed.");
         }
-        return new SlackActionInput(Required(value.ActionId, 255), Required(value.Type, 64), Optional(value.BlockId, 128),
+        return new SlackActionInput(Required(value.ActionId, 255), Required(value.Type, 64), Optional(value.BlockId, 255),
             OptionalText(value.Value, 40000), value.SelectedValues.Select(item => OptionalText(item, 40000)
                 ?? throw new MessageDurablePayloadException("A Slack selected value is required.")).ToArray(),
             SlackRichTextProjection.Normalize(value.RichTextValue));
@@ -485,7 +492,7 @@ internal static class SlackDurableCodecValidation
         {
             throw new MessageDurablePayloadException("The Slack view projection is malformed.");
         }
-        return new SlackViewStateInput(Required(value.BlockId, 128), Required(value.ActionId, 255),
+        return new SlackViewStateInput(Required(value.BlockId, 255), Required(value.ActionId, 255),
             Required(value.Type, 64), OptionalText(value.Value, 40000),
             value.SelectedValues.Select(item => OptionalText(item, 40000)
                 ?? throw new MessageDurablePayloadException("A Slack selected value is required.")).ToArray(),

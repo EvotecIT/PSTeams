@@ -11,5 +11,7 @@ public enum SlackInteractionKind {
     /// <summary>Block action, button, or selection.</summary>
     BlockAction,
     /// <summary>Modal view submission.</summary>
-    ViewSubmission
+    ViewSubmission,
+    /// <summary>Modal view closed without submission.</summary>
+    ViewClosed
 }

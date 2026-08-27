@@ -47,6 +47,17 @@ public sealed class MessageReceiveResultProcessor {
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(result);
+        if (result.Status == MessageReceiveStatus.DispatchReady &&
+            !result.RequiresSynchronousDispatch &&
+            result.Route is not null &&
+            result.Envelope is not null &&
+            _router.GetDispatchMode<TProviderPayload>(result.Route) == MessageDispatchMode.Synchronous) {
+            result = MessageReceiveResult<TProviderPayload>.Dispatch(
+                result.Route,
+                result.Envelope,
+                result.Acknowledgement,
+                requiresSynchronousDispatch: true);
+        }
         if (result.Status == MessageReceiveStatus.DispatchReady) {
             var acceptance = await _acceptance.AcceptAsync(result, cancellationToken).ConfigureAwait(false);
             if (acceptance is not (MessageIngressEnqueueStatus.Accepted or MessageIngressEnqueueStatus.Duplicate)) {

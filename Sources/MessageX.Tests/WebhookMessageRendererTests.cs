@@ -1,8 +1,179 @@
+using MessageX;
 using MessageX.Teams;
 
 namespace MessageX.Tests;
 
 public class WebhookMessageRendererTests {
+    [Fact]
+    public void RenderRejectsUniversalActionsWithoutBotOwnedOutboundTransport() {
+        var executeRequest = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Actions = {
+                    new TeamsAdaptiveExecuteAction {
+                        Title = "Approve",
+                        Verb = "approve-build"
+                    }
+                }
+            }
+        };
+        var refreshRequest = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Refresh = new TeamsAdaptiveRefresh {
+                    Action = new TeamsAdaptiveExecuteAction { Verb = "refresh-status" }
+                }
+            }
+        };
+
+        var execute = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(executeRequest));
+        var refresh = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(refreshRequest));
+
+        Assert.Contains("bot-capable outbound transport", execute.Message, StringComparison.Ordinal);
+        Assert.Contains("bot-capable outbound transport", refresh.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderRejectsUniversalActionsBelowAdaptiveCardVersion15() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Actions = {
+                    new TeamsAdaptiveExecuteAction {
+                        Title = "Approve",
+                        Verb = "approve-build"
+                    }
+                }
+            }
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+
+        Assert.Contains("version 1.5", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderValidatesUniversalActionsNestedInContainers() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Body = {
+                    new TeamsAdaptiveContainer {
+                        Items = {
+                            new TeamsAdaptiveActionSet {
+                                Actions = {
+                                    new TeamsAdaptiveExecuteAction {
+                                        Title = "Approve",
+                                        Verb = "approve-build"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+    }
+
+    [Fact]
+    public void RenderValidatesUniversalActionsOnImageSelectActions() {
+        var versioned = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.4",
+                Body = {
+                    new TeamsAdaptiveImage {
+                        Url = "https://example.test/approval.png",
+                        SelectAction = new TeamsAdaptiveExecuteAction { Verb = "approve" }
+                    }
+                }
+            }
+        };
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(versioned));
+
+        versioned.AdaptiveCard!.Version = "1.5";
+        ((TeamsAdaptiveExecuteAction)((TeamsAdaptiveImage)versioned.AdaptiveCard.Body[0]).SelectAction!).Verb = string.Empty;
+        Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(versioned));
+    }
+
+    [Fact]
+    public void RenderRejectsUniversalActionsNestedInImageSetsAndShowCards() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Actions = {
+                    new TeamsAdaptiveShowCardAction {
+                        Card = new TeamsAdaptiveCard {
+                            Version = "1.5",
+                            Body = {
+                                new TeamsAdaptiveImageSet {
+                                    Images = {
+                                        new TeamsAdaptiveImage {
+                                            Url = "https://example.test/approval.png",
+                                            SelectAction = new TeamsAdaptiveExecuteAction { Verb = "approve" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+
+        Assert.Contains("bot-capable outbound transport", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderCapsTeamsRefreshUsersAtSixty() {
+        var request = new TeamsMessageRequest {
+            AdaptiveCard = new TeamsAdaptiveCard {
+                Version = "1.5",
+                Refresh = new TeamsAdaptiveRefresh {
+                    Action = new TeamsAdaptiveExecuteAction { Verb = "refresh" }
+                }
+            }
+        };
+        foreach (var index in Enumerable.Range(0, 60)) {
+            request.AdaptiveCard.Refresh.UserIds.Add("user-" + index);
+        }
+        Assert.NotNull(TeamsLegacyAdaptiveNormalizer.Normalize(request.AdaptiveCard));
+
+        request.AdaptiveCard.Refresh.UserIds.Add("user-60");
+        Assert.Throws<ArgumentException>(() => TeamsLegacyAdaptiveNormalizer.Normalize(request.AdaptiveCard));
+    }
+
+    [Fact]
+    public void RenderRejectsUndefinedAssociatedInputPolicies() {
+        var card = new TeamsAdaptiveCard {
+            Version = "1.5",
+            Actions = {
+                new TeamsAdaptiveExecuteAction {
+                    Verb = "approve",
+                    AssociatedInputs = (TeamsAdaptiveAssociatedInputs)42
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => TeamsLegacyAdaptiveNormalizer.Normalize(card));
+    }
+
+    [Fact]
+    public void RenderRejectsRecursiveShowCardGraphs() {
+        var card = new TeamsAdaptiveCard();
+        card.Actions.Add(new TeamsAdaptiveShowCardAction {
+            Card = card
+        });
+
+        var request = new TeamsMessageRequest { AdaptiveCard = card };
+
+        var exception = Assert.Throws<ArgumentException>(() => WebhookMessageRenderer.Render(request));
+        Assert.Contains("recursive", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void RenderUsesSummaryFallbacks() {
         var request = new TeamsMessageRequest {

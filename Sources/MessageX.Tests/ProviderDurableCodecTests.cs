@@ -120,6 +120,70 @@ public sealed class ProviderDurableCodecTests
     }
 
     [Fact]
+    public void SlackClosedModalCodecRetainsCallbackAndSafeMetadata()
+    {
+        var blockId = new string('b', 255);
+        var json = JsonSerializer.Serialize(new {
+            type = "view_closed",
+            team = new { id = "T123" },
+            user = new { id = "U123" },
+            view = new {
+                callback_id = "approval",
+                private_metadata = "case-42",
+                state = new {
+                    values = new Dictionary<string, object> {
+                        [blockId] = new {
+                            reason = new { type = "plain_text_input", value = "not needed" }
+                        }
+                    }
+                }
+            }
+        });
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(receive.Route!, receive.Envelope!));
+
+        Assert.Equal(SlackInteractionKind.ViewClosed, decoded.Payload.Kind);
+        Assert.Equal("approval", decoded.Payload.ProviderPayload?.View?.CallbackId);
+        Assert.Equal("case-42", decoded.Payload.ProviderPayload?.View?.PrivateMetadata);
+        var value = Assert.Single(decoded.Payload.ProviderPayload?.View?.Values ?? Array.Empty<SlackViewStateInput>());
+        Assert.Equal(blockId, value.BlockId);
+        Assert.Equal("reason", value.ActionId);
+        Assert.Equal("not needed", value.Value);
+    }
+
+    [Fact]
+    public void SlackBlockActionCodecRetainsMaximumLengthBlockIdentifier()
+    {
+        var blockId = new string('b', 255);
+        var json = JsonSerializer.Serialize(new {
+            type = "block_actions",
+            team = new { id = "T123" },
+            user = new { id = "U123" },
+            actions = new[] {
+                new { type = "button", action_id = "approve", block_id = blockId, value = "yes" }
+            }
+        });
+        var body = "payload=" + Uri.EscapeDataString(json);
+        var receive = SlackInteractionReceiver.Receive(
+            Request("application/x-www-form-urlencoded", body),
+            SlackSecret,
+            SlackSign(body),
+            SlackTimestamp);
+        var codec = new SlackInteractionEventDurableCodec();
+
+        var decoded = codec.Decode(codec.Encode(receive.Route!, receive.Envelope!));
+
+        Assert.Equal(blockId, decoded.Payload.ProviderPayload?.Actions[0].BlockId);
+    }
+
+    [Fact]
     public void SlackRichTextInputSurvivesDurableRoundTripWithoutCapabilities()
     {
         const string json = """

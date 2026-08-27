@@ -30,6 +30,9 @@ internal static class DiscordMessageRenderer {
         if (!payload.ContainsKey("embeds")) {
             payload["embeds"] = Array.Empty<object>();
         }
+        if (!payload.ContainsKey("components")) {
+            payload["components"] = Array.Empty<object>();
+        }
         payload.Remove("tts");
         payload.Remove("nonce");
         payload.Remove("enforce_nonce");
@@ -74,11 +77,70 @@ internal static class DiscordMessageRenderer {
                 return item;
             }).ToArray();
         }
+        if (message.Components.Count > 0) {
+            payload["components"] = RenderComponents(message.Components);
+        }
         if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook) {
             AddOptional(payload, "username", string.IsNullOrWhiteSpace(message.WebhookUsername) ? null : message.WebhookUsername);
             AddOptional(payload, "avatar_url", message.WebhookAvatarUrl?.AbsoluteUri);
         }
         return payload;
+    }
+
+    internal static object[] RenderComponents(IEnumerable<DiscordActionRow> rows) {
+        return rows.Select(row => (object)new Dictionary<string, object?> {
+            ["type"] = row.Type,
+            ["components"] = row.Components.Select(RenderComponent).ToArray()
+        }).ToArray();
+    }
+
+    private static Dictionary<string, object?> RenderComponent(DiscordInteractiveComponent component) {
+        if (component is DiscordButton button) {
+            var payload = new Dictionary<string, object?> {
+                ["type"] = button.Type,
+                ["style"] = (int)button.Style,
+                ["disabled"] = button.Disabled
+            };
+            AddOptional(payload, "custom_id", button.CustomId);
+            AddOptional(payload, "label", button.Label);
+            AddOptional(payload, "url", button.Url?.AbsoluteUri);
+            return payload;
+        }
+        if (component is DiscordStringSelect select) {
+            var payload = new Dictionary<string, object?> {
+                ["type"] = select.Type,
+                ["custom_id"] = select.CustomId,
+                ["options"] = select.Options.Select(option => {
+                    var item = new Dictionary<string, object?> {
+                        ["label"] = option.Label,
+                        ["value"] = option.Value,
+                        ["default"] = option.Default
+                    };
+                    AddOptional(item, "description", option.Description);
+                    return item;
+                }).ToArray(),
+                ["min_values"] = select.MinimumValues,
+                ["max_values"] = select.MaximumValues,
+                ["disabled"] = select.Disabled
+            };
+            AddOptional(payload, "placeholder", select.Placeholder);
+            return payload;
+        }
+        if (component is DiscordTextInput textInput) {
+            var payload = new Dictionary<string, object?> {
+                ["type"] = textInput.Type,
+                ["custom_id"] = textInput.CustomId,
+                ["style"] = (int)textInput.Style,
+                ["label"] = textInput.Label,
+                ["required"] = textInput.Required
+            };
+            AddOptional(payload, "min_length", textInput.MinimumLength);
+            AddOptional(payload, "max_length", textInput.MaximumLength);
+            AddOptional(payload, "value", textInput.Value);
+            AddOptional(payload, "placeholder", textInput.Placeholder);
+            return payload;
+        }
+        throw new ArgumentException($"Unsupported Discord component type '{component.GetType().Name}'.", nameof(component));
     }
 
     private static Dictionary<string, object?> RenderAllowedMentions(DiscordAllowedMentions mentions) {

@@ -1,664 +1,186 @@
-# PSTeams / MessageX - Messaging for PowerShell and .NET
+# PSTeams and MessageX
 
-PSTeams is available as a PowerShell module from PowerShell Gallery. Its current source is evolving into reusable `MessageX` libraries for Teams, Slack, and Discord while keeping familiar commands such as `Send-TeamsMessage` and `Send-DiscordMessage` and adding provider-native commands such as `Send-SlackMessage`.
-
-## PowerShell Module
-
-[![powershell gallery version](https://img.shields.io/powershellgallery/v/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
-[![powershell gallery preview](https://img.shields.io/powershellgallery/v/PSTeams.svg?label=powershell%20gallery%20preview&colorB=yellow&include_prereleases)](https://www.powershellgallery.com/packages/PSTeams)
-[![powershell gallery platforms](https://img.shields.io/powershellgallery/p/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
-[![powershell gallery downloads](https://img.shields.io/powershellgallery/dt/PSTeams.svg)](https://www.powershellgallery.com/packages/PSTeams)
-
-## Project Information
+PSTeams is evolving from a Teams-focused PowerShell module into MessageX: reusable, provider-native .NET libraries with thin PowerShell cmdlets for Microsoft Teams, Slack, and Discord.
 
 [![Test .NET](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml)
 [![Test PowerShell](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml)
-[![top language](https://img.shields.io/github/languages/top/evotecit/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
-[![code size](https://img.shields.io/github/languages/code-size/evotecit/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
-[![license](https://img.shields.io/github/license/EvotecIT/PSTeams.svg)](https://github.com/EvotecIT/PSTeams)
+[![license](https://img.shields.io/github/license/EvotecIT/PSTeams.svg)](LICENSE)
 
-## Author and Social
+## Release status
 
-[![Twitter follow](https://img.shields.io/twitter/follow/PrzemyslawKlys.svg?label=Twitter%20%40PrzemyslawKlys&style=social)](https://twitter.com/PrzemyslawKlys)
-[![Blog](https://img.shields.io/badge/Blog-evotec.xyz-2A6496.svg)](https://evotec.xyz/hub)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-pklys-0077B5.svg?logo=LinkedIn)](https://www.linkedin.com/in/pklys)
+The PowerShell Gallery currently contains the historical PSTeams release. The MessageX NuGet packages and the rebuilt PSTeams binary module described below are release candidates in this repository; they are not public packages yet.
 
-## What it's all about
+Do not use `Install-Module PSTeams` as proof that the MessageX code is installed. Before publication, build the staged artifacts locally and test them as described in [ROADMAP.md](ROADMAP.md).
 
-[PSTeams](https://evotec.xyz/hub/scripts/psteams-powershell-module/) helps you send rich notifications to Microsoft Teams from PowerShell on Windows, Linux, and macOS. It can build and send classic Office 365 connector cards, Adaptive Cards, Hero Cards, List Cards, and Thumbnail Cards.
+## Design
 
-PSTeams uses a cleaner architecture:
+MessageX keeps one reusable C# owner for each capability and leaves PowerShell, ASP.NET Core, and product integrations as thin surfaces:
 
-- `MessageX.Core` owns provider-neutral delivery results, message references, capability flags, and classified errors.
-- `MessageX.Teams` owns Microsoft Teams composition and delivery.
-- `MessageX.Slack` owns Slack incoming-webhook, Web API, and Block Kit messaging without SlackNet or Newtonsoft.Json.
-- `MessageX.Discord` owns Discord incoming-webhook and bot REST delivery, embeds, attachments, and interaction verification without Discord.Net, NetCord, or Newtonsoft.Json.
-- `MessageX.PowerShell` exposes thin provider-native binary PowerShell cmdlets over those libraries.
-- `PSTeams` remains the PowerShell module users install and import.
+- `MessageX.Core` owns delivery results, durable references, capability flags, errors, bounded provider data, and shared HTTP behavior.
+- `MessageX.Teams` owns Teams webhook payloads, Adaptive Cards, webhook-safe actions, and typed future bot-transport models.
+- `MessageX.Slack` owns Slack incoming webhooks, Web API messaging, Block Kit, file upload, and transient interaction responses.
+- `MessageX.Discord` owns Discord webhooks, bot REST messaging, embeds, attachments, components, and transient interaction responses.
+- `MessageX.Hosting` owns provider-neutral routing, acknowledgement deadlines, deduplication, queues, retries, and durable dispatch contracts.
+- Provider hosting packages verify native requests and project them into the shared hosting pipeline.
+- `MessageX.Persistence.DbaClientX` persists MessageX domain state through DbaClientX without taking ownership of database-provider behavior.
+- `MessageX.PowerShell` exposes compiled cmdlets over the same libraries.
 
-## Capabilities
+Provider-native rich content stays provider-native. MessageX does not flatten Adaptive Cards, Block Kit, and Discord components into a lowest-common-denominator document model.
 
-- Send Microsoft Teams notifications through incoming webhooks and workflow webhooks.
-- Describe whether a Workflow URL delivers to a channel, group chat, or chat without claiming conversation access that the URL does not provide.
-- Configure proxy, timeout, cancellation, and product user-agent behavior for webhook delivery.
-- Compose classic connector-card messages with sections, facts, images, buttons, and activity fields.
-- Compose Adaptive Cards with containers, columns, tables, images, media, mentions, rich text, actions, and fallback text.
-- Compose Hero, Thumbnail, and List cards with typed cmdlets.
-- Convert message objects to JSON before sending, which is useful for testing, logging, and CI validation.
-- Keep authenticated Microsoft Graph lifecycle and governed Teams chat/channel delivery in GraphEssentialsX rather than duplicating that client in MessageX.Teams.
-- Send Slack text and initial Block Kit messages through fixed-destination incoming webhooks or an authenticated bot connection.
-- Address Slack channels, private channels, direct messages, multiparty conversations, and user IDs through provider identifiers supported by `chat.postMessage`.
-- Reply in Slack threads and retain the returned channel and timestamp as a durable `MessageReference` for later lifecycle work.
-- Send Discord messages through incoming webhooks or bot REST to channels, threads, and one-to-one DMs.
-- Compose Discord embeds and attachments, control mentions with a safe notify-nobody default, and retain durable message/channel/thread references.
-- Verify Discord interaction request signatures through an owned API while keeping Bouncy Castle types internal.
-- Keep the PowerShell module surface familiar while moving implementation into reusable C# cmdlets.
+## Current capability matrix
 
-## Installing and Updating
+| Capability | Teams | Slack | Discord |
+| --- | --- | --- | --- |
+| Notification send | Workflow and incoming webhook | Incoming webhook and bot Web API | Incoming webhook and bot REST |
+| Rich content | Adaptive Cards, webhook-safe actions, legacy wrapper cards | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
+| Message lifecycle | Workflow URLs remain send-only | Reply, update, delete, reactions | Reply, read, update, delete, reactions |
+| File delivery | Images and provider card media | Current external upload workflow | Multipart attachments |
+| Verified HTTP receive | Teams app activities and card actions | Events API, commands, actions, views | Commands, components, autocomplete, modals |
+| Interaction continuation | Verified app activity receipt; bot-owned outbound actions are deferred | Transient response URL and `views.open` | Follow-up, edit, and delete within token lifetime |
+| Durable hosting | Shared queue, replay, retry, dead-letter, health, DbaClientX adapter | Shared | Shared |
+| Realtime connection | Deferred | Socket Mode deferred | Gateway deferred |
 
-PSTeams works on Windows, Linux, and macOS through PowerShell Gallery. Installation does not require administrative rights when you install for the current user.
+Teams Graph administration and collaboration lifecycle belong in GraphEssentialsX. MessageX does not embed a second Microsoft Graph client.
 
-Install for the current user:
+## PowerShell quick start
 
-```powershell
-Install-Module PSTeams -Scope CurrentUser
-```
+Credentials should come from environment variables, a secret store, or `SecureString`; never commit webhook URLs or tokens.
 
-Install for all users from an elevated PowerShell session:
-
-```powershell
-Install-Module PSTeams
-```
-
-Update an existing installation:
-
-```powershell
-Update-Module -Name PSTeams
-```
-
-After updating, restart any PowerShell session that already imported PSTeams so the new binary module is loaded.
-If PSTeams is used in production automations, test new versions before rolling them out broadly.
-Runtime dependency on `PSSharedGoods` has been removed from the module shell. Development tooling may still use helper modules such as `PSWriteColor`, but the shipping module is being kept as self-contained as possible.
-
-## Quick Start
-
-Send a classic connector-card notification through an incoming webhook:
-
-```powershell
-$target = New-TeamsWebhookTarget -Uri $Env:TEAMS_WEBHOOK_URL
-$section = New-TeamsSection `
-    -ActivityTitle 'PSTeams' `
-    -ActivitySubtitle 'Build notification' `
-    -ActivityText 'The release pipeline completed successfully.' `
-    -ActivityDetails @(
-        New-TeamsFact -Name 'Environment' -Value 'Production'
-        New-TeamsFact -Name 'Result' -Value 'Passed'
-    )
-
-$message = New-TeamsMessage -Title 'Deployment completed' -Text 'PSTeams notification' -Sections $section
-Send-TeamsMessage -Message $message -Target $target
-```
-
-Send an Adaptive Card through a Workflow that is configured to deliver to a channel:
+### Teams Workflow notification
 
 ```powershell
 $target = New-TeamsWebhookTarget `
-    -Uri $Env:TEAMS_WORKFLOW_URL `
+    -Uri $Env:MESSAGEX_TEAMS_WORKFLOW_URL `
     -Workflow `
     -Destination Channel `
-    -DisplayName 'Release channel'
-
-$card = New-TeamsAdaptiveCard -Body @(
-    New-TeamsAdaptiveTextBlock -Text 'Deployment completed' -Weight Bolder
-)
-$message = New-TeamsMessage -Summary 'Deployment completed' -AdaptiveCard $card
-Send-TeamsMessage -Message $message -Target $target -TimeoutSeconds 30 -PassThru
-```
-
-The destination value is descriptive metadata. Workflow URLs remain send-only: they do not provide message IDs, replies, updates, deletes, or inbound events.
-
-Render the same message as JSON when you want to validate payloads in tests or CI:
-
-```powershell
-$message | ConvertTo-TeamsJson
-```
-
-Create and preview a Slack Block Kit message:
-
-```powershell
-$target = New-SlackConversationTarget -ConversationId 'C0123456789' -DisplayName 'Release alerts'
-$message = New-SlackMessage -Text 'Deployment completed' -Blocks @(
-    New-SlackSection -Markdown '*Deployment completed*'
-    New-SlackDivider
-)
-
-$message | ConvertTo-SlackJson -Target $target
-```
-
-Send through a Slack bot connection without placing its token in normal output:
-
-```powershell
-$token = Read-Host 'Slack bot token' -AsSecureString
-$connection = New-SlackConnection -BotToken $token -WorkspaceId 'T0123456789'
-Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru
-```
-
-For a fixed-destination Slack incoming webhook, use `New-SlackWebhookTarget` or the simple `Send-SlackMessage -WebhookText ... -WebhookUri ...` parameter set. Webhook URLs and bot tokens are credentials and should come from a secret store.
-
-Create and preview a Discord message without allowing content to notify mentions by default:
-
-```powershell
-$target = New-DiscordChannelTarget `
-    -ChannelId '123456789012345678' `
-    -GuildId '223456789012345678' `
     -DisplayName 'Release alerts'
 
-$message = New-DiscordMessage -Content 'Deployment completed' -Embeds @(
-    New-DiscordSection -Title 'Release' -Description 'The deployment completed successfully.' -Color 0x2EB886 -Fields @(
-        New-DiscordFact -Name 'Environment' -Value 'Production' -Inline
+$openBuild = New-TeamsAdaptiveOpenUrlAction `
+    -Title 'Open build' `
+    -Url 'https://example.com/build/42'
+
+$card = New-TeamsAdaptiveCard -Version '1.2' -Body @(
+    New-TeamsAdaptiveTextBlock -Text 'Build 42 is ready' -Weight Bolder
+) -Actions $openBuild
+
+$message = New-TeamsMessage -Summary 'Build ready' -AdaptiveCard $card
+Send-TeamsMessage -Message $message -Target $target -PassThru
+```
+
+Workflow URLs are send-only capabilities. They do not grant conversation reads, replies, updates, deletes, or inbound events. `Action.Execute` and Adaptive Card refresh require a bot-owned outbound transport, so current Workflow and incoming-webhook targets reject those contracts before sending.
+
+### Slack Block Kit and file upload
+
+```powershell
+$connection = New-SlackConnection `
+    -BotToken (Read-Host 'Slack bot token' -AsSecureString) `
+    -WorkspaceId 'T0123456789'
+$target = New-SlackConversationTarget -ConversationId 'C0123456789' -DisplayName 'Release alerts'
+
+$message = New-SlackMessage -Text 'Build 42 is ready' -Blocks @(
+    New-SlackHeader -Text 'Build approval'
+    New-SlackSection -Markdown 'Build *42* is ready for review.'
+    New-SlackActions -Elements @(
+        New-SlackButton -Text 'Approve' -ActionId 'approve-build' -Value '42' -Style Primary
+        New-SlackButton -Text 'Reject' -ActionId 'reject-build' -Value '42' -Style Danger
     )
 )
 
-$message | ConvertTo-DiscordJson -Target $target
+Send-SlackMessage -Message $message -Target $target -Connection $connection -PassThru
+Send-SlackFile -Path .\build.log -ConversationId 'C0123456789' -Connection $connection -PassThru
 ```
 
-Send through a Discord bot connection without placing its token in normal output:
+`Send-SlackFile` uses `files.getUploadURLExternal`, the provider upload URL, and `files.completeUploadExternal`. It does not use the retired `files.upload` API.
+
+### Discord components
 
 ```powershell
-$token = Read-Host 'Discord bot token' -AsSecureString
-$connection = New-DiscordConnection -BotToken $token
+$connection = New-DiscordConnection -BotToken (Read-Host 'Discord bot token' -AsSecureString)
+$target = New-DiscordChannelTarget -ChannelId '123456789012345678' -GuildId '223456789012345678'
+
+$message = New-DiscordMessage -Content 'Build 42 is ready' -Components @(
+    New-DiscordActionRow -Components @(
+        New-DiscordButton -Label 'Approve' -CustomId 'approve-build' -Style Success
+        New-DiscordButton -Label 'Open build' -Url 'https://example.com/build/42'
+    )
+)
+
 Send-DiscordMessage -Message $message -Target $target -Connection $connection -PassThru
 ```
 
-For fixed-destination delivery, use `New-DiscordWebhookTarget` or the simple `Send-DiscordMessage -Text ... -WebhookUri ...` parameter set. `New-DiscordEmbed`, `New-DiscordField`, and `New-DiscordThumbnail` remain aliases for familiar PSDiscord builder names. Webhook URLs and bot tokens are credentials and should come from a secret store. Bot DMs should be user-initiated or otherwise expected, not unsolicited bulk messages.
+Discord mention parsing defaults to nobody. Opt in with an explicit `New-DiscordAllowedMentions` policy.
 
-## Supported .NET and PowerShell Versions
+## C# example
 
-### MessageX libraries
+```csharp
+using MessageX.Slack;
 
-- .NET 8.0 and .NET 10.0 for modern cross-platform use
-- .NET Framework 4.7.2 for Windows PowerShell 5.1 scenarios
+var connection = SlackConnection.ForBotToken(
+    Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN")!,
+    workspaceId: "T0123456789");
 
-### PowerShell Module
+var message = new SlackMessageRequest { Text = "Deployment completed" };
+message.Blocks.Add(new SlackHeaderBlock {
+    Text = SlackTextObject.Plain("Release")
+});
+message.Blocks.Add(new SlackSectionBlock {
+    Text = SlackTextObject.Markdown("Production deployment completed successfully.")
+});
 
-- PowerShell 7 on .NET 10 uses the .NET 10 binary build; PowerShell 7 on .NET 8 uses the .NET 8 binary build.
-- Windows PowerShell 5.1 uses the .NET Framework 4.7.2 binary build during development.
-- Packaged module builds are produced by `Build\Build-Module.ps1` through PowerForge/PSPublishModule. Development builds are unsigned by default; signing is an explicit release-gate choice.
+using var client = new SlackClient(connection);
+var result = await client.SendAsync(
+    message,
+    SlackMessageTarget.ForConversation("C0123456789"));
 
-## Legacy Branch
-
-The historical script-function implementation is preserved on the `legacy` branch for reference and maintenance history. New development should target `MessageX.Core`, provider libraries such as `MessageX.Teams`, `MessageX.Slack`, and `MessageX.Discord`, `MessageX.PowerShell`, and binary cmdlets rather than adding new PowerShell wrapper functions.
-
-## Links/Blogs
-
-While I didn't spent much time creating WIKI, working on `Get-Help` documentation, I did write 4 articles that should help you get started.
-First 3 articles are for version 0.X.X-1.X.X, and last one is small introduction to new versionF.
-
-- [x] [PSTeams – PowerShell Module](https://evotec.xyz/hub/scripts/psteams-powershell-module/)
-- [x] [PSTeams – Send notifications to MS Teams from Mac / Linux or Windows](https://evotec.xyz/psteams-send-notifications-to-ms-teams-from-mac-linux-or-windows/)
-- [x] [Sending Messages to Microsoft Teams from PowerShell just got easier and better](https://evotec.xyz/sending-to-microsoft-teams-from-powershell-just-got-easier-and-better/)
-- [x] [Introducing PSTeams 2.0 – Support for Adaptive Cards, Hero Cards, List Cards and Thumbnail Cards](https://evotec.xyz/introducing-psteams-2-0-support-for-adaptive-cards-hero-cards-list-cards-and-thumbnail-cards/)
-
-## Support This Project
-
-If you find this project helpful, please consider supporting its development.
-Your sponsorship will help the maintainers dedicate more time to maintenance and new feature development for everyone.
-
-It takes a lot of time and effort to create and maintain this project.
-By becoming a sponsor, you can help ensure that it stays free and accessible to everyone who needs it.
-
-To become a sponsor, you can choose from the following options:
-
- - [Become a sponsor via GitHub Sponsors :heart:](https://github.com/sponsors/PrzemyslawKlys)
- - [Become a sponsor via PayPal :heart:](https://paypal.me/PrzemyslawKlys)
-
-Your sponsorship is completely optional and not required for using this project.
-We want this project to remain open-source and available for anyone to use for free,
-regardless of whether they choose to sponsor it or not.
-
-If you work for a company that uses our .NET libraries or PowerShell Modules,
-please consider asking your manager or marketing team if your company would be interested in supporting this project.
-Your company's support can help us continue to maintain and improve this project for the benefit of everyone.
-
-Thank you for considering supporting this project!
-
-## Supported Cards
-
-While `WebHook Notifications` in theory only support `Office 365 Connector Card` it's possible to do more than that.
-
-- Supported in 0.X.0 - 1.0.X
-  - [x] [Office 365 Connector Card](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#office-365-connector-card) - The Office 365 Connector card provides a flexible layout with multiple sections, fields, images, and actions. This card encapsulates a connector card so that it can be used by bots. See the notes section for differences between connector cards and the O365 card.
-- Supported in 2.X.X
-  - [x] [AdaptiveCard](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#adaptive-card)
-  - [x] [List Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#list-card)
-  - [x] [Hero Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#hero-card)
-  - [x] [Thumbnail Cards](https://docs.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#thumbnail-card)
-
-Below you can find how to send them and what they display.
-You should be aware that while I've added some features, not all of them will work in Teams such as submitting data, or using inputs (they may display data but not really do anything).
-It's still **work in progress** and things may change and get new features.
-
-### Adaptive cards
-
-Adaptive Cards are most advanced cards. There's lots of options available. Make sure to review:
-
-- [Adaptive Card Samples](https://github.com/EvotecIT/PSTeams/tree/master/Examples/Adaptive%20Card%20Samples)
-- [Adaptive Card Playground](https://github.com/EvotecIT/PSTeams/tree/master/Examples/Adaptive%20Card%20Samples)
-
-Here's some code / output:
-
-```powershell
-New-AdaptiveCard -Uri $Env:TEAMSPESTERID -VerticalContentAlignment center {
-    New-AdaptiveContainer {
-        New-AdaptiveColumnSet {
-            New-AdaptiveColumn {
-                New-AdaptiveImage -Url "https://adaptivecards.io/content/cats/3.png" -Size Medium -AlternateText "Shades cat team emblem" -HorizontalAlignment Center
-                New-AdaptiveTextBlock -Weight Bolder -Text 'SHADES' -HorizontalAlignment Center
-            } -Width Auto
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text "Sat, Aug 31, 2019" -HorizontalAlignment Center -Wrap
-                New-AdaptiveTextBlock -Text "Final" -Spacing None -HorizontalAlignment Center
-                New-AdaptiveTextBlock -Text "45 - 7" -HorizontalAlignment Center -Size ExtraLarge
-            } -Width Stretch -Separator -Spacing Medium
-            New-AdaptiveColumn {
-                New-AdaptiveImage -Url "https://adaptivecards.io/content/cats/2.png" -Size Medium -HorizontalAlignment Center -AlternateText "Skins cat team emblem"
-                New-AdaptiveTextBlock -Weight Bolder -Text 'SKINS' -HorizontalAlignment Center
-            } -Width Auto -Separator -Spacing Medium
-        }
-    }
-} -Speak 'The Seattle Seahawks beat the Carolina Panthers 40-7'
+if (!result.IsSuccess) {
+    throw new InvalidOperationException($"Slack delivery failed: {result.ErrorKind}");
+}
 ```
 
-Output
+## Hosting
 
-![Adaptive Card Sporting Event](Docs/Images/AdaptiveCard-SportingEvent.png)
+The ASP.NET Core provider packages expose verified endpoints over the shared MessageX host. The host acknowledges within provider deadlines, bounds synchronous work, deduplicates retries, and can move asynchronous work into durable storage.
 
-Or something more advanced with hidden data, multiple actions and so on:
+Routes that must open a Slack or Discord modal use an explicit inline registration so the handler runs before the provider acknowledgement:
 
-```powershell
-New-AdaptiveCard -Uri $Env:TEAMSPESTERID {
-    New-AdaptiveContainer -Style Emphasis -Bleed {
-        New-AdaptiveColumnSet {
-            New-AdaptiveColumn -Width Stretch {
-                New-AdaptiveTextBlock -Text '**EXPENSE APPROVAL**' -Weight Bolder -Size Large
-            }
-            New-AdaptiveColumn -Width Auto {
-                New-AdaptiveImage -Url "https://adaptivecards.io/content/pending.png" -AlternateText 'Pending' -HeightInPixels 30 #-HorizontalAlignment Right
-            }
-        }
-    }
-
-    New-AdaptiveContainer {
-        New-AdaptiveColumnSet {
-            New-AdaptiveColumn -Width Stretch {
-                New-AdaptiveTextBlock -Text 'Trip to UAE' -Wrap -Size ExtraLarge
-            }
-            New-AdaptiveColumn -Width Auto {
-                New-AdaptiveActionSet {
-                    New-AdaptiveAction -Title 'LINK TO CLICK' -ActionUrl 'https://adaptivecards.io'
-                }
-            }
-        }
-    }
-    New-AdaptiveTextBlock -Text "[ER-13052](https://adaptivecards.io)" -Spacing Small -Size Small -Weight Bolder -Color Accent
-
-    New-AdaptiveFactSet -Spacing Large {
-        New-AdaptiveFact -Title "Submitted By" -Value "**Matt Hidinger**  matt@contoso.com"
-        New-AdaptiveFact -Title "Duration" -Value "2019-06-19 - 2019-06-21"
-        New-AdaptiveFact -Title "Submitted On" -Value "2019-04-14"
-        New-AdaptiveFact -Title "Reimbursable Amount" -Value '$ 400.00'
-        New-AdaptiveFact -Title "Awaiting approval from" -Value "**Thomas**  thomas@contoso.com"
-        New-AdaptiveFact -Title "Submitted to" -Value "**David**  david@contoso.com"
-    }
-
-    New-AdaptiveContainer -Style Emphasis -Spacing Large {
-        New-AdaptiveColumnSet {
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text 'DATE' -Weight Bolder
-            } -Width Auto
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text 'CATEGORY' -Weight Bolder
-            } -Width Stretch
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text 'AMOUNT' -Weight Bolder
-            } -Width Auto
-        }
-    } -Bleed
-
-    New-AdaptiveColumnSet {
-        New-AdaptiveColumn -Width Auto -Spacing Medium {
-            New-AdaptiveTextBlock -Text '06-19' -Wrap
-        }
-        New-AdaptiveColumn -Width Stretch {
-            New-AdaptiveTextBlock -Text 'Air Travel Expense' -Wrap
-        }
-        New-AdaptiveColumn -Width Auto {
-            New-AdaptiveTextBlock -Text '$300.00' -Wrap
-        }
-        # Special column with Action and hidden items
-        # Notice ActionTargetElement which triggers automatically ToggleVisibility for those mentioned
-        New-AdaptiveColumn -Spacing Small -VerticalContentAlignment Center -Width Auto {
-            New-AdaptiveImage -Id 'chevronDown1' -Url "https://adaptivecards.io/content/down.png" -WidthInPixels 20 -AlternateText "Details collapsed"
-            New-AdaptiveImage -Id 'chevronUp1' -Url "https://adaptivecards.io/content/up.png" -WidthInPixels 20 -AlternateText "Details collapsed" -Hidden
-        } -SelectActionTargetElement 'cardContent1', 'chevronDown1', 'chevronUp1'
-    }
-
-    # Notice this will be hidden initially and shown with the action from above
-    New-AdaptiveContainer -Hidden -Id 'cardContent1' {
-        New-AdaptiveTextBlock -Text '* Leg 1 on Tue, Jun 19th, 2019 at 6:00 AM.' -Subtle -Wrap
-        New-AdaptiveTextBlock -Text '* Leg 2 on Tue, Jun 19th, 2019 at 7:15 PM.' -Subtle -Wrap
-        New-AdaptiveContainer -Style Good {
-            # This should be an input type, but not yet added - not sure if it makes sense, as inputs are not working for webhooks
-            New-AdaptiveTextBlock -Text 'Some more data in good color' -Subtle -Wrap
-        }
-    }
-
-    New-AdaptiveColumnSet {
-        New-AdaptiveColumn -Width Auto -Spacing Medium {
-            New-AdaptiveTextBlock -Text '06-19' -Wrap
-        }
-        New-AdaptiveColumn -Width Stretch {
-            New-AdaptiveTextBlock -Text 'Auto Mobile Expense' -Wrap
-        }
-        New-AdaptiveColumn -Width Auto {
-            New-AdaptiveTextBlock -Text '$100.00' -Wrap
-        }
-        # Special column with Action and hidden items
-        # Notice ActionTargetElement which triggers automatically ToggleVisibility for those mentioned
-        New-AdaptiveColumn -Spacing Small -VerticalContentAlignment Center -Width Auto {
-            New-AdaptiveImage -Id 'chevronDown2' -Url "https://adaptivecards.io/content/down.png" -WidthInPixels 20 -AlternateText "Details collapsed"
-            New-AdaptiveImage -Id 'chevronUp2' -Url "https://adaptivecards.io/content/up.png" -WidthInPixels 20 -AlternateText "Details collapsed" -Hidden
-        } -SelectActionTargetElement 'cardContent2', 'chevronDown2', 'chevronUp2'
-    }
-
-    # Notice this will be hidden initially and shown with the action from above
-    New-AdaptiveContainer -Hidden -Id 'cardContent2' {
-        New-AdaptiveTextBlock -Text '* Contoso Car Rentrals, Tues 6/19 at 7:00 AM' -Subtle -Wrap
-        New-AdaptiveContainer -Style Warning {
-            # This should be an input type, but not yet added - not sure if it makes sense, as inputs are not working for webhooks
-            New-AdaptiveTextBlock -Text 'Some more data in warning color' -Subtle -Wrap
-        }
-    }
-
-    New-AdaptiveColumnSet {
-        New-AdaptiveColumn -Width Auto -Spacing Medium {
-            New-AdaptiveTextBlock -Text '06-21' -Wrap
-        }
-        New-AdaptiveColumn -Width Stretch {
-            New-AdaptiveTextBlock -Text 'Excess Baggage Cost' -Wrap
-        }
-        New-AdaptiveColumn -Width Auto {
-            New-AdaptiveTextBlock -Text '$50.38' -Wrap
-        }
-        # Special column with Action and hidden items
-        # Notice ActionTargetElement which triggers automatically ToggleVisibility for those mentioned
-        New-AdaptiveColumn -Spacing Small -VerticalContentAlignment Center -Width Auto {
-            New-AdaptiveImage -Id 'chevronDown3' -Url "https://adaptivecards.io/content/down.png" -WidthInPixels 20 -AlternateText "Details collapsed"
-            New-AdaptiveImage -Id 'chevronUp3' -Url "https://adaptivecards.io/content/up.png" -WidthInPixels 20 -AlternateText "Details collapsed" -Hidden
-        } -SelectActionTargetElement 'cardContent3', 'chevronDown3', 'chevronUp3'
-    }
-
-    # Notice this will be hidden initially and shown with the action from above
-    New-AdaptiveContainer -Hidden -Id 'cardContent3' {
-        New-AdaptiveTextBlock -Text 'More data' -Subtle -Wrap
-        New-AdaptiveContainer -Style Attention {
-            # This should be an input type, but not yet added - not sure if it makes sense, as inputs are not working for webhooks
-            New-AdaptiveTextBlock -Text 'Some more data in warning color' -Subtle -Wrap
-        }
-    }
-
-    New-AdaptiveColumnSet -Spacing Large -Separator {
-        New-AdaptiveColumn {
-            New-AdaptiveTextBlock -Text "Total Expense Amount" -Wrap -HorizontalAlignment Right
-            New-AdaptiveTextBlock -Text 'Non-reimbursable Amount' -Wrap -HorizontalAlignment Right
-            New-AdaptiveTextBlock -Text 'Advance Amount' -Wrap -HorizontalAlignment Right
-        } -Width Stretch
-        New-AdaptiveColumn {
-            New-AdaptiveTextBlock -Text '$450.38' -HorizontalAlignment Right
-            New-AdaptiveTextBlock -Text '(-) 50.38' -HorizontalAlignment Right
-            New-AdaptiveTextBlock -Text '(-) 0.00' -HorizontalAlignment Right
-        } -Width Auto
-    }
-
-    New-AdaptiveContainer -Style Emphasis {
-        New-AdaptiveColumnSet {
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text 'Amount to be Reimbursed' -Wrap -HorizontalAlignment Right
-            } -Width Stretch
-            New-AdaptiveColumn {
-                New-AdaptiveTextBlock -Text '$ 400.00' -Weight Bolder
-            } -Width Auto
-        }
-    } -Bleed
-
-    New-AdaptiveColumnSet {
-        New-AdaptiveColumn -VerticalContentAlignment Center -WidthInWeight 1 {
-            New-AdaptiveTextBlock -Text 'Show history' -Wrap -HorizontalAlignment Right -Id 'showHistory' -Color Accent
-            New-AdaptiveTextBlock -Text 'Hide history' -Wrap -HorizontalAlignment Right -Id 'hideHistory' -Color Accent -Hidden
-        } -SelectActionTargetElement 'cardContent4', 'showHistory', 'hideHistory'
-    }
-
-    New-AdaptiveContainer -id 'cardContent4' -Hidden {
-        New-AdaptiveTextBlock -Text '* Expense submitted by **Matt Hidinger** on Mon, Jul 15, 2019' -Subtle -Wrap
-        New-AdaptiveTextBlock -Text '* Expense approved by **Thomas** on Mon, Jul 15, 2019' -Subtle -Wrap
-    }
-} -Action {
-    # This won't really work as submit doesn't work in
-    New-AdaptiveAction -Type Action.Submit -Title 'Approve'
-    New-AdaptiveAction -Type Action.Submit -Title 'Reject'
-} -Verbose
+```csharp
+router.OnAction<SlackInteractionEvent>(
+    "open-approval",
+    HandleApprovalAsync,
+    MessageDispatchMode.Synchronous);
 ```
 
-Output
+Keep ordinary handlers deferred. Synchronous registrations use bounded process-local replay protection and cannot be persisted or replayed after restart.
 
-![Adaptive Card Expense Approval](Docs/Images/AdaptiveCard-ExpenseApproval.png)
+Transient Slack response URLs, Slack trigger IDs, and Discord interaction tokens never enter durable codecs. A restored durable event intentionally cannot use those short-lived capabilities.
 
-### List Cards
+Realtime transports are deliberately outside the first package candidate. Slack Socket Mode and the Discord Gateway need separate reconnect, heartbeat, sequence, resume, and health contracts; HTTP receive remains the supported production path for this preview.
 
-Here's a simple way to send List Cards to Teams using WebHook
+## Supported runtimes
 
-- List Items do not support `tapType` `imBack`. When clicked action is not taken
-- List Items do not support `tapAction`. It's there, but doesn't work.
-- List Items do not support type `file`. It displays, but no action is taken. It's better to use `resultItem`
+- `MessageX.Core`, provider libraries, hosting core, and `MessageX.PowerShell`: .NET Framework 4.7.2, .NET 8, and .NET 10 where the project contract allows it.
+- ASP.NET Core hosting and DbaClientX persistence: .NET 8 and .NET 10.
+- PowerShell: Windows PowerShell 5.1 and supported PowerShell 7 runtimes through target-specific binary assets.
 
-Code
-
-```powershell
-New-CardList {
-    New-CardListItem -Type file -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx" -TapAction editOnline
-    New-CardListItem -Type resultItem -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx"
-    New-CardListItem -Type resultItem -Title 'Trello title' -SubTitle 'A Trello subtitle' -TapType openUrl -TapValue "http://trello.com" -Icon "https://cdn2.iconfinder.com/data/icons/social-icons-33/128/Trello-128.png"
-    New-CardListItem -Type section -Title 'Manager'
-    New-CardListItem -Type person -Title "John Doe" -SubTitle 'Manager' -TapType imBack -TapValue "JohnDoe@contoso.com" -TapAction whois
-    New-CardListButton -Type openUrl -Title 'Show' -Value 'https://evotec.xyz'
-} -Uri $Env:TEAMSPESTERID -Title 'Card Title'
-```
-
-Output
-
-![List Card](Docs/Images/CardList.png)
-
-### Hero Cards
-
-Here's a simple way to send List Cards to Teams using WebHook
-
-- Hero Buttons (`New-HeroButton`)do not support button type other then `openUrl`
-  - When using Type `imBack` action is not taken
-  - When using Type `file` button is not displayed
-- Using more than 3 buttons causes carousel for card. I've blocked it out, as all that happens is text is doubled/image is doubled but buttons don't show up over 3
-
-Code
+## Build and test
 
 ```powershell
-New-HeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service." {
-    New-HeroImage -Url 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg'
-    New-HeroButton -Type openUrl -Title 'Official website' -Value 'https://www.seattlemonorail.com'
-    New-HeroButton -Type openUrl -Title 'Wikipeda page' -Value 'https://www.seattlemonorail.com'
-    New-HeroButton -Type openUrl -Title 'Evotec page' -Value 'https://www.evotec.xyz'
-} -Uri $Env:TEAMSPESTERID
+dotnet restore Sources/MessageX.slnx
+dotnet build Sources/MessageX.slnx --configuration Release --no-restore
+dotnet test --project Sources/MessageX.Tests/MessageX.Tests.csproj --configuration Release --no-build
 ```
 
-Output
+NuGet staging is configured by `Build/project.build.json`. The PowerShell module is built by `Build/Build-Module.ps1` through PSPublishModule/PowerForge. Both publish paths are disabled by default.
 
-![Hero Card](Docs/Images/HeroCard.png)
+## Compatibility and boundaries
 
-### Thumbnail Cards
+- The `legacy` branch preserves the historical script implementation.
+- Existing PSTeams command names remain available where they represent supported behavior.
+- New code should target typed `MessageX.*` libraries and binary cmdlets rather than adding another PowerShell implementation layer.
+- Repository renaming and public package publication are separate maintainer decisions; neither is implied by a local release-candidate build.
 
-Here's a simple way to send Thumbnail Cards to Teams using WebHook
+See [ARCHITECTURE.md](ARCHITECTURE.md), [SUPPORT.md](SUPPORT.md), and [ROADMAP.md](ROADMAP.md) for ownership, supported boundaries, and the remaining release gates.
 
-- Images are not supported in buttons, you can send them but it's not displayed
-- imBack action is not supported in buttons, you can send them but once you click it an notification message appears
+## License and support
 
-Code
-
-```powershell
-New-ThumbnailCard -Title 'Bender' -SubTitle "tale of a robot who dared to love" -Text "Bender Bending Rodríguez is a main character in the animated television series Futurama. He was created by series creators Matt Groening and David X. Cohen, and is voiced by John DiMaggio" {
-    New-ThumbnailImage -Url 'https://upload.wikimedia.org/wikipedia/en/a/a6/Bender_Rodriguez.png' -AltText "Bender Rodríguez"
-    New-ThumbnailButton -Type imBack -Title 'Thumbs Up' -Value 'I like it' -Image "http://moopz.com/assets_c/2012/06/emoji-thumbs-up-150-thumb-autox125-140616.jpg"
-    New-ThumbnailButton -Type openUrl -Title 'Thumbs Down' -Value 'https://evotec.xyz'
-    New-ThumbnailButton -Type openUrl -Title 'I feel luck' -Value 'https://www.bing.com/images/search?q=bender&qpvt=bender&qpvt=bender&qpvt=bender&FORM=IGRE'
-} -Uri $Env:TEAMSPESTERID
-```
-
-Output
-
-![Thumbnail Card](Docs/Images/ThumbnailCard.png)
-
-### Office 365 Connector Card - pre 2.X.X version
-
-```powershell
-$TeamsID = 'YourCodeGoesHere'
-$Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"
-$Fact1 = New-TeamsFact -Name 'PS Version' -Value "**$($PSVersionTable.PSVersion)**"
-$Fact2 = New-TeamsFact -Name 'PS Edition' -Value "**$($PSVersionTable.PSEdition)**"
-$Fact3 = New-TeamsFact -Name 'OS' -Value "**$($PSVersionTable.OS)**"
-$CurrentDate = Get-Date
-$Section = New-TeamsSection `
-    -ActivityTitle "**PSTeams**" `
-    -ActivitySubtitle "@PSTeams - $CurrentDate" `
-    -ActivityImage Add `
-    -ActivityText "This message proves PSTeams Pester test passed properly." `
-    -Buttons $Button1 `
-    -ActivityDetails $Fact1, $Fact2, $Fact3
-Send-TeamsMessage `
-    -URI $TeamsID `
-    -MessageTitle 'PSTeams - Pester Test' `
-    -MessageText "This text won't show up" `
-    -Color DodgerBlue `
-    -Sections $Section
-```
-
-- When executed from Linux
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb6509e8013e.png)
-
-- When executed from Windows
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650ade0d73.png)
-
-- When executed from MacOS
-
-![image](https://evotec.xyz/wp-content/uploads/2018/10/img_5bb650be35f4b.png)
-
-- And this is more advanced option sent by [PSWinReporting](https://evotec.xyz/hub/scripts/pswinreporting-powershell-module/)
-
-![image](https://evotec.xyz/wp-content/uploads/2018/09/img_5b9e830101081.png)
-
-## Typed Adaptive Cards
-
-The public adaptive surface is binary-backed through `MessageX.PowerShell`. Commands such as `New-AdaptiveCard`, `New-AdaptiveContainer`, `New-AdaptiveColumn`, `New-AdaptiveColumnSet`, `New-AdaptiveTable`, and the rest of the `New-Adaptive*` family are cmdlets rather than script functions.
-
-If you prefer the typed surface directly, the `New-TeamsAdaptive*` cmdlets now expose the richer card and layout options too:
-
-```powershell
-$card = New-TeamsAdaptiveCard `
-    -FallbackText 'Build failed' `
-    -MinimumHeight 140 `
-    -Language 'en' `
-    -VerticalContentAlignment center `
-    -BackgroundUrl 'https://example.test/background.png' `
-    -BackgroundFillMode Cover `
-    -AllowImageExpand `
-    -FullWidth `
-    -Body @(
-        New-TeamsAdaptiveContainer `
-            -Style Emphasis `
-            -Bleed `
-            -MinimumHeight 120 `
-            -Spacing Medium `
-            -Items @(
-                New-TeamsAdaptiveColumnSet `
-                    -Style Good `
-                    -Bleed `
-                    -Columns @(
-                        New-TeamsAdaptiveColumn -WidthInWeight 2 -Items @(
-                            New-TeamsAdaptiveTextBlock -Text 'Pipeline failed' -Weight Bolder -Color Attention
-                        )
-                        New-TeamsAdaptiveColumn -Width auto -Items @(
-                            New-TeamsAdaptiveImage -Url 'https://example.test/status.png' -AltText 'Status'
-                        )
-                    )
-            )
-    ) `
-    -Actions @(
-        New-TeamsAdaptiveOpenUrlAction -Title 'Open build' -Url 'https://example.test/build/42'
-        New-TeamsAdaptiveSubmitAction -Title 'Acknowledge'
-        New-TeamsAdaptiveShowCardAction -Title 'Details' -Body @(
-            New-TeamsAdaptiveTextBlock -Text 'Nested details'
-        ) -Actions @(
-            New-TeamsAdaptiveSubmitAction -Title 'Confirm'
-        )
-    )
-
-$message = New-TeamsMessage -Summary 'Build notification' -AdaptiveCard $card
-$json = $message | ConvertTo-TeamsJson
-```
-
-Dedicated typed examples live under `Examples\MessageCard\MessageCard-Typed.ps1` and `Examples\Adaptive Card\AdaptiveCard-TypedActions.ps1`.
-
-## Typed Wrapper Cards
-
-Typed wrapper-card models are now available as well:
-
-```powershell
-$target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
-$heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
-    New-TeamsCardImage -Url 'https://example.test/monorail.jpg' -AlternateText 'Monorail'
-) -Buttons @(
-    New-CardListButton -Type OpenUrl -Title 'Official website' -Value 'https://example.test'
-)
-
-Send-TeamsMessage -HeroCard $heroCard -Target $target
-
-$json = $heroCard | ConvertTo-TeamsJson
-$wrapped = $json | Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
-```
-
-Typed wrapper-card direct sending currently targets incoming and Workflow webhooks.
-
-## Microsoft Graph Boundary
-
-Authenticated Microsoft Graph lifecycle, discovery, paging, throttling, and governed writes belong to GraphEssentialsX. MessageX.Teams intentionally does not carry a second Graph client. MessageX will add an optional thin adapter after GraphEssentialsX is available as a consumable package; Workflow delivery remains usable without it.
-
-## Documentation for Message Cards (for development)
-
-This module uses Message Cards to send information to Teams. You can find out what is supported in [Legacy actionable message card reference](https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference) just in case you would like to help out with development of this module.
-
-Additional links:
-
-- <https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/cards/cards-format>
-- <https://docs.microsoft.com/en-us/outlook/actionable-messages/message-card-reference>
-
-![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation1.png)
-
-![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation2.png)
-
-![Teams Card Explanatiuion](https://evotec.xyz/wp-content/uploads/2019/12/TeamsExplanation3.png)
-
-```powershell
-Send-TeamsMessage -Verbose {
-    New-TeamsSection -ActivityTitle "**Elon Musk**" -ActivitySubtitle "@elonmusk - 9/12/2016 at 5:33pm" -ActivityImageLink "https://pbs.twimg.com/profile_images/782474226020200448/zDo-gAo0.jpg" -ActivityText "Climate change explained in comic book form by xkcd xkcd.com/1732"
-    New-TeamsSection -ActivityTitle "**Mark Knopfler**" -ActivitySubtitle "@MarkKnopfler - 9/12/2016 at 1:12pm" -ActivityImageLink "https://pbs.twimg.com/profile_images/1042367841117384704/YvrqQiBK_400x400.jpg" -ActivityText "Mark Knopfler features on B.B King's all-star album of Blues greats, released on this day in 2005..."
-    New-TeamsSection -ActivityTitle "**Elon Musk**" -ActivitySubtitle "@elonmusk - 9/12/2016 at 5:33pm" -ActivityImageLink "https://pbs.twimg.com/profile_images/782474226020200448/zDo-gAo0.jpg" -ActivityText "Climate change explained in comic book form by xkcd xkcd.com/1732"
-} -Uri $TeamsID -MessageSummary 'Tweet'
-```
+This project is licensed under the repository [LICENSE](LICENSE). Issues and focused pull requests are welcome. Commercial users can support ongoing maintenance through [GitHub Sponsors](https://github.com/sponsors/PrzemyslawKlys).

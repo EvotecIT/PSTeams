@@ -102,7 +102,7 @@ public static class SlackInteractionReceiver {
             teamId,
             enterpriseId,
             userId,
-            new SlackTransientInteractionContext(triggerId, responseUrl),
+            new SlackTransientInteractionContext(triggerId, responseUrl, request.ReceivedAt),
             CreateDeduplicationKey(installationId, signature),
             channelId);
         return Dispatch(
@@ -207,6 +207,13 @@ public static class SlackInteractionReceiver {
                 kind = SlackInteractionKind.ViewSubmission;
                 route = MessageRoute.ForSubmission(name);
                 providerPayload = new SlackInteractionPayload(null, view, null);
+            } else if (string.Equals(type, "view_closed", StringComparison.Ordinal)) {
+                if (!TryReadViewSubmission(root, out name, out var view)) {
+                    return Reject(400, MessageReceiveFailureKind.Malformed);
+                }
+                kind = SlackInteractionKind.ViewClosed;
+                route = MessageRoute.ForAction(name);
+                providerPayload = new SlackInteractionPayload(null, view, null);
             } else {
                 return MessageReceiveResult<SlackInteractionEvent>.Acknowledge(
                     MessageAcknowledgement.Empty(200));
@@ -223,7 +230,7 @@ public static class SlackInteractionReceiver {
                 teamId,
                 enterpriseId,
                 userId,
-                new SlackTransientInteractionContext(triggerId, responseUrl),
+                new SlackTransientInteractionContext(triggerId, responseUrl, request.ReceivedAt),
                 CreateDeduplicationKey(installationId, signature),
                 channelId,
                 messageTimestamp,
@@ -361,7 +368,7 @@ public static class SlackInteractionReceiver {
         view = null!;
         if (!root.TryGetProperty("view", out var viewElement) ||
             viewElement.ValueKind != JsonValueKind.Object ||
-            !TryRequired(viewElement, "callback_id", 128, out callbackId) ||
+            !TryRequired(viewElement, "callback_id", 255, out callbackId) ||
             !TryOptionalText(viewElement, "private_metadata", 3000, out var privateMetadata)) {
             return false;
         }
@@ -385,7 +392,7 @@ public static class SlackInteractionReceiver {
         }
         var normalized = new List<SlackViewStateInput>();
         foreach (var block in stateValues.EnumerateObject()) {
-            if (!TryNormalizeCoordinate(block.Name, 128, required: true, out var blockId) ||
+            if (!TryNormalizeCoordinate(block.Name, 255, required: true, out var blockId) ||
                 block.Value.ValueKind != JsonValueKind.Object) {
                 return false;
             }
@@ -438,7 +445,7 @@ public static class SlackInteractionReceiver {
         out SlackActionInput value) {
         value = null!;
         if (!TryRequired(action, "type", 64, out var type) ||
-            !TryOptional(action, "block_id", 128, out var blockId) ||
+            !TryOptional(action, "block_id", 255, out var blockId) ||
             !TryOptionalText(action, "value", 40000, out var scalarValue) ||
             !TryReadSelectedValues(action, out var selectedValues) ||
             !SlackRichTextProjection.TryRead(action, "rich_text_value", out var richTextValue)) {
@@ -737,7 +744,8 @@ public static class SlackInteractionReceiver {
 
     private static bool IsRouteName(string value, SlackInteractionKind kind) =>
         value.Length > 0 &&
-        value.Length <= (kind == SlackInteractionKind.BlockAction ? 255 : 128) &&
+        value.Length <= (kind is SlackInteractionKind.BlockAction or SlackInteractionKind.ViewSubmission or
+            SlackInteractionKind.ViewClosed ? 255 : 128) &&
         !value.Any(char.IsControl);
 
     private static bool IsForm(string contentType) {

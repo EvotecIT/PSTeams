@@ -60,6 +60,27 @@ public sealed class DiscordIncomingWebhookSenderTests {
     }
 
     [Fact]
+    public async Task OrdinaryIncomingWebhookRejectsInteractiveComponentsBeforeNetworkUse() {
+        using var handler = new RecordingHandler(HttpStatusCode.OK, "{}");
+        using var sender = new DiscordIncomingWebhookSender(new HttpClient(handler), disposeHttpClient: true);
+        var message = new DiscordMessageRequest {
+            Content = "Choose",
+            Components = {
+                new DiscordActionRow {
+                    Components = { new DiscordButton { Label = "Approve", CustomId = "approve" } }
+                }
+            }
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sender.SendAsync(
+            message,
+            DiscordMessageTarget.ForIncomingWebhook(WebhookUri),
+            TestContext.Current.CancellationToken));
+
+        Assert.Null(handler.RequestUri);
+    }
+
+    [Fact]
     public async Task RateLimitCarriesBucketScopeAndRetryMetadata() {
         using var handler = new RecordingHandler(
             HttpStatusCode.TooManyRequests,

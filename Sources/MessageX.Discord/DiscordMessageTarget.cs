@@ -8,6 +8,9 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
     /// <summary>Secret webhook URI retained only inside the Discord transport assembly.</summary>
     internal Uri? WebhookUri { get; private set; }
 
+    /// <summary>Whether this webhook is owned by the application and can execute interactive components.</summary>
+    internal bool SupportsInteractiveComponents { get; private set; }
+
     /// <summary>Existing Discord channel or thread-channel identifier.</summary>
     public string? ChannelId { get; private set; }
 
@@ -48,6 +51,15 @@ public sealed class DiscordMessageTarget : IProviderCapabilities {
                 ? null
                 : DiscordSnowflake.Normalize(threadId, nameof(threadId)),
             DisplayName = NormalizeDisplayName(displayName)
+        };
+    }
+
+    internal static DiscordMessageTarget ForApplicationWebhook(Uri uri) {
+        ValidateWebhookUri(uri);
+        return new DiscordMessageTarget {
+            DeliveryMethod = DiscordDeliveryMethod.IncomingWebhook,
+            WebhookUri = uri,
+            SupportsInteractiveComponents = true
         };
     }
 

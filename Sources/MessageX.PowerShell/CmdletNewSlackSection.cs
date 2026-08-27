@@ -32,6 +32,10 @@ public sealed class CmdletNewSlackSection : PSCmdlet {
     [Parameter(Mandatory = false)]
     public SwitchParameter Expand { get; set; }
 
+    /// <summary>Optional interactive accessory such as a button.</summary>
+    [Parameter(Mandatory = false)]
+    public SlackBlockElement? Accessory { get; set; }
+
     /// <inheritdoc />
     protected override void ProcessRecord() {
         var text = ParameterSetName switch {
@@ -43,7 +47,8 @@ public sealed class CmdletNewSlackSection : PSCmdlet {
         var section = new SlackSectionBlock {
             Text = text,
             BlockId = BlockId,
-            Expand = Expand.IsPresent ? true : null
+            Expand = Expand.IsPresent ? true : null,
+            Accessory = Accessory
         };
         foreach (var field in Fields ?? Array.Empty<SlackTextObject>()) {
             if (field is not null) {

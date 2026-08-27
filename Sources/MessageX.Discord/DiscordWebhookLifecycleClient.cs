@@ -41,7 +41,9 @@ public sealed class DiscordWebhookLifecycleClient :
         MessageReference reference,
         CancellationToken cancellationToken = default) {
         var coordinates = ValidateReference(reference, MessageCapabilities.Update);
-        var request = new HttpRequestMessage(new HttpMethod("PATCH"), CreateMessageUri(coordinates.MessageId)) {
+        var request = new HttpRequestMessage(
+            new HttpMethod("PATCH"),
+            CreateMessageUri(coordinates.MessageId, message.Components.Count > 0)) {
             Content = DiscordHttpContentFactory.CreateUpdate(message, _target)
         };
         return await ExecuteVerifiedMutationAsync(
@@ -170,12 +172,21 @@ public sealed class DiscordWebhookLifecycleClient :
         return coordinates;
     }
 
-    private Uri CreateMessageUri(string messageId) {
+    private Uri CreateMessageUri(string messageId, bool withComponents = false) {
         var builder = new UriBuilder(_target.WebhookUri!);
         builder.Path = builder.Path.TrimEnd('/') + "/messages/" + Uri.EscapeDataString(messageId);
-        builder.Query = _target.ThreadId is null
+        var query = _target.ThreadId is null
             ? string.Empty
             : "thread_id=" + Uri.EscapeDataString(_target.ThreadId);
+        if (withComponents) {
+            if (!_target.SupportsInteractiveComponents) {
+                throw new ArgumentException(
+                    "Discord interactive components require an application-owned webhook target.",
+                    nameof(messageId));
+            }
+            query += query.Length == 0 ? "with_components=true" : "&with_components=true";
+        }
+        builder.Query = query;
         return builder.Uri;
     }
 

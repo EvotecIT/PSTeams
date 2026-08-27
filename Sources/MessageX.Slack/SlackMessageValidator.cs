@@ -24,7 +24,30 @@ internal static class SlackMessageValidator {
         }
 
         foreach (var block in message.Blocks) {
-            ValidateBlock(block);
+            ValidateBlock(block, allowInput: false);
+        }
+    }
+
+    internal static void ValidateModal(SlackModalView view) {
+        if (view is null) {
+            throw new ArgumentNullException(nameof(view));
+        }
+        ValidateIdentifier(view.CallbackId, 255, "Slack modal callback identifiers");
+        ValidatePlainText(view.Title, 24, "Slack modal titles");
+        if (view.Submit is not null) {
+            ValidatePlainText(view.Submit, 24, "Slack modal submit labels");
+        }
+        if (view.Close is not null) {
+            ValidatePlainText(view.Close, 24, "Slack modal close labels");
+        }
+        if (view.Blocks.Count is < 1 or > 100) {
+            throw new ArgumentException("Slack modal views require one to one hundred blocks.", nameof(view));
+        }
+        if (view.Submit is null && view.Blocks.Any(static block => block is SlackInputBlock)) {
+            throw new ArgumentException("Slack modal views containing input blocks require a submit label.", nameof(view));
+        }
+        foreach (var block in view.Blocks) {
+            ValidateBlock(block, allowInput: true);
         }
     }
 
@@ -42,12 +65,12 @@ internal static class SlackMessageValidator {
         }
     }
 
-    private static void ValidateBlock(SlackBlock block) {
+    private static void ValidateBlock(SlackBlock block, bool allowInput) {
         if (block is null) {
             throw new ArgumentException("Slack Block Kit collections cannot contain null blocks.", nameof(block));
         }
-        if (block.BlockId?.Length > 255) {
-            throw new ArgumentException("Slack block identifiers cannot exceed 255 characters.", nameof(block));
+        if (block.BlockId?.Length > 255 || block.BlockId?.Any(char.IsControl) == true) {
+            throw new ArgumentException("Slack block identifiers cannot exceed 255 non-control characters.", nameof(block));
         }
 
         if (block is SlackSectionBlock section) {
@@ -63,6 +86,98 @@ internal static class SlackMessageValidator {
             foreach (var field in section.Fields) {
                 ValidateText(field, 2000, "Slack section field text");
             }
+            if (section.Accessory is not null) {
+                ValidateElement(section.Accessory, allowTextInput: false);
+            }
+            return;
+        }
+        if (block is SlackActionsBlock actions) {
+            if (actions.Elements.Count is < 1 or > 25) {
+                throw new ArgumentException("Slack action blocks require one to twenty-five elements.", nameof(block));
+            }
+            foreach (var element in actions.Elements) {
+                ValidateElement(element, allowTextInput: false);
+            }
+            return;
+        }
+        if (block is SlackHeaderBlock header) {
+            ValidatePlainText(header.Text, 150, "Slack header text");
+            return;
+        }
+        if (block is SlackContextBlock context) {
+            if (context.Elements.Count is < 1 or > 10) {
+                throw new ArgumentException("Slack context blocks require one to ten elements.", nameof(block));
+            }
+            foreach (var text in context.Elements) {
+                ValidateText(text, 2000, "Slack context text");
+            }
+            return;
+        }
+        if (block is SlackInputBlock input) {
+            if (!allowInput) {
+                throw new ArgumentException("Slack input blocks are supported only inside modal views.", nameof(block));
+            }
+            ValidatePlainText(input.Label, 2000, "Slack input labels");
+            if (input.Hint is not null) {
+                ValidatePlainText(input.Hint, 2000, "Slack input hints");
+            }
+            ValidateElement(input.Element, allowTextInput: true);
+            return;
+        }
+        if (block is not SlackDividerBlock) {
+            throw new ArgumentException($"Unsupported Slack block type '{block.GetType().Name}'.", nameof(block));
+        }
+    }
+
+    private static void ValidateElement(SlackBlockElement element, bool allowTextInput) {
+        if (element is null) {
+            throw new ArgumentException("Slack element collections cannot contain null values.", nameof(element));
+        }
+        if (element is SlackButtonElement button) {
+            if (allowTextInput) {
+                throw new ArgumentException("Slack input blocks require an input-capable element.", nameof(element));
+            }
+            ValidatePlainText(button.Text, 75, "Slack button text");
+            ValidateIdentifier(button.ActionId, 255, "Slack button action identifiers");
+            if (button.Value?.Length > 2000 || button.Value?.Any(char.IsControl) == true ||
+                button.AccessibilityLabel?.Length > 75 || button.AccessibilityLabel?.Any(char.IsControl) == true) {
+                throw new ArgumentException("Slack button value or accessibility label exceeds provider limits.", nameof(element));
+            }
+            if (button.Url is not null && (!button.Url.IsAbsoluteUri ||
+                !string.Equals(button.Url.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                button.Url.AbsoluteUri.Length > 3000)) {
+                throw new ArgumentException("Slack button URLs must be absolute HTTPS URIs of at most 3000 characters.", nameof(element));
+            }
+            if (button.Style is < SlackButtonStyle.Default or > SlackButtonStyle.Danger) {
+                throw new ArgumentException("Slack button style is invalid.", nameof(element));
+            }
+            return;
+        }
+        if (element is SlackPlainTextInputElement input && allowTextInput) {
+            ValidateIdentifier(input.ActionId, 255, "Slack input action identifiers");
+            if (input.InitialValue?.Length > 3000 || input.MinimumLength is < 0 or > 3000 ||
+                input.MaximumLength is < 1 or > 3000 || input.MinimumLength is not null &&
+                input.MaximumLength is not null && input.MinimumLength > input.MaximumLength) {
+                throw new ArgumentException("Slack plain-text input length settings are invalid.", nameof(element));
+            }
+            if (input.Placeholder is not null) {
+                ValidatePlainText(input.Placeholder, 150, "Slack input placeholders");
+            }
+            return;
+        }
+        throw new ArgumentException($"Unsupported Slack element type '{element.GetType().Name}'.", nameof(element));
+    }
+
+    private static void ValidatePlainText(SlackTextObject text, int maximumLength, string label) {
+        if (text is null || text.Style != SlackTextStyle.PlainText) {
+            throw new ArgumentException($"{label} must use a plain-text object.", nameof(text));
+        }
+        ValidateText(text, maximumLength, label);
+    }
+
+    private static void ValidateIdentifier(string? value, int maximumLength, string label) {
+        if (string.IsNullOrWhiteSpace(value) || value!.Length > maximumLength || value.Any(char.IsControl)) {
+            throw new ArgumentException($"{label} must contain bounded non-control text.", nameof(value));
         }
     }
 
