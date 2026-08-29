@@ -54,7 +54,8 @@ Complete the release decisions and freeze the exact candidate before mandatory v
 - [ ] Enable signing only with the intended release certificate; verify signatures, package contents, repository metadata, and SHA-256 hashes.
 - [ ] Create one content-addressed verification manifest that binds all three frozen commits, public versions, package files, module files, signatures, hashes, build-tool versions, and the exact configuration used to produce them.
 - [ ] Give the manifest a candidate ID derived from its digest. Record every CI, review, live, clean-consumer, and downstream evidence item against that candidate ID and its exact test inputs.
-- [ ] Configure publication to fail when a target NuGet or PowerShell Gallery version already exists; unconditional duplicate skipping is not allowed for a coordinated release.
+- [ ] Configure publication to fail when a target NuGet version, PowerShell Gallery version, Git tag, or GitHub release already exists; unconditional duplicate skipping or tag replacement is not allowed for a coordinated release.
+- [ ] Replace the independent or timestamp-based GitHub publisher paths with one dry-run coordinated plan whose version-derived tag targets the frozen MessageX commit and whose single release contains only the manifest-authorized NuGet and PSTeams artifacts. Keep every upload and GitHub publication switch disabled while building and verifying the candidate.
 
 The verification manifest is immutable after it is generated. Any source, dependency, build, signing, package-content, deployment-configuration, manifest-input, TestimoX, or EventViewerX change creates a new candidate ID and invalidates all prior mandatory evidence. Freeze, sign, and record the replacement candidate in a new manifest, then rerun every mandatory CI, review, live, clean-consumer, and downstream verification gate. Evidence is never copied or reassigned between candidate IDs.
 
@@ -90,7 +91,7 @@ TestimoX and EventViewerX must consume the signed verification packages from the
 - [ ] Rebuild the frozen TestimoX and EventViewerX commits from clean environments using only the signed staged package feed.
 - [ ] Confirm both pilots resolve the exact MessageX versions and hashes recorded in the artifact manifest.
 
-The public package references replace the staged feed only after the coordinated release completes. The pilots are then rebuilt once more against the public packages as release verification.
+Keep the pilot source commits frozen. During coordinated publication, rebuild them with an isolated restore configuration, empty package cache, and package location that expose only NuGet.org and the exact authorized versions. Persist normal public-feed configuration in downstream branches only after the coordinated release completes.
 
 ## Publication authorization
 
@@ -106,13 +107,13 @@ The MessageX NuGet packages, rebuilt PSTeams module, exact-commit tag, and GitHu
 
 - [ ] Reconfirm the accepted commits, candidate ID, manifest digest, signatures, hashes, target-version absence, credentials, and explicit release authorization immediately before upload.
 - [ ] Use only the files named in the authorized manifest as publisher inputs; abort if any local file hash or signer differs.
-- [ ] Publish the complete MessageX NuGet set in dependency order with duplicate skipping disabled, then download every package from NuGet.org and verify its contents, dependencies, repository commit, signatures, and hashes against the authorized manifest during the same guarded release operation.
-- [ ] Publish the matching PSTeams module to PowerShell Gallery in that release operation, download it into clean Windows PowerShell 5.1 and PowerShell 7 environments, and verify its file hashes, manifest metadata, Authenticode signer, import, and representative commands against the authorized manifest.
-- [ ] Create the exact-commit tag and GitHub release with generated release notes and the verified release artifacts.
-- [ ] Rebuild the clean C# consumers and downstream pilots against only the public packages.
-- [ ] Record the final versions, commit, package hashes, signatures, feed URLs, and verification results in the GitHub release.
+- [ ] Publish the complete MessageX NuGet set in dependency order with duplicate skipping disabled. Download every package from NuGet.org, verify the author and repository signatures, compare the immutable payload entries, dependencies, and repository commit with the authorized manifest, and record the repository-signed archive digest separately; do not compare the rewritten public `.nupkg` byte-for-byte with its pre-upload archive hash.
+- [ ] Rebuild and run the clean C# consumers and frozen downstream pilots using only NuGet.org and the exact public MessageX versions. Confirm their resolved payload identities match the authorized manifest before publishing the PowerShell module or GitHub release.
+- [ ] Publish the matching PSTeams module to PowerShell Gallery in that same guarded release operation. Download it into clean Windows PowerShell 5.1 and PowerShell 7 environments, then verify its file hashes, manifest metadata, Authenticode signer, import, and representative commands against the authorized manifest.
+- [ ] Only after both public-feed verification gates pass, create the exact-commit tag and visible GitHub prerelease with generated release notes and the verified release artifacts. Do not enable the GitHub publication step earlier in the operation.
+- [ ] Record the final versions, frozen commits, candidate payload hashes, author signatures, public archive digests and repository signatures, feed URLs, and verification results in the GitHub release.
 
-If any upload or public verification fails, stop the release operation, record the partial public state, and resolve it before announcing the release. NuGet and PowerShell Gallery publication is not transactionally atomic, so the guarded operation and post-upload verification are the fail-closed boundary.
+If any upload or public verification fails, stop the release operation, record the partial public state outside a visible GitHub release, and resolve it before announcing the release. Never overwrite, delete, or reuse an already-public version as recovery; create a new version, candidate ID, manifest, and complete verification run when replacement artifacts are required. NuGet and PowerShell Gallery publication is not transactionally atomic, so the guarded operation and post-upload verification are the fail-closed boundary.
 
 GitHub Releases and generated release notes are the release-history source of truth. Before declaring that history complete, backfill the missing `0.1.0` through `0.6.0` notes from Git history under explicit release authorization. This repository does not maintain a duplicate changelog file.
 
