@@ -37,10 +37,10 @@ Produce an unpublished, reproducible MessageX package set and PSTeams binary mod
 
 Implement the first real consumers before freezing the release candidate. During development they may consume unpublished staged packages, but never repository-relative MessageX source shortcuts.
 
-- [ ] Add a TestimoX notification adapter that keeps `ADPlayground.Notifications` as the domain owner and MessageX as transport.
-- [ ] Add optional EventViewerX provider sinks without pulling every provider into its core engine.
+- [ ] Add an adapter in a private downstream notification consumer that keeps its existing domain notification layer as the owner and MessageX as transport.
+- [ ] Add optional [EventViewerX](https://github.com/EvotecIT/EventViewerX) provider sinks without pulling every provider into its core engine.
 - [ ] Reuse EventViewerX buffering/outbox behavior and keep HTML/email reporting in its existing owner.
-- [ ] Bring the MessageX, TestimoX, and EventViewerX branches through their required CI and review gates without publishing any package or module.
+- [ ] Bring the MessageX, private downstream consumer, and EventViewerX branches through their required CI and review gates without publishing any package or module.
 
 ## Freeze the signed verification candidate
 
@@ -49,7 +49,7 @@ Complete the release decisions and freeze the exact candidate before mandatory v
 - [ ] Choose final public package IDs and confirm whether the PowerShell module remains `PSTeams` or gains a separate `MessageX` identity.
 - [ ] Confirm repository identity; do not rename the GitHub repository as an incidental build change.
 - [ ] Choose the preview version and use three-part public versions.
-- [ ] Freeze accepted exact MessageX, TestimoX, and EventViewerX commits for the complete verification and release operation.
+- [ ] Freeze accepted exact MessageX, private downstream consumer, and EventViewerX commits for the complete verification and release operation.
 - [ ] Rebuild the complete NuGet and PowerShell candidate from the frozen MessageX commit using the intended public three-part PowerForge/PSPublishModule version.
 - [ ] Enable signing only with the intended release certificate; verify signatures, package contents, repository metadata, and SHA-256 hashes.
 - [ ] Create one content-addressed verification manifest that binds all three frozen commits, public versions, package files, module files, signatures, hashes, build-tool versions, and the exact configuration used to produce them.
@@ -57,7 +57,7 @@ Complete the release decisions and freeze the exact candidate before mandatory v
 - [ ] Configure publication to fail when a target NuGet version, PowerShell Gallery version, Git tag, or GitHub release already exists; unconditional duplicate skipping or tag replacement is not allowed for a coordinated release.
 - [ ] Replace the independent or timestamp-based GitHub publisher paths with one dry-run coordinated plan whose version-derived tag targets the frozen MessageX commit and whose single release contains only the manifest-authorized NuGet and PSTeams artifacts. Keep every upload and GitHub publication switch disabled while building and verifying the candidate.
 
-The verification manifest is immutable after it is generated. Any source, dependency, build, signing, package-content, deployment-configuration, manifest-input, TestimoX, or EventViewerX change creates a new candidate ID and invalidates all prior mandatory evidence. Freeze, sign, and record the replacement candidate in a new manifest, then rerun every mandatory CI, review, live, clean-consumer, and downstream verification gate. Evidence is never copied or reassigned between candidate IDs.
+The verification manifest is immutable after it is generated. Any source, dependency, build, signing, package-content, deployment-configuration, manifest-input, private downstream consumer, or EventViewerX change creates a new candidate ID and invalidates all prior mandatory evidence. Freeze, sign, and record the replacement candidate in a new manifest, then rerun every mandatory CI, review, live, clean-consumer, and downstream verification gate. Evidence is never copied or reassigned between candidate IDs.
 
 ## Mandatory live verification before publication
 
@@ -84,11 +84,11 @@ Use clean environments with no repository-relative source, shared MessageX packa
 
 ## Mandatory downstream verification before publication
 
-TestimoX and EventViewerX must consume the signed verification packages from the staged feed, never repository-relative source shortcuts. These pilots prove that the public boundaries work for real Evotec consumers before the first release.
+A private downstream notification consumer and EventViewerX must consume the signed verification packages from the staged feed, never repository-relative source shortcuts. These pilots prove that the public boundaries work for real consumers before the first release.
 
 - [ ] Validate incident, recovery, aggregation, suppression, restart, backpressure, and duplicate-delivery behavior.
 - [ ] Validate burst handling, cancellation, throttling, restart, and partial multi-target failure.
-- [ ] Rebuild the frozen TestimoX and EventViewerX commits from clean environments using only the signed staged package feed.
+- [ ] Rebuild the frozen private downstream consumer and EventViewerX commits from clean environments using only the signed staged package feed.
 - [ ] Confirm both pilots resolve the exact MessageX versions and hashes recorded in the artifact manifest.
 
 Keep the pilot source commits frozen. During coordinated publication, rebuild them with an isolated restore configuration, empty package cache, and package location that expose only NuGet.org and the exact authorized versions. Persist normal public-feed configuration in downstream branches only after the coordinated release completes.
