@@ -8,9 +8,9 @@ PSTeams is evolving from a Teams-focused PowerShell module into MessageX: reusab
 
 ## Release status
 
-The PowerShell Gallery currently contains the historical PSTeams release. The MessageX NuGet packages and the rebuilt PSTeams binary module described below are release candidates in this repository; they are not public packages yet.
+The PowerShell Gallery currently contains the historical PSTeams release. The MessageX NuGet packages and the rebuilt PSTeams binary module described below are unpublished release candidates in this repository.
 
-Do not use `Install-Module PSTeams` as proof that the MessageX code is installed. Before publication, build the staged artifacts locally and test them as described in [ROADMAP.md](ROADMAP.md).
+Do not use `Install-Module PSTeams` as proof that the MessageX code is installed. Nothing in the MessageX package set will be published until the mandatory live-provider, clean-consumer, downstream-pilot, signing, and exact-head release gates in [ROADMAP.md](ROADMAP.md) pass. The MessageX NuGet packages, rebuilt PSTeams module, tag, and GitHub release will then ship as one coordinated release.
 
 ## Design
 
