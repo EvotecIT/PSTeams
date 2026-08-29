@@ -33,11 +33,25 @@ Produce an unpublished, reproducible MessageX package set and PSTeams binary mod
 - Security, public API, dependency, package-content, and independent code reviews are complete for the merged candidate.
 - Trim/Native AOT analysis is documented as a supported-boundary limitation until provider serialization uses source-generated JSON metadata.
 
+## Freeze the signed verification candidate
+
+Complete the release decisions and freeze the exact candidate before mandatory verification begins. Every subsequent gate applies to this signed candidate, not an earlier staging build.
+
+- [ ] Choose final public package IDs and confirm whether the PowerShell module remains `PSTeams` or gains a separate `MessageX` identity.
+- [ ] Confirm repository identity; do not rename the GitHub repository as an incidental build change.
+- [ ] Choose the preview version and use three-part public versions.
+- [ ] Freeze one accepted exact commit for every package, module, downstream-pilot, tag, and release artifact.
+- [ ] Rebuild the complete NuGet and PowerShell candidate from that commit using the intended public three-part PowerForge/PSPublishModule version.
+- [ ] Enable signing only with the intended release certificate; verify signatures, package contents, repository metadata, and SHA-256 hashes.
+
+Any source, dependency, build, signing, package-content, or deployment-configuration change that can affect the candidate invalidates the verification evidence. Freeze and sign the replacement candidate, then rerun every mandatory live, clean-consumer, and downstream verification gate.
+
 ## Mandatory live verification before publication
 
-These checks are release blockers. Run them only against the designated test installations with credentials supplied through approved secret storage. Missing credentials or an unavailable test environment keeps the candidate unpublished; it does not turn live verification into an optional gate.
+These checks are release blockers and must exercise the exact signed verification candidate. Run them only against the designated test installations with credentials supplied through approved secret storage. Missing credentials or an unavailable test environment keeps the candidate unpublished; it does not turn live verification into an optional gate.
 
 - [ ] Teams Workflow notification with a webhook-supported Adaptive Card in the designated test tenant.
+- [ ] Authenticated Teams app HTTP activity and Adaptive Card action through the real test installation, endpoint route, request verification, routing, and action dispatch path.
 - [ ] Slack bot send, lifecycle, external file upload, button response, and modal open in the designated test workspace.
 - [ ] Discord bot send, attachment, component/modal interaction, follow-up, edit, and delete in the designated test guild.
 - [ ] Verify negative authentication, scope/permission, expiry, replay, and rate-limit behavior without exposing response bodies or secrets.
@@ -45,7 +59,7 @@ These checks are release blockers. Run them only against the designated test ins
 
 ## Mandatory downstream verification before publication
 
-TestimoX and EventViewerX must consume staged packages, never repository-relative source shortcuts. These pilots prove that the public boundaries work for real Evotec consumers before the first release.
+TestimoX and EventViewerX must consume the signed verification packages from the staged feed, never repository-relative source shortcuts. These pilots prove that the public boundaries work for real Evotec consumers before the first release.
 
 - [ ] Add a TestimoX notification adapter that keeps `ADPlayground.Notifications` as the domain owner and MessageX as transport.
 - [ ] Validate incident, recovery, aggregation, suppression, restart, backpressure, and duplicate-delivery behavior.
@@ -56,22 +70,17 @@ TestimoX and EventViewerX must consume staged packages, never repository-relativ
 
 The public package references replace the staged feed only after the coordinated release completes. The pilots are then rebuilt once more against the public packages as release verification.
 
-## Release decisions and signed candidate
+## Publication authorization
 
-Publication remains a separate, explicitly authorized operation. Before requesting that authorization:
+Publication remains a separate, explicitly authorized operation. Request that authorization only after the exact signed candidate passes every mandatory gate above.
 
-- [ ] Choose final public package IDs and confirm whether the PowerShell module remains `PSTeams` or gains a separate `MessageX` identity.
-- [ ] Confirm repository identity; do not rename the GitHub repository as an incidental build change.
-- [ ] Choose the preview version and use three-part public versions.
-- [ ] Freeze one accepted exact commit for every package, module, downstream-pilot, tag, and release artifact.
-- [ ] Rebuild the complete NuGet and PowerShell candidate from that commit using the intended public three-part PowerForge/PSPublishModule version.
-- [ ] Enable signing only with the intended release certificate; verify signatures, package contents, repository metadata, and SHA-256 hashes.
-- [ ] Repeat clean C# restores, PowerShell 5.1/7 imports, provider smoke tests, and downstream-pilot builds from only the signed staged artifacts.
+- [ ] Confirm the recorded verification commit matches every signed staged artifact and completed mandatory gate.
 - [ ] Confirm NuGet, PowerShell Gallery, and GitHub credentials and produce a dry-run publication plan without uploading anything.
+- [ ] Obtain explicit authorization for this exact commit, version set, artifact manifest, and coordinated release operation.
 
 ## Coordinated publication
 
-The MessageX NuGet packages, rebuilt PSTeams module, exact-commit tag, and GitHub release are one release unit. Dependency order is internal sequencing, not permission to leave a partial release as the supported state. Do not begin this section until every mandatory verification and signed-candidate item above is complete and publication has been explicitly authorized.
+The MessageX NuGet packages, rebuilt PSTeams module, exact-commit tag, and GitHub release are one release unit. Dependency order is internal sequencing, not permission to leave a partial release as the supported state. Do not begin this section until every candidate-freeze, mandatory-verification, and authorization item above is complete.
 
 - [ ] Reconfirm the accepted commit, artifact manifest, signatures, hashes, feed availability, credentials, and explicit release authorization immediately before upload.
 - [ ] Publish the complete MessageX NuGet set in dependency order and verify every package from NuGet.org during the same guarded release operation.
