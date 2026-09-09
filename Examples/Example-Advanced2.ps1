@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot 'Import-MessageX.ps1')
 
 # This is fake TeamsID - you need to use yours
 $TeamsID = 'https://outlook.office.ad05-32e40'

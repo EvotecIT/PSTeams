@@ -22,10 +22,11 @@ internal static class TeamsPowerShellImageSupport {
     }
 
     public static string ResolveBuiltInImage(string imageName) {
+        var fileName = imageName.ToLowerInvariant() + ".jpg";
         var assemblyDirectory = Path.GetDirectoryName(typeof(TeamsPowerShellImageSupport).Assembly.Location) ?? string.Empty;
         var candidates = new[] {
-            Path.GetFullPath(Path.Combine(assemblyDirectory, "..", "..", "Images", $"{imageName}.jpg")),
-            Path.GetFullPath(Path.Combine(assemblyDirectory, "..", "..", "..", "..", "Module", "PSTeams", "Images", $"{imageName}.jpg"))
+            Path.GetFullPath(Path.Combine(assemblyDirectory, "..", "..", "Images", fileName)),
+            Path.GetFullPath(Path.Combine(assemblyDirectory, "..", "..", "..", "..", "..", "Module", "MessageX", "Images", fileName))
         };
 
         var imagePath = candidates.FirstOrDefault(File.Exists);

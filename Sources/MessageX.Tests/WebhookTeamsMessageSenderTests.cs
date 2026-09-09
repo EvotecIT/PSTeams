@@ -257,13 +257,30 @@ public sealed class WebhookTeamsMessageSenderTests {
         Assert.Equal("https://example.test/workflows/secret-token", handler.RequestUri?.AbsoluteUri);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task ConnectorBodyThrottlingDoesNotOverrideWorkflowResponseContracts(bool workflow, bool expectedSuccess) {
+        using var handler = new RecordingHandler(responseBody: "Microsoft Teams endpoint returned HTTP error 429");
+        using var sender = new WebhookTeamsMessageSender(new HttpClient(handler), disposeHttpClient: true);
+        var uri = new Uri("https://example.test/secret-token");
+        var target = workflow ? TeamsMessageTarget.ForWorkflowWebhook(uri) : TeamsMessageTarget.ForIncomingWebhook(uri);
+        var result = await sender.SendAsync(new TeamsMessageRequest { Text = "Release ready" }, target,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(expectedSuccess, result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(workflow ? MessageErrorKind.Unknown : MessageErrorKind.RateLimited, result.ErrorKind);
+    }
+
     private sealed class RecordingHandler : HttpMessageHandler {
         private readonly HttpStatusCode _statusCode;
         private readonly string _correlationId;
+        private readonly string _responseBody;
 
-        public RecordingHandler(HttpStatusCode statusCode = HttpStatusCode.OK, string correlationId = "request-42") {
+        public RecordingHandler(HttpStatusCode statusCode = HttpStatusCode.OK, string correlationId = "request-42", string responseBody = "accepted") {
             _statusCode = statusCode;
             _correlationId = correlationId;
+            _responseBody = responseBody;
         }
 
         public Uri? RequestUri { get; private set; }
@@ -275,7 +292,7 @@ public sealed class WebhookTeamsMessageSenderTests {
             _ = await request.Content!.ReadAsStringAsync(cancellationToken);
 
             var response = new HttpResponseMessage(_statusCode) {
-                Content = new StringContent("accepted", Encoding.UTF8, "text/plain")
+                Content = new StringContent(_responseBody, Encoding.UTF8, "text/plain")
             };
             if (_statusCode == HttpStatusCode.TooManyRequests) {
                 response.Headers.TryAddWithoutValidation("Retry-After", "30");

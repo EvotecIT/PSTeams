@@ -1,11 +1,11 @@
 ﻿@{
-    RootModule           = 'PSTeams.psm1'
-    ModuleVersion        = '2.4.1'
-    GUID                 = 'a46c3b0b-5687-4d62-89c5-753ae01e0926'
+    RootModule           = 'MessageX.psm1'
+    ModuleVersion        = '0.1.0'
+    GUID                 = 'd62b583e-c92b-4ac1-b83d-b7d710e48cb5'
     Author               = 'Przemyslaw Klys'
     CompanyName          = 'Evotec'
     Copyright            = '(c) 2011 - 2026 Przemyslaw Klys @ Evotec. All rights reserved.'
-    Description          = 'PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.'
+    Description          = 'Compose and deliver Teams, Slack, and Discord messages with typed MessageX libraries and compiled PowerShell cmdlets.'
     PowerShellVersion    = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
     FunctionsToExport    = @()
@@ -15,8 +15,7 @@
         PSData = @{
             Tags                       = @('Teams', 'Slack', 'Discord', 'Microsoft', 'MSTeams', 'Notifications', 'Webhook', 'PowerShell', 'Windows', 'MacOS', 'Linux')
             ProjectUri                 = 'https://github.com/EvotecIT/PSTeams'
-            ReleaseNotes               = 'The current migration keeps PSTeams command names while moving implementation to MessageX.Teams and MessageX.PowerShell.'
-            IconUri                    = 'https://statics.teams.microsoft.com/evergreen-assets/apps/teamscmdlets_largeimage.png'
+            ReleaseNotes               = 'Initial MessageX candidate. See MIGRATION.md for the transition from historical PSTeams and PSDiscord modules.'
             RequireLicenseAcceptance   = $false
             ExternalModuleDependencies = @()
         }

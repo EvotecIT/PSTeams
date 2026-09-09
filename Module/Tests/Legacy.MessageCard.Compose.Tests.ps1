@@ -1,7 +1,7 @@
 Describe 'Legacy connector-card migration cmdlets' {
     BeforeEach {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
     }
 
     It 'creates typed connector-card building blocks from migrated cmdlets' {

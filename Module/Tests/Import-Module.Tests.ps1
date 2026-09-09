@@ -1,14 +1,10 @@
-Describe 'PSTeams module migration shell' {
-    BeforeAll {
-        $script:baselinePath = Join-Path -Path $PSScriptRoot -ChildPath 'Baselines'
-    }
-
+Describe 'MessageX module exports' {
     BeforeEach {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
     }
 
-    It 'exports legacy functions and migrated cmdlets together' {
-        $module = Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force -PassThru
+    It 'exports the supported compiled commands' {
+        $module = Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force -PassThru
 
         $module.ExportedFunctions.Keys | Should -BeNullOrEmpty
         $module.ExportedFunctions.Keys | Should -Not -Contain 'New-AdaptiveCard'
@@ -69,7 +65,7 @@ Describe 'PSTeams module migration shell' {
 
         (Get-Alias -Name 'New-HeroImage').Definition | Should -Be 'New-AdaptiveImage'
         (Get-Alias -Name 'New-ThumbnailImage').Definition | Should -Be 'New-AdaptiveImage'
-        (Get-Command -Name 'Convert-Color' -Module PSTeams -ErrorAction SilentlyContinue) | Should -BeNullOrEmpty
+        (Get-Command -Name 'Convert-Color' -Module MessageX -ErrorAction SilentlyContinue) | Should -BeNullOrEmpty
 
         $module.ExportedCmdlets.Keys | Should -Contain 'ConvertTo-TeamsFact'
         $module.ExportedCmdlets.Keys | Should -Contain 'ConvertTo-TeamsJson'
@@ -121,25 +117,4 @@ Describe 'PSTeams module migration shell' {
         $module.ExportedCmdlets.Keys | Should -Contain 'Send-TeamsMessageBody'
     }
 
-    It 'preserves every legacy command name on main' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force | Out-Null
-
-        $legacyNamesJson = Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyCommands.json') -Raw
-        $legacyNames = @(ConvertFrom-Json $legacyNamesJson | ForEach-Object { $_ })
-        $currentNames = @(Get-Command -Module PSTeams | Select-Object -ExpandProperty Name | Sort-Object)
-
-        $missing = @($legacyNames | Where-Object { $_ -notin $currentNames } | Sort-Object)
-        $missing | Should -BeNullOrEmpty
-    }
-
-    It 'preserves every legacy alias target on main' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force | Out-Null
-
-        $legacyAliasesJson = Get-Content (Join-Path -Path $baselinePath -ChildPath 'LegacyAliases.json') -Raw
-        $legacyAliases = @(ConvertFrom-Json $legacyAliasesJson | ForEach-Object { $_ })
-        $currentAliases = @(Get-Alias | Where-Object Source -eq 'PSTeams' | ForEach-Object { '{0}=>{1}' -f $_.Name, $_.Definition } | Sort-Object)
-
-        $missing = @($legacyAliases | Where-Object { $_ -notin $currentAliases } | Sort-Object)
-        $missing | Should -BeNullOrEmpty
-    }
 }

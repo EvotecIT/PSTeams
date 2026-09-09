@@ -1,15 +1,15 @@
 ---
-Module Name: PSTeams
-Module Guid: a46c3b0b-5687-4d62-89c5-753ae01e0926
+Module Name: MessageX
+Module Guid: d62b583e-c92b-4ac1-b83d-b7d710e48cb5
 Download Help Link: https://github.com/EvotecIT/PSTeams
-Help Version: 2.4.1
+Help Version: 0.1.0
 Locale: en-US
 ---
-# PSTeams Module
+# MessageX Module
 ## Description
-PSTeams provides typed Teams, Slack, and Discord message composition and delivery through MessageX libraries and thin compiled PowerShell cmdlets.
+Compose and deliver Teams, Slack, and Discord messages with typed MessageX libraries and compiled PowerShell cmdlets.
 
-## PSTeams Cmdlets
+## MessageX Cmdlets
 ### [Add-DiscordReaction](Add-DiscordReaction.md)
 Adds the authenticated Discord bot's reaction to a message.
 

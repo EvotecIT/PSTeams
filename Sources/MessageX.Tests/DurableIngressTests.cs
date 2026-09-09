@@ -885,6 +885,9 @@ public sealed partial class DurableIngressTests {
             "delivered",
             await handler.Delivered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         Assert.Equal(1, store.OutboxClaimFailures);
+        var outboxHealth = provider.GetRequiredService<IMessageDurableOutboxHealth>().GetHealthSnapshot();
+        Assert.Equal(1, outboxHealth.Unavailable);
+        Assert.NotNull(outboxHealth.LastFailureAt);
         for (var index = workers.Length - 1; index >= 0; index--) {
             await workers[index].StopAsync(TestContext.Current.CancellationToken);
         }

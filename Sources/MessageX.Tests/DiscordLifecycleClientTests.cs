@@ -549,6 +549,29 @@ public sealed class DiscordLifecycleClientTests {
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OrdinaryWebhookUpdatesAndClearsLinkButtons(bool includeButton) {
+        const string body = "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345679\"}";
+        using var handler = new QueueHandler(Response(HttpStatusCode.OK, body), Response(HttpStatusCode.OK, body));
+        using var client = new DiscordWebhookLifecycleClient(
+            DiscordMessageTarget.ForIncomingWebhook(WebhookUri, "123456789012345679"),
+            new HttpClient(handler), disposeHttpClient: true);
+        var message = new DiscordMessageRequest { Content = "Updated release" };
+        if (includeButton) {
+            message.Components.Add(new DiscordActionRow { Components = { new DiscordButton {
+                Label = "Release notes", Style = DiscordButtonStyle.Link, Url = new Uri("https://example.test/release")
+            } } });
+        }
+        var result = await client.UpdateAsync(message, WebhookReference(), TestContext.Current.CancellationToken);
+        Assert.True(result.IsSuccess);
+        var request = handler.Requests.Last();
+        Assert.Contains("with_components=true", request.Uri.Query, StringComparison.Ordinal);
+        using var payload = JsonDocument.Parse(request.Body!);
+        Assert.Equal(includeButton ? 1 : 0, payload.RootElement.GetProperty("components").GetArrayLength());
+    }
+
     private sealed record RecordedRequest(
         HttpMethod Method,
         Uri Uri,

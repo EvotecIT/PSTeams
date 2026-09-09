@@ -4,7 +4,7 @@ This roadmap tracks the release candidate, not the history of the migration. Com
 
 ## Release objective
 
-Produce an unpublished, reproducible MessageX package set and PSTeams binary module that can be consumed from clean environments and proven against the supported providers. No NuGet package, PowerShell module, tag, or GitHub release is published until every mandatory pre-publication gate below passes.
+Produce an unpublished, reproducible MessageX package set and MessageX PowerShell module that can be consumed from clean environments and proven against the supported providers. No NuGet package, PowerShell module, tag, or GitHub release is published until every mandatory pre-publication gate below passes.
 
 ## Implemented candidate
 
@@ -28,42 +28,44 @@ Produce an unpublished, reproducible MessageX package set and PSTeams binary mod
 
 - The provider libraries, hosting packages, persistence adapter, and compiled PowerShell surface are merged on `main` with exact-head CI and review feedback settled.
 - Release builds and the complete contract suites pass on the supported Windows, Linux, .NET, and PowerShell lanes.
-- All NuGet packages and the PSTeams module have been built into isolated staging locations with publication and signing disabled.
+- All NuGet packages and the MessageX module have been built into isolated staging locations with publication and signing disabled.
 - Package metadata, contents, dependencies, generated command documentation, clean C# consumers, and representative PowerShell commands have been validated from staged artifacts.
 - Security, public API, dependency, package-content, and independent code reviews are complete for the merged candidate.
 - Trim/Native AOT analysis is documented as a supported-boundary limitation until provider serialization uses source-generated JSON metadata.
 
-## Prepare downstream pilots
+## Prove delivery before enabling automation
 
-Implement the first real consumers before freezing the release candidate. During development they may consume unpublished staged packages, but never repository-relative MessageX source shortcuts.
+Complete the supported provider and package proof before enabling release announcements. Start with a small test project or one narrowly scoped PSPublishModule release event. Broader monitoring consumers follow after this pilot.
 
-- [ ] Add an adapter in a private downstream notification consumer that keeps its existing domain notification layer as the owner and MessageX as transport.
-- [ ] Add optional [EventViewerX](https://github.com/EvotecIT/EventViewerX) provider sinks without pulling every provider into its core engine.
-- [ ] Reuse EventViewerX buffering/outbox behavior and keep HTML/email reporting in its existing owner.
-- [ ] Bring the MessageX, private downstream consumer, and EventViewerX branches through their required CI and review gates without publishing any package or module.
+- [ ] Complete local provider regressions, staged-package consumers, module imports, and supported-runtime tests.
+- [ ] Complete the designated live provider matrix below using disposable test destinations.
+- [ ] Select the pilot repository and record its release event, destination IDs, credential references, and owner.
+- [ ] Implement the pilot using staged MessageX packages. Keep release readiness in PowerForge, transport in MessageX, and persistence through DbaClientX.
+- [ ] Prove duplicate suppression, provider backoff, restart, ambiguous delivery, correction/edit behavior, and partial destination failure before enabling announcements.
+- [ ] Settle the MessageX and pilot changes through their CI and review gates without publishing packages.
 
 ## Freeze the signed verification candidate
 
 Complete the release decisions and freeze the exact candidate before mandatory verification begins. Every subsequent gate applies to this signed candidate, not an earlier staging build.
 
-- [ ] Choose final public package IDs and confirm whether the PowerShell module remains `PSTeams` or gains a separate `MessageX` identity.
+- [x] Use `MessageX.*` provider packages and a separate `MessageX` PowerShell module; do not add PSTeams or PSDiscord compatibility wrappers.
 - [ ] Confirm repository identity; do not rename the GitHub repository as an incidental build change.
-- [ ] Choose the preview version and use three-part public versions.
-- [ ] Freeze accepted exact MessageX, private downstream consumer, and EventViewerX commits for the complete verification and release operation.
+- [x] Use `0.1.0` as the initial local candidate version; reconfirm its availability before publication.
+- [ ] Freeze accepted exact MessageX and selected pilot commits for the complete verification and release operation.
 - [ ] Rebuild the complete NuGet and PowerShell candidate from the frozen MessageX commit using the intended public three-part PowerForge/PSPublishModule version.
 - [ ] Enable signing only with the intended release certificate; verify signatures, package contents, repository metadata, and SHA-256 hashes.
-- [ ] Create one content-addressed verification manifest that binds all three frozen commits, public versions, package files, module files, signatures, hashes, build-tool versions, and the exact configuration used to produce them.
+- [ ] Create one content-addressed verification manifest that binds all frozen commits, public versions, package files, module files, signatures, hashes, build-tool versions, and the exact configuration used to produce them.
 - [ ] Give the manifest a candidate ID derived from its digest. Record every CI, review, live, clean-consumer, and downstream evidence item against that candidate ID and its exact test inputs.
 - [ ] Configure publication to fail when a target NuGet version, PowerShell Gallery version, Git tag, or GitHub release already exists; unconditional duplicate skipping or tag replacement is not allowed for a coordinated release.
-- [ ] Replace the independent or timestamp-based GitHub publisher paths with one dry-run coordinated plan whose version-derived tag targets the frozen MessageX commit and whose single release contains only the manifest-authorized NuGet and PSTeams artifacts. Keep every upload and GitHub publication switch disabled while building and verifying the candidate.
+- [ ] Replace the independent or timestamp-based GitHub publisher paths with one dry-run coordinated plan whose version-derived tag targets the frozen MessageX commit and whose single release contains only the manifest-authorized NuGet and MessageX artifacts. Keep every upload and GitHub publication switch disabled while building and verifying the candidate.
 
-The verification manifest is immutable after it is generated. Any source, dependency, build, signing, package-content, deployment-configuration, manifest-input, private downstream consumer, or EventViewerX change creates a new candidate ID and invalidates all prior mandatory evidence. Freeze, sign, and record the replacement candidate in a new manifest, then rerun every mandatory CI, review, live, clean-consumer, and downstream verification gate. Evidence is never copied or reassigned between candidate IDs.
+The verification manifest is immutable after it is generated. Any source, dependency, build, signing, package-content, deployment-configuration, manifest-input, or pilot source change creates a new candidate ID and invalidates all prior mandatory evidence. Freeze, sign, and record the replacement candidate in a new manifest, then rerun every mandatory CI, review, live, clean-consumer, and downstream verification gate. Evidence is never copied or reassigned between candidate IDs.
 
 ## Mandatory live verification before publication
 
 These checks are release blockers and must exercise the exact signed verification candidate. Run them only against the designated test installations with credentials supplied through approved secret storage. Missing credentials or an unavailable test environment keeps the candidate unpublished; it does not turn live verification into an optional gate.
 
-- [ ] Teams Workflow and incoming-webhook notifications with webhook-supported Adaptive Cards in the designated test tenant.
+- [ ] Teams Workflow notifications with webhook-supported Adaptive Cards in the designated test tenant. Verify both HTTP acceptance and the resulting Workflow run and channel message. Legacy Office 365 connector URLs are retired and are outside live support.
 - [ ] Authenticated Teams app HTTP activity and Adaptive Card action through the real test installation, endpoint route, request verification, routing, and action dispatch path.
 - [ ] Slack incoming-webhook notification plus bot send, reply, update, delete, reaction, conversation resolution, external file upload, button response, and modal open in the designated test workspace.
 - [ ] Verified Slack Events API event, slash command, block action, shortcut, and view submission through request verification, acknowledgement, routing, and dispatch.
@@ -78,18 +80,18 @@ Use clean environments with no repository-relative source, shared MessageX packa
 
 - [ ] Restore and build representative C# notification and hosting consumers using only the signed staged NuGet feed.
 - [ ] Run those consumers for every supported C# runtime family; verify host startup, actual loaded assembly locations, versions, and hashes, plus one provider-neutral dispatch path.
-- [ ] Install the signed staged PSTeams module and import it in Windows PowerShell 5.1 and supported PowerShell 7 environments.
+- [ ] Install the signed staged MessageX module and import it in Windows PowerShell 5.1 and supported PowerShell 7 environments.
 - [ ] Exercise representative Teams, Slack, and Discord composition and delivery commands through the installed signed module.
 - [ ] Confirm the consumers and module resolve only the frozen package/module versions recorded in the artifact manifest.
 
 ## Mandatory downstream verification before publication
 
-A private downstream notification consumer and EventViewerX must consume the signed verification packages from the staged feed, never repository-relative source shortcuts. These pilots prove that the public boundaries work for real consumers before the first release.
+The selected announcement pilot must consume the signed verification packages from the staged feed, never repository-relative source shortcuts. The pilot proves that the public boundaries work for real consumers before the first release.
 
 - [ ] Validate incident, recovery, aggregation, suppression, restart, backpressure, and duplicate-delivery behavior.
 - [ ] Validate burst handling, cancellation, throttling, restart, and partial multi-target failure.
-- [ ] Rebuild the frozen private downstream consumer and EventViewerX commits from clean environments using only the signed staged package feed.
-- [ ] Confirm both pilots resolve the exact MessageX versions and hashes recorded in the artifact manifest.
+- [ ] Rebuild the frozen selected pilot commits from clean environments using only the signed staged package feed.
+- [ ] Confirm the pilot resolves the exact MessageX versions and hashes recorded in the artifact manifest.
 
 Keep the pilot source commits frozen. During coordinated publication, rebuild them with an isolated restore configuration, empty package cache, and package location that expose only NuGet.org and the exact authorized versions. Persist normal public-feed configuration in downstream branches only after the coordinated release completes.
 
@@ -103,13 +105,13 @@ Publication remains a separate, explicitly authorized operation. Request that au
 
 ## Coordinated publication
 
-The MessageX NuGet packages, rebuilt PSTeams module, exact-commit tag, and GitHub release are one release unit. Dependency order is internal sequencing, not permission to leave a partial release as the supported state. Do not begin this section until every candidate-freeze, mandatory-verification, and authorization item above is complete.
+The MessageX NuGet packages, rebuilt MessageX module, exact-commit tag, and GitHub release are one release unit. Dependency order is internal sequencing, not permission to leave a partial release as the supported state. Do not begin this section until every candidate-freeze, mandatory-verification, and authorization item above is complete.
 
 - [ ] Reconfirm the accepted commits, candidate ID, manifest digest, signatures, hashes, target-version absence, credentials, and explicit release authorization immediately before upload.
 - [ ] Use only the files named in the authorized manifest as publisher inputs; abort if any local file hash or signer differs.
 - [ ] Publish the complete MessageX NuGet set in dependency order with duplicate skipping disabled. Download every package from NuGet.org, verify the author and repository signatures, compare the immutable payload entries, dependencies, and repository commit with the authorized manifest, and record the repository-signed archive digest separately; do not compare the rewritten public `.nupkg` byte-for-byte with its pre-upload archive hash.
 - [ ] Rebuild and run the clean C# consumers and frozen downstream pilots using only NuGet.org and the exact public MessageX versions. Confirm their resolved payload identities match the authorized manifest before publishing the PowerShell module or GitHub release.
-- [ ] Publish the matching PSTeams module to PowerShell Gallery in that same guarded release operation. Download it into clean Windows PowerShell 5.1 and PowerShell 7 environments, then verify its file hashes, manifest metadata, Authenticode signer, import, and representative commands against the authorized manifest.
+- [ ] Publish the matching MessageX module to PowerShell Gallery in that same guarded release operation. Download it into clean Windows PowerShell 5.1 and PowerShell 7 environments, then verify its file hashes, manifest metadata, Authenticode signer, import, and representative commands against the authorized manifest.
 - [ ] Only after both public-feed verification gates pass, create the exact-commit tag and visible GitHub prerelease with generated release notes and the verified release artifacts. Do not enable the GitHub publication step earlier in the operation.
 - [ ] Record the final versions, frozen commits, candidate payload hashes, author signatures, public archive digests and repository signatures, feed URLs, and verification results in the GitHub release.
 

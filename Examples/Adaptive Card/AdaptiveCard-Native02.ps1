@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot '..\Import-MessageX.ps1')
 
 New-AdaptiveCard -Uri $Env:TEAMSPESTERID {
     New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Test'

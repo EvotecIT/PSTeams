@@ -1,10 +1,18 @@
-Describe 'MessageX binary cmdlets through PSTeams' {
+Describe 'MessageX binary cmdlets' {
     BeforeEach {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'loads built-in activity images with their actual media type' {
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
+        $section = New-TeamsSection -ActivityImage Alert -ActivityText 'Validation'
+        $section.ActivityImage | Should -Match '^data:image/png;base64,'
+        $bytes = [Convert]::FromBase64String(($section.ActivityImage -split ',', 2)[1])
+        [BitConverter]::ToString($bytes[0..7]) | Should -Be '89-50-4E-47-0D-0A-1A-0A'
     }
 
     It 'renders adaptive card JSON from typed cmdlets only' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $richText = New-TeamsAdaptiveRichTextBlock -Inlines @(
             New-TeamsAdaptiveTextRun -Text 'Run ' -Color Default
@@ -73,7 +81,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'creates standard and workflow webhook targets' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $incoming = New-TeamsWebhookTarget -Uri 'https://example.test/incoming'
         $workflow = New-TeamsWebhookTarget -Uri 'https://example.test/workflow' -Workflow -Destination Channel
@@ -87,7 +95,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'renders connector-card JSON from typed Teams message cmdlets' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42' -Summary 'Build summary' -Color DodgerBlue -HideOriginalBody -Sections @(
             New-TeamsSection -Title 'Build summary' -ActivityText 'Pipeline failed' -ActivityDetails @(
@@ -108,7 +116,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'renders connector-card JSON when connector-only fields are set without sections' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42' -Color AlbescentWhite -HideOriginalBody
         $json = $message | ConvertTo-TeamsJson
@@ -120,7 +128,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'treats null sections input as empty when building a typed Teams message' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $sections = $null
         { $message = New-TeamsMessage -Title 'Build failed' -Sections $sections } | Should -Not -Throw
@@ -129,7 +137,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'renders typed wrapper-card objects through ConvertTo-TeamsJson' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text 'Monorail text' -Images @(
             New-TeamsCardImage -Url 'https://example.test/monorail.jpg' -AlternateText 'Monorail'
@@ -162,7 +170,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'wraps typed wrapper-card JSON through Send-TeamsMessageBody' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
             New-TeamsCardImage -Url 'https://example.test/monorail.jpg'
@@ -177,16 +185,16 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'supports Send-TeamsMessage in WhatIf mode with typed input' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $message = New-TeamsMessage -Text 'Hello from MessageX'
         $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
 
-        { Send-TeamsMessage -Message $message -Target $target -Proxy 'http://proxy.example.test:8080' -TimeoutSeconds 15 -UserAgent 'PSTeams.Tests/1.0' -WhatIf } | Should -Not -Throw
+        { Send-TeamsMessage -Message $message -Target $target -Proxy 'http://proxy.example.test:8080' -TimeoutSeconds 15 -UserAgent 'MessageX.Tests/1.0' -WhatIf } | Should -Not -Throw
     }
 
     It 'supports Send-TeamsMessage in WhatIf mode with typed wrapper-card input' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
             New-TeamsCardImage -Url 'https://example.test/monorail.jpg'
@@ -205,14 +213,14 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'exposes the migrated Send-TeamsMessage cmdlet as the active public command' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         (Get-Command Send-TeamsMessage).CommandType | Should -Be 'Cmdlet'
-        (Get-Command Send-TeamsMessage).Source | Should -Be 'PSTeams'
+        (Get-Command Send-TeamsMessage).Source | Should -Be 'MessageX'
     }
 
     It 'exposes consistent enterprise transport parameters on every webhook send entry point' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $commands = @(
             'Send-TeamsMessage'
@@ -232,7 +240,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'keeps provider response bodies out of default PowerShell delivery errors' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $result = [MessageX.Teams.TeamsDeliveryResult]::new()
         $result.StatusCode = 429
@@ -269,7 +277,7 @@ Describe 'MessageX binary cmdlets through PSTeams' {
     }
 
     It 'owns one reusable Teams client lease for the complete cmdlet lifecycle' {
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $cmdlet = [MessageX.PowerShell.CmdletSendTeamsMessageBody]::new()
         $baseType = [MessageX.PowerShell.TeamsWebhookCmdletBase]

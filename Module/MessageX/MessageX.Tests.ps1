@@ -58,7 +58,7 @@ Write-Color
 
 $testsPath = Join-Path -Path $PSScriptRoot -ChildPath '..\Tests'
 if (-not (Test-Path -LiteralPath $testsPath)) {
-    throw "Path $testsPath doesn't contain the active PSTeams migration tests. Failing tests."
+    throw "Path $testsPath doesn't contain the active MessageX migration tests. Failing tests."
 }
 
 Import-Module Pester -Force

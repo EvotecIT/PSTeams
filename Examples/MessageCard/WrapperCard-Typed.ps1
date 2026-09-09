@@ -1,4 +1,4 @@
-. $PSScriptRoot\..\Import-PSTeams.ps1
+. $PSScriptRoot\..\Import-MessageX.ps1
 
 $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
 

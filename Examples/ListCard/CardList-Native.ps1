@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot '..\Import-MessageX.ps1')
 
 New-CardList {
     New-CardListItem -Type file -Title 'Report' -SubTitle 'teams > new > design' -TapType openUrl -TapValue "https://contoso.sharepoint.com/teams/new/Shared%20Documents/Report.xlsx" -TapAction editOnline

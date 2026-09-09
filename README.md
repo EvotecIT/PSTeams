@@ -1,6 +1,6 @@
-# PSTeams and MessageX
+# MessageX
 
-PSTeams is evolving from a Teams-focused PowerShell module into MessageX: reusable, provider-native .NET libraries with thin PowerShell cmdlets for Microsoft Teams, Slack, and Discord.
+MessageX provides provider-native .NET libraries and a PowerShell module for Microsoft Teams, Slack, and Discord. It succeeds the PSTeams and PSDiscord modules.
 
 [![Test .NET](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-dotnet.yml)
 [![Test PowerShell](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml/badge.svg)](https://github.com/EvotecIT/PSTeams/actions/workflows/test-powershell.yml)
@@ -8,9 +8,9 @@ PSTeams is evolving from a Teams-focused PowerShell module into MessageX: reusab
 
 ## Release status
 
-The PowerShell Gallery currently contains the historical PSTeams release. The MessageX NuGet packages and the rebuilt PSTeams binary module described below are unpublished release candidates in this repository.
+The PowerShell Gallery currently contains the historical PSTeams release. The MessageX NuGet packages and the MessageX PowerShell module described below are unpublished release candidates in this repository.
 
-Do not use `Install-Module PSTeams` as proof that the MessageX code is installed. Nothing in the MessageX package set will be published until the mandatory live-provider, clean-consumer, downstream-pilot, signing, and exact-head release gates in [ROADMAP.md](ROADMAP.md) pass. The MessageX NuGet packages, rebuilt PSTeams module, tag, and GitHub release will then ship as one coordinated release.
+Do not use `Install-Module PSTeams` as proof that the MessageX code is installed. Nothing in the MessageX package set will be published until the mandatory live-provider, clean-consumer, downstream-pilot, signing, and exact-head release gates in [ROADMAP.md](ROADMAP.md) pass. The MessageX NuGet packages, MessageX module, tag, and GitHub release will then ship as one coordinated release.
 
 ## Design
 
@@ -31,7 +31,7 @@ Provider-native rich content stays provider-native. MessageX does not flatten Ad
 
 | Capability | Teams | Slack | Discord |
 | --- | --- | --- | --- |
-| Notification send | Workflow and incoming webhook | Incoming webhook and bot Web API | Incoming webhook and bot REST |
+| Notification send | Workflow webhook | Incoming webhook and bot Web API | Incoming webhook and bot REST |
 | Rich content | Adaptive Cards, webhook-safe actions, legacy wrapper cards | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
 | Message lifecycle | Workflow URLs remain send-only | Reply, update, delete, reactions | Reply, read, update, delete, reactions |
 | File delivery | Images and provider card media | Current external upload workflow | Multipart attachments |
@@ -175,7 +175,7 @@ NuGet staging is configured by `Build/project.build.json`. The PowerShell module
 ## Compatibility and boundaries
 
 - The `legacy` branch preserves the historical script implementation.
-- Existing PSTeams command names remain available where they represent supported behavior.
+- MessageX is a separate module with its own identity. Familiar builders remain useful, but historical PSTeams and PSDiscord parameter compatibility is not a release contract. See [MIGRATION.md](MIGRATION.md).
 - New code should target typed `MessageX.*` libraries and binary cmdlets rather than adding another PowerShell implementation layer.
 - Repository renaming and public package publication are separate maintainer decisions; neither is implied by a local release-candidate build.
 

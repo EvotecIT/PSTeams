@@ -11,6 +11,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
     private readonly string[] _payloadTypes;
     private readonly MessageXDurableIngressOptions _options;
     private readonly TimeProvider _timeProvider;
+    private readonly MessageDurableOutboxHealth _health;
     private readonly string _ownerId = Guid.NewGuid().ToString("N");
     private int _claimPayloadOffset;
 
@@ -19,7 +20,8 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         MessageDurableStoreInitializer initializer,
         IEnumerable<IMessageOutboxHandler> handlers,
         IOptions<MessageXDurableIngressOptions> options,
-        TimeProvider timeProvider) {
+        TimeProvider timeProvider,
+        MessageDurableOutboxHealth health) {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _initializer = initializer ?? throw new ArgumentNullException(nameof(initializer));
         ArgumentNullException.ThrowIfNull(handlers);
@@ -27,6 +29,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         _payloadTypes = _handlers.Keys.OrderBy(static value => value, StringComparer.Ordinal).ToArray();
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        _health = health ?? throw new ArgumentNullException(nameof(health));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -38,6 +41,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
                     continue;
                 }
                 var leases = await ClaimSupportedOutboxAsync(stoppingToken).ConfigureAwait(false);
+                _health.Claimed(leases.Count);
                 if (leases.Count == 0) {
                     await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
                     continue;
@@ -47,6 +51,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
             } catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
                 break;
             } catch {
+                _health.Unavailable(_timeProvider.GetUtcNow());
                 await Task.Delay(_options.PollInterval, _timeProvider, stoppingToken).ConfigureAwait(false);
             }
         }
@@ -54,6 +59,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
 
     private async Task ProcessAsync(MessageOutboxLease lease, CancellationToken stoppingToken) {
         if (!_handlers.TryGetValue(lease.Record.PayloadType, out var handler)) {
+            _health.Unavailable(_timeProvider.GetUtcNow());
             return;
         }
         using var deliveryCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
@@ -77,6 +83,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         }
         var first = await Task.WhenAny(delivery, renewal).ConfigureAwait(false);
         if (ReferenceEquals(first, renewal) && !await renewal.ConfigureAwait(false)) {
+            _health.LeaseLost(_timeProvider.GetUtcNow());
             deliveryCancellation.Cancel();
             ObserveAfterLeaseLoss(delivery);
             return;
@@ -96,10 +103,15 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
             return;
         }
         try {
-            await _store.CompleteOutboxAsync(
+            var completed = await _store.CompleteOutboxAsync(
                 lease.RecordId,
                 lease.LeaseToken,
                 stoppingToken).ConfigureAwait(false);
+            if (completed) {
+                _health.Completed(_timeProvider.GetUtcNow());
+            } else {
+                _health.LeaseLost(_timeProvider.GetUtcNow());
+            }
         } finally {
             await StopRenewalAsync(deliveryCancellation, renewal).ConfigureAwait(false);
         }
@@ -122,6 +134,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
                 if (renewed is null) {
                     return false;
                 }
+                _health.LeaseRenewed();
                 renewalDelay = MessageLeaseRenewalSchedule.GetDelay(
                     _options.LeaseDuration,
                     renewed.LeaseDuration);
@@ -160,18 +173,27 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         return leases;
     }
 
-    private Task<MessageDurableFailureResult> FailAsync(
+    private async Task<MessageDurableFailureResult> FailAsync(
         MessageOutboxLease lease,
         MessageDurableFailureKind kind,
         TimeSpan retryDelay,
-        CancellationToken cancellationToken) =>
-        _store.FailOutboxAsync(
+        CancellationToken cancellationToken) {
+        var result = await _store.FailOutboxAsync(
             lease.RecordId,
             lease.LeaseToken,
             kind,
             retryDelay,
             _options.MaximumAttempts,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
+        var at = _timeProvider.GetUtcNow();
+        switch (result.Status) {
+            case MessageDurableFailureStatus.RetryScheduled: _health.Retried(at); break;
+            case MessageDurableFailureStatus.DeadLettered: _health.DeadLettered(at); break;
+            case MessageDurableFailureStatus.LeaseLost: _health.LeaseLost(at); break;
+            default: throw new InvalidOperationException("The durable store returned an unsupported failure state.");
+        }
+        return result;
+    }
 
     private Task<MessageDurableFailureResult> FailDeliveryAsync(
         MessageOutboxLease lease,
@@ -180,10 +202,14 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         var definitelyNotSent = exception is MessageOutboxDeliveryException {
             Outcome: MessageOutboxDeliveryOutcome.DefinitelyNotSent
         };
+        var delay = _options.RetryDelay;
+        if (exception is MessageOutboxDeliveryException { RetryAfter: { } providerDelay } && providerDelay > delay) {
+            delay = providerDelay;
+        }
         return FailAsync(
             lease,
             definitelyNotSent ? MessageDurableFailureKind.Handler : MessageDurableFailureKind.Permanent,
-            definitelyNotSent ? _options.RetryDelay : TimeSpan.Zero,
+            definitelyNotSent ? delay : TimeSpan.Zero,
             cancellationToken);
     }
 
@@ -200,5 +226,10 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken) {
+        _health.Stopping();
+        await base.StopAsync(cancellationToken).ConfigureAwait(false);
     }
 }
