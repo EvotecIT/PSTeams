@@ -142,6 +142,7 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
         } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             return true;
         } catch {
+            _health.Unavailable(_timeProvider.GetUtcNow());
             return false;
         }
     }
@@ -169,6 +170,9 @@ internal sealed class MessageDurableOutboxWorker : BackgroundService {
                 payloadTypes,
                 cancellationToken).ConfigureAwait(false);
             leases.AddRange(claimed);
+            if (claimed.MalformedRecordsDeadLettered > 0) {
+                _health.DeadLettered(_timeProvider.GetUtcNow(), claimed.MalformedRecordsDeadLettered);
+            }
         }
         return leases;
     }

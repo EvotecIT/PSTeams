@@ -1452,7 +1452,7 @@ public sealed partial class DurableIngressTests {
                 maximumAttempts,
                 cancellationToken);
 
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,

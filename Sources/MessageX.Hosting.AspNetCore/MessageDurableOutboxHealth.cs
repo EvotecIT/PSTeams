@@ -21,8 +21,8 @@ internal sealed class MessageDurableOutboxHealth : IMessageDurableOutboxHealth {
         Interlocked.Increment(ref _retried);
         Interlocked.Exchange(ref _lastFailureTicks, at.UtcTicks);
     }
-    public void DeadLettered(DateTimeOffset at) {
-        Interlocked.Increment(ref _deadLettered);
+    public void DeadLettered(DateTimeOffset at, int count = 1) {
+        Interlocked.Add(ref _deadLettered, count);
         Interlocked.Exchange(ref _lastFailureTicks, at.UtcTicks);
     }
     public void LeaseRenewed() => Interlocked.Increment(ref _leaseRenewed);
