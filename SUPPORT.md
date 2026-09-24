@@ -8,7 +8,7 @@
 | PowerShell | Supported PowerShell 7 runtimes on Windows, Linux, and macOS through modern binaries |
 | .NET | .NET Framework 4.7.2, .NET 8, and .NET 10 where declared by the package |
 | Trimming / Native AOT | Not supported in the `0.1.0` candidate; use the standard JIT runtime |
-| Teams notification | Official incoming-webhook and Workflow URLs |
+| Teams notification | Power Automate / Teams Workflow URLs |
 | Teams application receive | Verified ASP.NET Core activity/card-action endpoint |
 | Slack notification | Official incoming webhook and bot Web API |
 | Slack receive | Signed HTTP Events API and Interactivity requests |
@@ -40,7 +40,7 @@ Do not open a public issue containing tokens, webhook URLs, private keys, raw au
 
 Useful reports include:
 
-- the MessageX package or PSTeams module version and its source;
+- the MessageX package or module version and its source;
 - runtime and operating system;
 - provider operation and safe target type;
 - classified error, HTTP status, provider code, correlation ID, and retry delay;
@@ -51,4 +51,4 @@ Do not include raw response bodies unless they have been reviewed and redacted.
 
 ## Compatibility
 
-Provider identifiers and durable message references are opaque. Do not parse them in consumers. Public breaking changes may occur during `0.x` previews and will be documented. Existing PSTeams names are retained when their behavior remains supported; obsolete protocol behavior is not preserved merely to keep dead code callable.
+Provider identifiers and durable message references are opaque. Do not parse them in consumers. Public breaking changes may occur during `0.x` previews and will be documented. MessageX does not promise drop-in PSTeams or PSDiscord parameter compatibility. Existing builders may remain when they serve current composition contracts. Legacy Office 365 connector URLs are retired by Microsoft and are not a live supported transport.

@@ -25,6 +25,9 @@ public static class MessageXDurableIngressServiceCollectionExtensions {
             MessageXDurableIngressOptionsValidator>());
         services.TryAddSingleton<MessageDurableStoreInitializer>();
         services.TryAddSingleton<MessageDurableIngressHealth>();
+        services.TryAddSingleton<MessageDurableOutboxHealth>();
+        services.TryAddSingleton<IMessageDurableOutboxHealth>(provider =>
+            provider.GetRequiredService<MessageDurableOutboxHealth>());
         services.TryAddSingleton<IMessageDurableIngressHealth>(provider =>
             provider.GetRequiredService<MessageDurableIngressHealth>());
         services.RemoveAll<IMessageIngressAcceptance>();

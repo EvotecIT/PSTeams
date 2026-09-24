@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot '..\Import-MessageX.ps1')
 
 New-AdaptiveCard {
     New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation.' -Separator -Wrap

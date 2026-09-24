@@ -98,7 +98,7 @@ internal abstract class DelegatingMessageDurableStore : IMessageDurableStore {
             maximumAttempts,
             cancellationToken);
 
-    public virtual Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+    public virtual Task<MessageOutboxClaimResult> ClaimOutboxAsync(
         string ownerId,
         int maximumCount,
         TimeSpan leaseDuration,

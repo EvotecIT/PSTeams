@@ -76,7 +76,8 @@ public interface IMessageDurableStore {
     /// Stores should return the effective relative duration on each lease so workers can schedule renewal without
     /// comparing the store's authoritative clock with the host clock.
     /// </summary>
-    Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+    /// <returns>The committed leases and count of malformed records dead-lettered during this claim.</returns>
+    Task<MessageOutboxClaimResult> ClaimOutboxAsync(
         string ownerId,
         int maximumCount,
         TimeSpan leaseDuration,

@@ -2,7 +2,7 @@ param (
     $TeamsID = $Env:TEAMSPESTERID
 )
 
-. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot 'Import-MessageX.ps1')
 
 
 $Button1 = New-TeamsButton -Name 'Visit English Evotec Website' -Link "https://evotec.xyz"

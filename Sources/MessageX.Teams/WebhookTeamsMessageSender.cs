@@ -98,7 +98,10 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             .ConfigureAwait(false);
 
         var statusCode = (int)response.StatusCode;
-        var isSuccess = response.IsSuccessStatusCode;
+        var connectorThrottled = target.DeliveryMethod == TeamsDeliveryMethod.IncomingWebhook &&
+            response.IsSuccessStatusCode && responseBody.IndexOf(
+                "Microsoft Teams endpoint returned HTTP error 429", StringComparison.OrdinalIgnoreCase) >= 0;
+        var isSuccess = response.IsSuccessStatusCode && !connectorThrottled;
         return new TeamsDeliveryResult {
             DeliveryMethod = target.DeliveryMethod,
             Target = string.IsNullOrWhiteSpace(target.DisplayName) ? target.TargetUri.Host : target.DisplayName!,
@@ -107,8 +110,10 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             ResponseBody = responseBody,
             CorrelationId = ReadCorrelationId(response),
             RetryAfter = ReadRetryAfter(response),
-            ErrorKind = isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
-            ErrorMessage = isSuccess ? null : $"Teams webhook returned HTTP status {statusCode}."
+            ErrorKind = connectorThrottled ? MessageErrorKind.RateLimited :
+                isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
+            ErrorMessage = connectorThrottled ? "Teams connector reported throttling." :
+                isSuccess ? null : $"Teams webhook returned HTTP status {statusCode}."
         };
     }
 

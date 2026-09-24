@@ -1,7 +1,7 @@
 Describe 'Generated command documentation contract' {
     BeforeAll {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
 
         $docsCandidates = @(
             [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\Docs'))
@@ -20,11 +20,11 @@ Describe 'Generated command documentation contract' {
                 Select-Object -ExpandProperty BaseName
         )
         $script:ExportedCommands = @(
-            Get-Command -Module PSTeams |
+            Get-Command -Module MessageX |
                 Where-Object CommandType -in @('Cmdlet', 'Function') |
                 Select-Object -ExpandProperty Name -Unique
         )
-        $helpPath = Join-Path $PSScriptRoot '..\PSTeams\en-US\PSTeams-help.xml'
+        $helpPath = Join-Path $PSScriptRoot '..\MessageX\en-US\MessageX-help.xml'
         [xml] $externalHelp = Get-Content -LiteralPath $helpPath -Raw
         $script:ExternalHelpCommands = @(
             $externalHelp.SelectNodes(

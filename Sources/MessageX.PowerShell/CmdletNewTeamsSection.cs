@@ -37,7 +37,7 @@ public sealed class CmdletNewTeamsSection : PSCmdlet {
     [Parameter(Mandatory = false)]
     public string? ActivityImageLink { get; set; }
 
-    /// <summary>Name of a built-in PSTeams activity image.</summary>
+    /// <summary>Name of a built-in activity image supplied with MessageX.</summary>
     [Parameter(Mandatory = false)]
     [ValidateSet("Alert", "Cancel", "Disable", "Download", "Minus", "Check", "Add", "None")]
     public string ActivityImage { get; set; } = "None";

@@ -5,7 +5,7 @@ namespace MessageX.Persistence.DbaClientX;
 
 public sealed partial class SqliteMessageDurableStore {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+    public async Task<MessageOutboxClaimResult> ClaimOutboxAsync(
         string ownerId,
         int maximumCount,
         TimeSpan leaseDuration,
@@ -46,6 +46,7 @@ public sealed partial class SqliteMessageDurableStore {
                 parameters,
                 cancellationToken: token).ConfigureAwait(false);
             var leases = new List<MessageOutboxLease>(storedCandidates.Count);
+            var malformedRecordsDeadLettered = 0;
             foreach (var storedCandidate in storedCandidates) {
                 OutboxCandidate candidate;
                 try {
@@ -56,6 +57,7 @@ public sealed partial class SqliteMessageDurableStore {
                         storedCandidate.RowId,
                         nowText,
                         token).ConfigureAwait(false);
+                    malformedRecordsDeadLettered++;
                     continue;
                 }
                 var leaseToken = NewId();
@@ -88,7 +90,7 @@ public sealed partial class SqliteMessageDurableStore {
                         leaseDuration));
                 }
             }
-            return (IReadOnlyList<MessageOutboxLease>)leases;
+            return new MessageOutboxClaimResult(leases, malformedRecordsDeadLettered);
         }, cancellationToken).ConfigureAwait(false);
     }
 

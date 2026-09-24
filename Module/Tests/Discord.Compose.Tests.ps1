@@ -1,7 +1,7 @@
 Describe 'MessageX Discord PowerShell surface' {
     BeforeAll {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
     }
 
     It 'builds safe provider-native embeds and JSON' {
@@ -167,7 +167,7 @@ Describe 'MessageX Discord PowerShell surface' {
             Should -Throw -ErrorId 'DiscordConnectionRequired,MessageX.PowerShell.CmdletSendDiscordMessage'
     }
 
-    It 'exports each Discord command and alias from PSTeams' {
+    It 'exports each Discord command and alias from MessageX' {
         $commands = @(
             'Add-DiscordReaction', 'ConvertTo-DiscordJson', 'Get-DiscordMessage',
             'New-DiscordAllowedMentions', 'New-DiscordAttachment',
@@ -179,7 +179,7 @@ Describe 'MessageX Discord PowerShell surface' {
             'Update-DiscordMessage'
         )
         foreach ($command in $commands) {
-            (Get-Command $command).Source | Should -Be 'PSTeams'
+            (Get-Command $command).Source | Should -Be 'MessageX'
         }
     }
 }

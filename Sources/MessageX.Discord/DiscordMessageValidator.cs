@@ -46,12 +46,6 @@ internal static class DiscordMessageValidator {
             (!string.IsNullOrWhiteSpace(message.Nonce) || message.EnforceNonce)) {
             throw new ArgumentException("Discord nonce options require an authenticated bot target.", nameof(message));
         }
-        if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook &&
-            message.Components.Count > 0 && !target.SupportsInteractiveComponents) {
-            throw new ArgumentException(
-                "Discord interactive components require a bot target or an application-owned interaction webhook.",
-                nameof(message));
-        }
         if (!string.IsNullOrWhiteSpace(message.ReplyToMessageId)) {
             if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook) {
                 throw new ArgumentException("Discord incoming webhooks do not accept message reply references.", nameof(message));
@@ -76,6 +70,14 @@ internal static class DiscordMessageValidator {
         }
         ValidateAttachmentReferences(message);
         ValidateMessageComponents(message.Components);
+        if (target.DeliveryMethod == DiscordDeliveryMethod.IncomingWebhook &&
+            !target.SupportsInteractiveComponents &&
+            message.Components.SelectMany(row => row.Components)
+                .Any(component => component is not DiscordButton { Style: DiscordButtonStyle.Link })) {
+            throw new ArgumentException(
+                "Discord interactive components require a bot target or an application-owned interaction webhook.",
+                nameof(message));
+        }
         if (totalEmbedCharacters > 6000) {
             throw new ArgumentException("Discord embed text cannot exceed 6000 characters per message.", nameof(message));
         }

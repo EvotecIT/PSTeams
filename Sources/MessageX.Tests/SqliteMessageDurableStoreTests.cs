@@ -620,6 +620,10 @@ public sealed class SqliteMessageDurableStoreTests {
             "sender-a", 3, TimeSpan.FromMinutes(1), BaseTime);
 
         Assert.Equal("send-valid", Assert.Single(deliveries).Record.DeduplicationKey);
+        Assert.Equal(2, deliveries.MalformedRecordsDeadLettered);
+        var nextClaim = await store.ClaimOutboxAsync("sender-a", 3, TimeSpan.FromMinutes(1), BaseTime);
+        Assert.Empty(nextClaim);
+        Assert.Equal(0, nextClaim.MalformedRecordsDeadLettered);
         using var statusClient = new SQLite();
         await using var statusSession = await statusClient.OpenSessionAsync(
             database.Path,
@@ -844,7 +848,7 @@ public sealed class SqliteMessageDurableStoreTests {
                 TestContext.Current.CancellationToken);
         }
 
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,

@@ -20,6 +20,8 @@ permissions:
 env:
     DOTNET_VERSION: '10.x'
     BUILD_CONFIGURATION: 'Debug'
+    MESSAGEX_USE_DEVELOPMENT_BINARIES: 'true'
+    MESSAGEX_DEVELOPMENT_CONFIGURATION: 'Debug'
 
 jobs:
     refresh-psd1:
@@ -33,7 +35,7 @@ jobs:
             - name: Setup PowerShell modules
               shell: pwsh
               run: |
-                  Install-Module PSPublishModule -RequiredVersion 3.0.124 -Force -Scope CurrentUser -AllowClobber
+                  Install-Module PSPublishModule -RequiredVersion 3.0.137 -Force -Scope CurrentUser -AllowClobber
 
             - name: Refresh module manifest
               shell: pwsh
@@ -44,7 +46,7 @@ jobs:
               uses: actions/upload-artifact@v7
               with:
                   name: psd1
-                  path: Module/PSTeams/PSTeams.psd1
+                  path: Module/MessageX/MessageX.psd1
 
     test-windows-ps5:
         needs: refresh-psd1
@@ -59,7 +61,7 @@ jobs:
               uses: actions/download-artifact@v8
               with:
                   name: psd1
-                  path: Module/PSTeams
+                  path: Module/MessageX
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v6
@@ -80,7 +82,7 @@ jobs:
 
             - name: Run PowerShell tests
               shell: powershell
-              run: ./Module/PSTeams/PSTeams.Tests.ps1
+              run: ./Module/MessageX/MessageX.Tests.ps1
 
     test-windows-ps7:
         needs: refresh-psd1
@@ -95,7 +97,7 @@ jobs:
               uses: actions/download-artifact@v8
               with:
                   name: psd1
-                  path: Module/PSTeams
+                  path: Module/MessageX
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v6
@@ -116,7 +118,7 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: ./Module/PSTeams/PSTeams.Tests.ps1
+              run: ./Module/MessageX/MessageX.Tests.ps1
 
     test-ubuntu:
         needs: refresh-psd1
@@ -131,7 +133,7 @@ jobs:
               uses: actions/download-artifact@v8
               with:
                   name: psd1
-                  path: Module/PSTeams
+                  path: Module/MessageX
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v6
@@ -160,7 +162,7 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: ./Module/PSTeams/PSTeams.Tests.ps1
+              run: ./Module/MessageX/MessageX.Tests.ps1
 
     test-macos:
         needs: refresh-psd1
@@ -175,7 +177,7 @@ jobs:
               uses: actions/download-artifact@v8
               with:
                   name: psd1
-                  path: Module/PSTeams
+                  path: Module/MessageX
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v6
@@ -208,4 +210,4 @@ jobs:
 
             - name: Run PowerShell tests
               shell: pwsh
-              run: ./Module/PSTeams/PSTeams.Tests.ps1
+              run: ./Module/MessageX/MessageX.Tests.ps1

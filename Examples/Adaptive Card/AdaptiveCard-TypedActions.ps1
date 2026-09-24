@@ -1,4 +1,4 @@
-. $PSScriptRoot\..\Import-PSTeams.ps1
+. $PSScriptRoot\..\Import-MessageX.ps1
 
 $card = New-TeamsAdaptiveCard -FallbackText 'Build failed' -Body @(
     New-TeamsAdaptiveTextBlock -Text 'Build failed' -Weight Bolder -Color Attention

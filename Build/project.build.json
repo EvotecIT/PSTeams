@@ -40,7 +40,7 @@
   "SignPackages": false,
   "PublishSource": "https://api.nuget.org/v3/index.json",
   "PublishApiKeyFilePath": "C:\\Support\\Important\\NugetOrgEvotec.txt",
-  "SkipDuplicate": true,
+  "SkipDuplicate": false,
   "PublishFailFast": true,
   "GitHubAccessTokenFilePath": "C:\\Support\\Important\\GithubAPI.txt",
   "GitHubUsername": "EvotecIT",
@@ -49,7 +49,8 @@
   "GitHubIncludeProjectNameInTag": false,
   "GitHubGenerateReleaseNotes": true,
   "GitHubReleaseMode": "Single",
+  "GitHubTagConflictPolicy": "Fail",
   "GitHubPrimaryProject": "MessageX.Core",
-  "GitHubTagTemplate": "{Repo}-v{UtcTimestamp}",
-  "GitHubReleaseName": "{Repo} {UtcDateTime}"
+  "GitHubTagTemplate": "v{Version}",
+  "GitHubReleaseName": "MessageX {Version}"
 }

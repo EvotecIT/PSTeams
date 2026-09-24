@@ -1,7 +1,7 @@
 Describe 'MessageX Slack PowerShell surface' {
     BeforeEach {
-        Get-Module PSTeams, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
-        Import-Module "$PSScriptRoot\..\PSTeams\PSTeams.psd1" -Force
+        Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
     }
 
     It 'creates Block Kit messages and renders provider-native JSON' {
@@ -149,7 +149,7 @@ Describe 'MessageX Slack PowerShell surface' {
         $errorRecord.Exception.ToString() | Should -Not -Match 'secret-token'
     }
 
-    It 'exports each Slack cmdlet from PSTeams' {
+    It 'exports each Slack cmdlet from MessageX' {
         $expected = @(
             'ConvertTo-SlackJson'
             'Add-SlackReaction'
@@ -168,7 +168,7 @@ Describe 'MessageX Slack PowerShell surface' {
         )
 
         foreach ($name in $expected) {
-            (Get-Command $name -Module PSTeams).CommandType | Should -Be 'Cmdlet'
+            (Get-Command $name -Module MessageX).CommandType | Should -Be 'Cmdlet'
         }
     }
 }

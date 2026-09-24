@@ -60,6 +60,28 @@ public sealed class DiscordIncomingWebhookSenderTests {
     }
 
     [Fact]
+    public async Task OrdinaryWebhookSendsLinkButtonsWithComponentOptIn() {
+        using var handler = new RecordingHandler(HttpStatusCode.OK,
+            "{\"id\":\"623456789012345678\",\"channel_id\":\"123456789012345678\"}");
+        using var sender = new DiscordIncomingWebhookSender(new HttpClient(handler), disposeHttpClient: true);
+        var message = new DiscordMessageRequest {
+            Content = "Release ready",
+            Components = { new DiscordActionRow {
+                Components = { new DiscordButton {
+                    Label = "Release notes", Style = DiscordButtonStyle.Link,
+                    Url = new Uri("https://example.test/releases/1.0.0")
+                } }
+            } }
+        };
+        var result = await sender.SendAsync(message, DiscordMessageTarget.ForIncomingWebhook(WebhookUri),
+            TestContext.Current.CancellationToken);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("?wait=true&with_components=true", handler.RequestUri?.Query);
+        using var payload = System.Text.Json.JsonDocument.Parse(handler.Body!);
+        Assert.Equal(5, payload.RootElement.GetProperty("components")[0].GetProperty("components")[0].GetProperty("style").GetInt32());
+    }
+
+    [Fact]
     public async Task OrdinaryIncomingWebhookRejectsInteractiveComponentsBeforeNetworkUse() {
         using var handler = new RecordingHandler(HttpStatusCode.OK, "{}");
         using var sender = new DiscordIncomingWebhookSender(new HttpClient(handler), disposeHttpClient: true);

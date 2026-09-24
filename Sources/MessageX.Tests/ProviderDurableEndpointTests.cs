@@ -318,7 +318,7 @@ public sealed class ProviderDurableEndpointTests {
             CancellationToken cancellationToken = default) =>
             _inner.FailInboxAsync(recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken);
 
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,

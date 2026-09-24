@@ -1,5 +1,5 @@
 Clear-Host
-Import-Module PSTeams -Force #-Verbose
+Import-Module MessageX -Force #-Verbose
 
 $TeamsID = 'https://outlook.office.com/webhook/a5c7c95a....'
 

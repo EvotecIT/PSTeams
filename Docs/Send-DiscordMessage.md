@@ -1,6 +1,6 @@
 ---
-external help file: PSTeams-help.xml
-Module Name: PSTeams
+external help file: MessageX-help.xml
+Module Name: MessageX
 online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
@@ -232,7 +232,7 @@ Parameter Sets: WebhookText, ThreadText
 Aliases: None
 Possible values:
 
-Required: True
+Required: False
 Position: 1
 Default value: None
 Accept pipeline input: False

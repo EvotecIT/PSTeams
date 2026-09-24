@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot 'Import-MessageX.ps1')
 
 Get-ChildItem | Select-Object -First 2 | ConvertTo-TeamsFact
 

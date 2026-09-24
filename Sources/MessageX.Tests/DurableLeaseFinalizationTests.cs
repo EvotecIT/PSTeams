@@ -302,7 +302,7 @@ public sealed class DurableLeaseFinalizationTests {
             _inner.FailInboxAsync(
                 recordId, leaseToken, failureKind, retryDelay, maximumAttempts, cancellationToken);
 
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,

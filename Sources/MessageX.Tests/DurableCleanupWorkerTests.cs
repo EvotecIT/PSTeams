@@ -105,7 +105,7 @@ public sealed class DurableCleanupWorkerTests {
             int maximumAttempts,
             CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
-        public Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,

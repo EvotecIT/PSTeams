@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot 'Import-MessageX.ps1')
 
 Send-TeamsMessage -Verbose -Color DimGray {
     New-TeamsSection -Title 'This is 2nd section within 1 message' {

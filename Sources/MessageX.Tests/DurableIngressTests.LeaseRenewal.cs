@@ -46,14 +46,17 @@ public sealed partial class DurableIngressTests {
         }
     }
 
-    [Fact]
-    public async Task OutboxRenewalUsesStoreReportedDurationWithoutComparingClocks() {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OutboxRenewalUsesStoreReportedDurationWithoutComparingClocks(bool renewalThrows) {
         using var database = new TemporaryDatabase();
         using var innerStore = new SqliteMessageDurableStore(database.Path);
         var losingStore = new LeaseLosingStore(
             innerStore,
             TimeSpan.FromMilliseconds(100),
-            TimeSpan.FromHours(-1));
+            TimeSpan.FromHours(-1),
+            renewOutboxThrows: renewalThrows);
         var services = Services(
             losingStore,
             includeCodec: true,
@@ -85,6 +88,9 @@ public sealed partial class DurableIngressTests {
             provider.GetServices<IMessageOutboxHandler>().Single());
         await handler.Canceled.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         Assert.True(losingStore.RenewOutboxCalls > 0);
+        var health = provider.GetRequiredService<IMessageDurableOutboxHealth>().GetHealthSnapshot();
+        Assert.Equal(1, health.LeaseLost);
+        Assert.Equal(renewalThrows ? 1 : 0, health.Unavailable);
         for (var index = workers.Length - 1; index >= 0; index--) {
             await workers[index].StopAsync(TestContext.Current.CancellationToken);
         }
@@ -110,14 +116,17 @@ public sealed partial class DurableIngressTests {
         private readonly IMessageDurableStore _inner;
         private readonly TimeSpan? _reportedLeaseLifetime;
         private readonly TimeSpan _reportedClockOffset;
+        private readonly bool _renewOutboxThrows;
 
         public LeaseLosingStore(
             IMessageDurableStore inner,
             TimeSpan? reportedLeaseLifetime = null,
-            TimeSpan? reportedClockOffset = null) {
+            TimeSpan? reportedClockOffset = null,
+            bool renewOutboxThrows = false) {
             _inner = inner;
             _reportedLeaseLifetime = reportedLeaseLifetime;
             _reportedClockOffset = reportedClockOffset ?? TimeSpan.Zero;
+            _renewOutboxThrows = renewOutboxThrows;
         }
 
         public int RenewInboxCalls { get; private set; }
@@ -205,7 +214,7 @@ public sealed partial class DurableIngressTests {
                 cancellationToken);
         }
 
-        public async Task<IReadOnlyList<MessageOutboxLease>> ClaimOutboxAsync(
+        public async Task<MessageOutboxClaimResult> ClaimOutboxAsync(
             string ownerId,
             int maximumCount,
             TimeSpan leaseDuration,
@@ -223,13 +232,13 @@ public sealed partial class DurableIngressTests {
             var reportedExpiry = DateTimeOffset.UtcNow
                 .Add(_reportedClockOffset)
                 .Add(_reportedLeaseLifetime.Value);
-            return leases.Select(lease => new MessageOutboxLease(
+            return new MessageOutboxClaimResult(leases.Select(lease => new MessageOutboxLease(
                 lease.RecordId,
                 lease.LeaseToken,
                 reportedExpiry,
                 lease.AttemptCount,
                 lease.Record,
-                _reportedLeaseLifetime)).ToArray();
+                _reportedLeaseLifetime)), leases.MalformedRecordsDeadLettered);
         }
 
         public Task<MessageLeaseRenewal?> RenewOutboxLeaseAsync(
@@ -238,6 +247,9 @@ public sealed partial class DurableIngressTests {
             TimeSpan leaseDuration,
             CancellationToken cancellationToken = default) {
             RenewOutboxCalls++;
+            if (_renewOutboxThrows) {
+                throw new IOException("Store unavailable during renewal.");
+            }
             return Task.FromResult<MessageLeaseRenewal?>(null);
         }
 

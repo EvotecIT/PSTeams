@@ -73,11 +73,6 @@ public sealed class DiscordIncomingWebhookSender : IDiscordMessageSender, IDispo
             query += "&thread_id=" + Uri.EscapeDataString(target.ThreadId);
         }
         if (withComponents) {
-            if (!target.SupportsInteractiveComponents) {
-                throw new ArgumentException(
-                    "Discord interactive components require an application-owned webhook target.",
-                    nameof(target));
-            }
             query += "&with_components=true";
         }
         builder.Query = query;

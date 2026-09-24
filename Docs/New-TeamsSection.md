@@ -1,6 +1,6 @@
 ---
-external help file: PSTeams-help.xml
-Module Name: PSTeams
+external help file: MessageX-help.xml
+Module Name: MessageX
 online version: https://github.com/EvotecIT/PSTeams
 schema: 2.0.0
 ---
@@ -44,7 +44,7 @@ Accept wildcard characters: False
 ```
 
 ### -ActivityImage
-Name of a built-in PSTeams activity image.
+Name of a built-in activity image supplied with MessageX.
 
 ```yaml
 Type: String

@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot '..\Import-MessageX.ps1')
 
 $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42 stopped in the release stage.' -Summary 'Build summary' -Color DodgerBlue -HideOriginalBody -Sections @(
     New-TeamsSection -Title 'Build summary' -ActivityTitle 'Release pipeline' -ActivitySubtitle 'Run 42' -ActivityText 'Deployment stopped after test failures.' -ActivityDetails @(

@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot '..\Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot '..\Import-MessageX.ps1')
 
 # Please notice that
 # - Images are not supported in buttons, you can send them but it's not displayed

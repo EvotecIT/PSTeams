@@ -1,4 +1,4 @@
-. (Join-Path $PSScriptRoot 'Import-PSTeams.ps1')
+. (Join-Path $PSScriptRoot 'Import-MessageX.ps1')
 
 $TeamsID = 'https://outlook.office.com/webhook/a5c7c'
 
