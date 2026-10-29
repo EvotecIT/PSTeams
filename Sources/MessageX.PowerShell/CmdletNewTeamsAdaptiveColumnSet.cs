@@ -6,8 +6,8 @@ namespace MessageX.PowerShell;
 [Cmdlet(VerbsCommon.New, "TeamsAdaptiveColumnSet")]
 [OutputType(typeof(TeamsAdaptiveColumnSet))]
 public sealed class CmdletNewTeamsAdaptiveColumnSet : PSCmdlet {
-    [Parameter(Mandatory = false)]
-    public TeamsAdaptiveColumn[] Columns { get; set; } = Array.Empty<TeamsAdaptiveColumn>();
+    [Parameter(Mandatory = false, Position = 0)]
+    public ScriptBlock? Columns { get; set; }
 
     [Parameter(Mandatory = false)]
     [ValidateSet("Accent", "Default", "Emphasis", "Good", "Warning", "Attention")]
@@ -45,11 +45,7 @@ public sealed class CmdletNewTeamsAdaptiveColumnSet : PSCmdlet {
             Height = Height
         };
 
-        foreach (var column in Columns) {
-            if (column is not null) {
-                columnSet.Columns.Add(column);
-            }
-        }
+        foreach (var column in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveColumn>(Columns)) columnSet.Columns.Add(column);
 
         WriteObject(columnSet);
     }

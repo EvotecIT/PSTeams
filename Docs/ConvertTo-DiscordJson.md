@@ -21,7 +21,7 @@ Serializes a typed Discord message using the exact provider payload contract.
 
 ### EXAMPLE 1
 ```powershell
-ConvertTo-DiscordJson -Message 'Value'
+ConvertTo-DiscordJson -Message 'Value' -Target 'Value'
 ```
 
 

@@ -21,7 +21,7 @@ Creates a Discord incoming-webhook target, optionally within an existing thread.
 
 ### EXAMPLE 1
 ```powershell
-New-DiscordWebhookTarget -DisplayName 'Name'
+New-DiscordWebhookTarget -Uri 'Value'
 ```
 
 

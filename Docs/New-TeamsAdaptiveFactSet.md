@@ -6,38 +6,38 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveFactSet
 ## SYNOPSIS
-New-TeamsAdaptiveFactSet [-Facts <TeamsAdaptiveFact[]>] [<CommonParameters>]
+Groups label/value facts in a Teams Adaptive Card.
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveFactSet [-Facts <TeamsAdaptiveFact[]>] [<CommonParameters>]
+New-TeamsAdaptiveFactSet [[-Facts] <scriptblock>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveFactSet [-Facts <TeamsAdaptiveFact[]>] [<CommonParameters>]
+Groups label/value facts in a Teams Adaptive Card.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveFactSet -Facts @('Value')
+New-TeamsAdaptiveFactSet -Facts { New-TeamsAdaptiveFact -Title 'Incident ID' -Value 'inc-42' }
 ```
 
 
 ## PARAMETERS
 
 ### -Facts
-Specifies one or more values for facts.
+Specifies a value for facts.
 
 ```yaml
-Type: TeamsAdaptiveFact[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: False
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

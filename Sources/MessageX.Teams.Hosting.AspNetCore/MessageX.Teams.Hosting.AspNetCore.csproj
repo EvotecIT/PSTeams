@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Teams.Apps" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
     <ProjectReference Include="..\MessageX.Hosting\MessageX.Hosting.csproj" />
     <ProjectReference Include="..\MessageX.Hosting.AspNetCore\MessageX.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\MessageX.Teams\MessageX.Teams.csproj" />

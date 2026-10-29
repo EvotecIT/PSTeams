@@ -1,35 +1,23 @@
 ---
-title: "Send a simple Teams message"
-description: "Use PSTeams to send a straightforward Microsoft Teams webhook message."
+title: "Send a Teams Workflow notification"
+description: "Render a MessageX Adaptive Card locally, then send it to a configured Workflow."
 layout: docs
 ---
 
-This pattern is useful when a script only needs to notify a channel that something happened.
-
-It comes from the source example at `Examples/Example-Short.ps1`.
-
-## When to use this pattern
-
-- You need a low-friction channel notification.
-- A full card is unnecessary.
-- The webhook URI is already managed as a secret.
-
-## Example
+Import the locally built MessageX module as shown on the [installation page](/projects/psteams/docs/install/). This complete example renders JSON without a network request. It sends only when you set `MESSAGEX_TEAMS_WORKFLOW_URL` to a Workflow URL you control.
 
 ```powershell
-Import-Module .\PSTeams.psd1 -Force
+$card = New-TeamsAdaptiveCard -Body {
+    New-TeamsAdaptiveTextBlock -Text 'Deployment finished successfully.'
+} -FallbackText 'Deployment finished successfully.'
+$message = New-TeamsMessage -AdaptiveCard $card -Summary 'Deployment finished'
 
-$teamsWebhook = $env:TEAMS_WEBHOOK_URL
-Send-TeamsMessage -URI $teamsWebhook -MessageText 'Deployment finished successfully.'
+$message | ConvertTo-TeamsJson | ConvertFrom-Json
+
+if ($env:MESSAGEX_TEAMS_WORKFLOW_URL) {
+    $target = New-TeamsWebhookTarget -Uri $env:MESSAGEX_TEAMS_WORKFLOW_URL -Destination Channel
+    Send-TeamsMessage -Message $message -Target $target -PassThru
+}
 ```
 
-## What this demonstrates
-
-- sending a basic webhook message
-- keeping the webhook outside the script
-- using Teams as an operations notification target
-
-## Source
-
-- [Example-Short.ps1](https://github.com/EvotecIT/PSTeams/blob/master/Examples/Example-Short.ps1)
-
+Create the Workflow in Teams and keep its URL in a secret store or process environment. A successful HTTP response means the Workflow accepted the request; inspect the Workflow run and the rendered channel message to confirm delivery. The Workflow target is send-only.

@@ -6,38 +6,38 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveImageSet
 ## SYNOPSIS
-New-TeamsAdaptiveImageSet -Images <TeamsAdaptiveImage[]> [-ImageSize <string>] [<CommonParameters>]
+New-TeamsAdaptiveImageSet [-Images] <scriptblock> [-ImageSize <string>] [<CommonParameters>]
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveImageSet -Images <TeamsAdaptiveImage[]> [-ImageSize <string>] [<CommonParameters>]
+New-TeamsAdaptiveImageSet [-Images] <scriptblock> [-ImageSize <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveImageSet -Images <TeamsAdaptiveImage[]> [-ImageSize <string>] [<CommonParameters>]
+New-TeamsAdaptiveImageSet [-Images] <scriptblock> [-ImageSize <string>] [<CommonParameters>]
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveImageSet -Images @('Value')
+New-TeamsAdaptiveImageSet -Images { }
 ```
 
 
 ## PARAMETERS
 
 ### -Images
-Specifies one or more values for images.
+Specifies a value for images.
 
 ```yaml
-Type: TeamsAdaptiveImage[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: True
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

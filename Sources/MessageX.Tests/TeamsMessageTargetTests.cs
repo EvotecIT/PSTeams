@@ -4,30 +4,30 @@ namespace MessageX.Tests;
 
 public class TeamsMessageTargetTests {
     [Fact]
-    public void ForIncomingWebhookCreatesWebhookTarget() {
+    public void ForWorkflowWebhookCreatesWebhookTarget() {
         var uri = new Uri("https://example.test/webhook");
 
-        var target = TeamsMessageTarget.ForIncomingWebhook(uri, "alerts");
+        var target = TeamsMessageTarget.ForWorkflowWebhook(uri, "alerts");
 
-        Assert.Equal(TeamsDeliveryMethod.IncomingWebhook, target.DeliveryMethod);
+        Assert.Equal(TeamsDeliveryMethod.WorkflowWebhook, target.DeliveryMethod);
         Assert.Equal(uri, target.TargetUri);
         Assert.Equal("alerts", target.DisplayName);
     }
 
     [Fact]
-    public void ForIncomingWebhookRequiresAbsoluteUri() {
+    public void ForWorkflowWebhookRequiresAbsoluteUri() {
         var uri = new Uri("/relative", UriKind.Relative);
 
-        var action = () => TeamsMessageTarget.ForIncomingWebhook(uri);
+        var action = () => TeamsMessageTarget.ForWorkflowWebhook(uri);
 
         Assert.Throws<ArgumentException>(action);
     }
 
     [Fact]
-    public void ForIncomingWebhookRequiresHttps() {
+    public void ForWorkflowWebhookRequiresHttps() {
         var uri = new Uri("http://example.test/webhook");
 
-        var action = () => TeamsMessageTarget.ForIncomingWebhook(uri);
+        var action = () => TeamsMessageTarget.ForWorkflowWebhook(uri);
 
         var exception = Assert.Throws<ArgumentException>(action);
         Assert.Contains("HTTPS", exception.Message);

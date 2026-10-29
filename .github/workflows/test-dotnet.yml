@@ -45,10 +45,10 @@ jobs:
               run: dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run tests (.NET 8.0)
-              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net8.0/MessageX.Tests.dll --minimum-expected-tests 29 --results-directory TestResults/net8 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net8.trx
+              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net8.0/MessageX.Tests.dll --minimum-expected-tests 500 --results-directory TestResults/net8 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net8.trx
 
             - name: Run tests (.NET 10.0)
-              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 29 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 500 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
 
             - name: Summarize failing tests
               if: failure() && env.SUMMARIZE_FAILURES == 'true'
@@ -126,7 +126,7 @@ jobs:
               run: dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run tests (.NET 10.0)
-              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 29 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 500 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
 
             - name: Upload test results
               uses: actions/upload-artifact@v7
@@ -170,7 +170,7 @@ jobs:
               run: dotnet build Sources/MessageX.slnx --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
             - name: Run tests (.NET 10.0)
-              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 29 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+              run: dotnet test --test-modules Sources/MessageX.Tests/bin/Release/net10.0/MessageX.Tests.dll --minimum-expected-tests 500 --results-directory TestResults/net10 --report-xunit-trx --report-xunit-trx-filename MessageX.Tests.net10.trx --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
 
             - name: Upload test results
               uses: actions/upload-artifact@v7

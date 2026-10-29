@@ -21,7 +21,7 @@ New-TeamsAdaptiveMention [-Text] <string> [-UserPrincipalName] <string> [[-Name]
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveMention -Name 'Name'
+New-TeamsAdaptiveMention -Text 'Value' -UserPrincipalName 'Name'
 ```
 
 

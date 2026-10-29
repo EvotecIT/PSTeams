@@ -1,6 +1,6 @@
 # MessageX.Teams
 
-MessageX.Teams provides typed Microsoft Teams message composition and Workflow/incoming-webhook delivery. It depends on `MessageX.Core` and does not include a second Microsoft Graph client.
+MessageX.Teams provides typed Microsoft Teams Adaptive Card composition and Workflow delivery. Workflow actions are URL links only. It depends on `MessageX.Core` and does not include a second Microsoft Graph client.
 
 ```csharp
 using MessageX.Teams;

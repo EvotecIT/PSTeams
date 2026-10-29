@@ -21,7 +21,7 @@ Creates an authenticated Discord bot connection without exposing its token.
 
 ### EXAMPLE 1
 ```powershell
-New-DiscordConnection -ApplicationId 'Value'
+New-DiscordConnection -BotToken (Read-Host -AsSecureString)
 ```
 
 

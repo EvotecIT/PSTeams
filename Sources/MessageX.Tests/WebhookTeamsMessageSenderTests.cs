@@ -7,7 +7,7 @@ namespace MessageX.Tests;
 
 public sealed class WebhookTeamsMessageSenderTests {
     [Fact]
-    public async Task SendJsonAsyncRejectsManuallyConstructedHttpTarget() {
+    public async Task SendAsyncRejectsManuallyConstructedHttpTarget() {
         using var handler = new RecordingHandler();
         using var sender = new WebhookTeamsMessageSender(new HttpClient(handler), disposeHttpClient: true);
         var target = new TeamsMessageTarget {
@@ -15,8 +15,8 @@ public sealed class WebhookTeamsMessageSenderTests {
             TargetUri = new Uri("http://example.test/workflows/secret-token")
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => sender.SendJsonAsync(
-            "{}",
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => sender.SendAsync(
+            new TeamsMessageRequest { Text = "Example" },
             target,
             TestContext.Current.CancellationToken));
 
@@ -29,6 +29,25 @@ public sealed class WebhookTeamsMessageSenderTests {
         using var handler = WebhookTeamsMessageSender.CreateDefaultHandler();
 
         Assert.False(handler.AllowAutoRedirect);
+    }
+
+    [Fact]
+    public async Task WorkflowTargetSelectsAdaptiveAttachmentOverFakeHttp() {
+        using var handler = new RecordingHandler();
+        using var sender = new WebhookTeamsMessageSender(new HttpClient(handler), disposeHttpClient: true);
+        var target = TeamsMessageTarget.ForWorkflowWebhook(new Uri("https://example.test/workflow/secret"));
+        var card = new TeamsAdaptiveCard { FallbackText = "Build failed. Incident inc-42." };
+        card.Body.Add(new TeamsAdaptiveTextBlock { Text = "Build failed" });
+        card.Actions.Add(new TeamsAdaptiveOpenUrlAction { Title = "Open report", Url = "https://example.test/report/inc-42" });
+
+        var result = await sender.SendAsync(new TeamsMessageRequest { Summary = "Build failed", AdaptiveCard = card },
+            target, TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("https://example.test/workflow/secret", handler.RequestUri?.AbsoluteUri);
+        Assert.Contains("\"contentType\":\"application/vnd.microsoft.card.adaptive\"", handler.RequestBody);
+        Assert.Contains("\"type\":\"Action.OpenUrl\"", handler.RequestBody);
+        Assert.DoesNotContain("\"@type\":\"MessageCard\"", handler.RequestBody);
     }
 
     [Fact]
@@ -257,19 +276,17 @@ public sealed class WebhookTeamsMessageSenderTests {
         Assert.Equal("https://example.test/workflows/secret-token", handler.RequestUri?.AbsoluteUri);
     }
 
-    [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, true)]
-    public async Task ConnectorBodyThrottlingDoesNotOverrideWorkflowResponseContracts(bool workflow, bool expectedSuccess) {
+    [Fact]
+    public async Task WorkflowSuccessUsesHttpStatusEvenWhenBodyMentionsConnectorError() {
         using var handler = new RecordingHandler(responseBody: "Microsoft Teams endpoint returned HTTP error 429");
         using var sender = new WebhookTeamsMessageSender(new HttpClient(handler), disposeHttpClient: true);
         var uri = new Uri("https://example.test/secret-token");
-        var target = workflow ? TeamsMessageTarget.ForWorkflowWebhook(uri) : TeamsMessageTarget.ForIncomingWebhook(uri);
+        var target = TeamsMessageTarget.ForWorkflowWebhook(uri);
         var result = await sender.SendAsync(new TeamsMessageRequest { Text = "Release ready" }, target,
             TestContext.Current.CancellationToken);
-        Assert.Equal(expectedSuccess, result.IsSuccess);
+        Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        Assert.Equal(workflow ? MessageErrorKind.Unknown : MessageErrorKind.RateLimited, result.ErrorKind);
+        Assert.Equal(MessageErrorKind.Unknown, result.ErrorKind);
     }
 
     private sealed class RecordingHandler : HttpMessageHandler {
@@ -284,12 +301,13 @@ public sealed class WebhookTeamsMessageSenderTests {
         }
 
         public Uri? RequestUri { get; private set; }
+        public string? RequestBody { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken) {
             RequestUri = request.RequestUri;
-            _ = await request.Content!.ReadAsStringAsync(cancellationToken);
+            RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
 
             var response = new HttpResponseMessage(_statusCode) {
                 Content = new StringContent(_responseBody, Encoding.UTF8, "text/plain")

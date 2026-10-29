@@ -3,23 +3,22 @@ using MessageX.Teams;
 
 namespace MessageX.PowerShell;
 
+/// <summary>Composes a Teams Workflow Adaptive Card from nested PowerShell commands.</summary>
+/// <example><summary>Create a card with a report link</summary><code>New-TeamsAdaptiveCard -Body { New-TeamsAdaptiveTextBlock -Text 'Build failed' } -Actions { New-TeamsAdaptiveOpenUrlAction -Title 'Open report' -Url 'https://example.test/report' } -FallbackText 'Build failed. Open https://example.test/report'</code></example>
 [Cmdlet(VerbsCommon.New, "TeamsAdaptiveCard")]
 [OutputType(typeof(TeamsAdaptiveCard))]
 public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
-    [Parameter(Mandatory = false)]
-    public TeamsAdaptiveCardElement[] Body { get; set; } = Array.Empty<TeamsAdaptiveCardElement>();
+    [Parameter(Mandatory = false, Position = 0)]
+    public ScriptBlock? Body { get; set; }
 
     [Parameter(Mandatory = false)]
-    public TeamsAdaptiveAction[] Actions { get; set; } = Array.Empty<TeamsAdaptiveAction>();
+    public ScriptBlock? Actions { get; set; }
 
     [Parameter(Mandatory = false)]
     public TeamsAdaptiveMention[] Mentions { get; set; } = Array.Empty<TeamsAdaptiveMention>();
 
     [Parameter(Mandatory = false)]
     public string Version { get; set; } = "1.2";
-
-    [Parameter(Mandatory = false)]
-    public TeamsAdaptiveRefresh? Refresh { get; set; }
 
     [Parameter(Mandatory = false)]
     public string? FallbackText { get; set; }
@@ -53,10 +52,6 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
     public string? BackgroundVerticalAlignment { get; set; }
 
     [Parameter(Mandatory = false)]
-    [ValidateSet("Action.Submit", "Action.OpenUrl", "Action.ToggleVisibility")]
-    public string? SelectAction { get; set; }
-
-    [Parameter(Mandatory = false)]
     public string? SelectActionId { get; set; }
 
     [Parameter(Mandatory = false)]
@@ -64,9 +59,6 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
 
     [Parameter(Mandatory = false)]
     public string? SelectActionTitle { get; set; }
-
-    [Parameter(Mandatory = false)]
-    public string[]? SelectActionTargetElement { get; set; }
 
     [Parameter(Mandatory = false)]
     public SwitchParameter FullWidth { get; set; }
@@ -88,27 +80,16 @@ public sealed class CmdletNewTeamsAdaptiveCard : PSCmdlet {
                 BackgroundHorizontalAlignment,
                 BackgroundVerticalAlignment),
             SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
-                SelectAction,
                 SelectActionId,
                 SelectActionUrl,
-                SelectActionTitle,
-                SelectActionTargetElement),
-            Refresh = Refresh,
+                SelectActionTitle),
             AllowImageExpand = AllowImageExpand.IsPresent ? true : null,
             FullWidth = FullWidth.IsPresent
         };
 
-        foreach (var element in Body ?? Array.Empty<TeamsAdaptiveCardElement>()) {
-            if (element is not null) {
-                card.Body.Add(element);
-            }
-        }
+        foreach (var element in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveCardElement>(Body)) card.Body.Add(element);
 
-        foreach (var action in Actions ?? Array.Empty<TeamsAdaptiveAction>()) {
-            if (action is not null) {
-                card.Actions.Add(action);
-            }
-        }
+        foreach (var action in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveOpenUrlAction>(Actions)) card.Actions.Add(action);
 
         foreach (var mention in Mentions ?? Array.Empty<TeamsAdaptiveMention>()) {
             if (mention is not null) {

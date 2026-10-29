@@ -6,16 +6,16 @@ schema: 2.0.0
 ---
 # New-TeamsMessage
 ## SYNOPSIS
-New-TeamsMessage [-Title <string>] [-Text <string>] [-Summary <string>] [-AdaptiveCard <TeamsAdaptiveCard>] [-Sections <TeamsMessageSection[]>] [-ThemeColor <string>] [-HideOriginalBody] [-UseConnectorCardFormat] [<CommonParameters>]
+Creates a Teams Workflow message with an Adaptive Card.
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsMessage [-Title <string>] [-Text <string>] [-Summary <string>] [-AdaptiveCard <TeamsAdaptiveCard>] [-Sections <TeamsMessageSection[]>] [-ThemeColor <string>] [-HideOriginalBody] [-UseConnectorCardFormat] [<CommonParameters>]
+New-TeamsMessage [-AdaptiveCard] <TeamsAdaptiveCard> [-Summary <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsMessage [-Title <string>] [-Text <string>] [-Summary <string>] [-AdaptiveCard <TeamsAdaptiveCard>] [-Sections <TeamsMessageSection[]>] [-ThemeColor <string>] [-HideOriginalBody] [-UseConnectorCardFormat] [<CommonParameters>]
+Creates a Teams Workflow message with an Adaptive Card.
 
 ## EXAMPLES
 
@@ -36,40 +36,8 @@ Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -HideOriginalBody
-Specifies the hide original body switch.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Sections
-Specifies one or more values for sections.
-
-```yaml
-Type: TeamsMessageSection[]
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
+Required: True
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -80,70 +48,6 @@ Specifies a value for summary.
 
 ```yaml
 Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Text
-Specifies a value for text.
-
-```yaml
-Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ThemeColor
-Specifies a value for theme color.
-
-```yaml
-Type: String
-Parameter Sets: __AllParameterSets
-Aliases: Color
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Title
-Specifies a value for title.
-
-```yaml
-Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -UseConnectorCardFormat
-Specifies the use connector card format switch.
-
-```yaml
-Type: SwitchParameter
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:

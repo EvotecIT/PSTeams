@@ -21,7 +21,7 @@ New-TeamsAdaptiveOpenUrlAction [-Title] <string> [-Url] <string> [<CommonParamet
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveOpenUrlAction -Title 'Value'
+New-TeamsAdaptiveOpenUrlAction -Title 'Value' -Url 'Value'
 ```
 
 

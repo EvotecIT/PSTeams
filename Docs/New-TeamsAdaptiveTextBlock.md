@@ -21,7 +21,7 @@ New-TeamsAdaptiveTextBlock [-Text] <string> [-NoWrap] [-Size <string>] [-Weight 
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveTextBlock -Color 'Value'
+New-TeamsAdaptiveTextBlock -Text 'Value'
 ```
 
 

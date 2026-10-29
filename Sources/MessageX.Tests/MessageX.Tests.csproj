@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" PrivateAssets="all" />
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
   <ItemGroup>

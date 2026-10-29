@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MessageX.Teams;
 
-public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMessageSender, IDisposable {
+public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, IDisposable {
     internal static WebhookTeamsMessageSender Shared { get; } = new(CreateDefaultHttpClient(), disposeHttpClient: false);
 
     private readonly HttpClient _httpClient;
@@ -28,7 +28,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
     }
 
     public bool CanSend(TeamsDeliveryMethod deliveryMethod) {
-        return deliveryMethod is TeamsDeliveryMethod.IncomingWebhook or TeamsDeliveryMethod.WorkflowWebhook;
+        return deliveryMethod == TeamsDeliveryMethod.WorkflowWebhook;
     }
 
     public async Task<TeamsDeliveryResult> SendAsync(
@@ -50,7 +50,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
         return await SendJsonAsync(json, target, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<TeamsDeliveryResult> SendJsonAsync(
+    private async Task<TeamsDeliveryResult> SendJsonAsync(
         string jsonBody,
         TeamsMessageTarget target,
         CancellationToken cancellationToken = default) {
@@ -98,10 +98,7 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             .ConfigureAwait(false);
 
         var statusCode = (int)response.StatusCode;
-        var connectorThrottled = target.DeliveryMethod == TeamsDeliveryMethod.IncomingWebhook &&
-            response.IsSuccessStatusCode && responseBody.IndexOf(
-                "Microsoft Teams endpoint returned HTTP error 429", StringComparison.OrdinalIgnoreCase) >= 0;
-        var isSuccess = response.IsSuccessStatusCode && !connectorThrottled;
+        var isSuccess = response.IsSuccessStatusCode;
         return new TeamsDeliveryResult {
             DeliveryMethod = target.DeliveryMethod,
             Target = string.IsNullOrWhiteSpace(target.DisplayName) ? target.TargetUri.Host : target.DisplayName!,
@@ -110,10 +107,8 @@ public sealed class WebhookTeamsMessageSender : ITeamsMessageSender, ITeamsRawMe
             ResponseBody = responseBody,
             CorrelationId = ReadCorrelationId(response),
             RetryAfter = ReadRetryAfter(response),
-            ErrorKind = connectorThrottled ? MessageErrorKind.RateLimited :
-                isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
-            ErrorMessage = connectorThrottled ? "Teams connector reported throttling." :
-                isSuccess ? null : $"Teams webhook returned HTTP status {statusCode}."
+            ErrorKind = isSuccess ? MessageErrorKind.Unknown : ClassifyFailure(statusCode),
+            ErrorMessage = isSuccess ? null : $"Teams Workflow returned HTTP status {statusCode}."
         };
     }
 

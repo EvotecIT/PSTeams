@@ -6,14 +6,14 @@ This inventory maps the current open issues in the two predecessor repositories 
 
 | Issue | MessageX disposition | Completion evidence |
 |---|---|---|
-| [#61: New-AdaptiveCard behind a proxy](https://github.com/EvotecIT/PSTeams/issues/61) | The cleanup candidate adds proxy support to `New-AdaptiveCard` and other sending builders. Retain this as a Phase 1 transport contract. | Packed-module proxy test and a controlled proxy send. |
-| [#59: Retirement of Office 365 connectors](https://github.com/EvotecIT/PSTeams/issues/59) | Power Automate Workflows are the primary simple Teams notification path. Connector-card compatibility remains bounded and must not imply long-term connector availability. | Workflow sends to a channel and chat, plus migration documentation. |
+| [#61: New-AdaptiveCard behind a proxy](https://github.com/EvotecIT/PSTeams/issues/61) | The retired `New-AdaptiveCard` connector command has no MessageX replacement. Proxy configuration belongs to the retained `Send-TeamsMessage` Workflow transport. | Packed-module proxy test and a controlled Workflow send through a disposable proxy. |
+| [#59: Retirement of Office 365 connectors](https://github.com/EvotecIT/PSTeams/issues/59) | Power Automate Workflows are the Teams send path. Connector cards and IncomingWebhook delivery are removed; `New-TeamsAdaptiveCard` builds the Workflow attachment. | Workflow sends to a channel and chat through disposable destinations, plus migration documentation. |
 | [#58: ActivityImage](https://github.com/EvotecIT/PSTeams/issues/58) | Preserve the typed activity-image surface only where the selected Teams delivery format still renders it. Treat unsupported connector-era rendering explicitly. | Serialization fixture and live rendering decision for each retained card family. |
 | [#40: Create a channel message, then reply](https://github.com/EvotecIT/PSTeams/issues/40) | This requires a Teams app/bot or governed Graph lifecycle path, not a send-only Workflow URL. It belongs to the typed conversation/message-reference and reply capability. | Initial send returns durable coordinates; replies land in the same channel thread after restart. |
 | [#36: Send a file to a channel](https://github.com/EvotecIT/PSTeams/issues/36) | File upload belongs to authenticated message lifecycle support. Workflows must not claim it. | Provider capability discovery, upload result/reference, and live file round trip. |
 | [#30: Underscores disappear from text](https://github.com/EvotecIT/PSTeams/issues/30) | Protect literal text through the System.Text.Json rendering path. | Serialization and packed-module fixtures containing underscores, slashes, Unicode, and emoji. |
 | [#29: Inline images](https://github.com/EvotecIT/PSTeams/issues/29) | Keep data-image creation separate from transport, enforce provider limits, and keep diagnostics redacted. | File/URL/data fixtures for each supported card family and negative size-limit tests. |
-| [#20: Missing help](https://github.com/EvotecIT/PSTeams/issues/20) | The stabilization candidate generates matching Markdown and MAML help for all 63 current commands. Continue the same contract for MessageX providers. | Zero placeholders, exact export/help parity, and `Get-Help` proof from the packed module. |
+| [#20: Missing help](https://github.com/EvotecIT/PSTeams/issues/20) | Generate matching Markdown and MAML help for every exported MessageX command. | Zero placeholders, exact export/help parity, correct builder parameter signatures, and `Get-Help` proof from the packed module. |
 
 ## PSDiscord open issues
 

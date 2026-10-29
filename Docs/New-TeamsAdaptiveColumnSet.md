@@ -6,16 +6,16 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveColumnSet
 ## SYNOPSIS
-New-TeamsAdaptiveColumnSet [-Columns <TeamsAdaptiveColumn[]>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
+New-TeamsAdaptiveColumnSet [[-Columns] <scriptblock>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveColumnSet [-Columns <TeamsAdaptiveColumn[]>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
+New-TeamsAdaptiveColumnSet [[-Columns] <scriptblock>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveColumnSet [-Columns <TeamsAdaptiveColumn[]>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
+New-TeamsAdaptiveColumnSet [[-Columns] <scriptblock>] [-Style <string>] [-MinimumHeight <int>] [-Bleed] [-Spacing <string>] [-Separator] [-HorizontalAlignment <string>] [-Height <string>] [<CommonParameters>]
 
 ## EXAMPLES
 
@@ -44,16 +44,16 @@ Accept wildcard characters: False
 ```
 
 ### -Columns
-Specifies one or more values for columns.
+Specifies a value for columns.
 
 ```yaml
-Type: TeamsAdaptiveColumn[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: False
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

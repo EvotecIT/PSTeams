@@ -26,7 +26,13 @@ Creates typed Slack plain-text or mrkdwn content.
 
 ### EXAMPLE 1
 ```powershell
-New-SlackText -Emoji
+New-SlackText -Markdown 'Value'
+```
+
+
+### EXAMPLE 2
+```powershell
+New-SlackText -PlainText 'Value'
 ```
 
 

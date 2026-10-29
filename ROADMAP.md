@@ -9,8 +9,7 @@ Produce an unpublished, reproducible MessageX package set and MessageX PowerShel
 ## Implemented candidate
 
 - Provider-neutral delivery results, references, capabilities, error classification, HTTP configuration, and bounded provider data.
-- Teams Workflow/incoming-webhook delivery and typed Adaptive Card composition.
-- Typed Teams Universal Action and refresh models with explicit rejection on webhook-only delivery.
+- Teams Workflow delivery and typed Adaptive Card composition with `Action.OpenUrl` only.
 - Verified Teams app HTTP activities and Adaptive Card action dispatch through durable hosting contracts.
 - Slack incoming-webhook and bot Web API send, reply, update, delete, reactions, and conversation resolution.
 - Slack Block Kit sections, dividers, headers, context, actions, buttons, modal inputs, and `views.open`.
@@ -22,7 +21,7 @@ Produce an unpublished, reproducible MessageX package set and MessageX PowerShel
 - Discord interaction follow-up, original-response update/delete, and follow-up lifecycle with explicit token expiry.
 - Shared routing, acknowledgement deadlines, bounded synchronous dispatch, deduplication, retries, dead-letter behavior, health state, and DbaClientX persistence.
 - Compiled PowerShell cmdlets and provider-native builders over the C# libraries.
-- .NET Framework 4.7.2, .NET 8, and .NET 10 build coverage where supported by each project.
+- .NET Framework 4.7.2 and .NET 8 module builds; .NET 10 remains on justified library targets.
 
 ## Verified candidate baseline
 
@@ -97,7 +96,7 @@ Keep the pilot source commits frozen. During coordinated publication, rebuild th
 
 ## Publication authorization
 
-Publication remains a separate, explicitly authorized operation. Request that authorization only after the exact signed candidate passes every mandatory gate above.
+The 29 October 2026 MessageX brief authorizes the later release operation once the exact signed candidate passes every mandatory gate above. Wave 1 does not publish anything.
 
 - [ ] Confirm the artifact manifest's frozen commits, versions, signatures, and hashes match every signed staged artifact and completed mandatory gate.
 - [ ] Confirm NuGet, PowerShell Gallery, and GitHub credentials and produce a dry-run publication plan without uploading anything.

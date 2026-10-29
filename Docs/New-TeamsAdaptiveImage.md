@@ -21,7 +21,7 @@ New-TeamsAdaptiveImage [-Url] <string> [-AltText <string>] [-Size <string>] [<Co
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveImage -AltText 'Value'
+New-TeamsAdaptiveImage -Url 'Value'
 ```
 
 

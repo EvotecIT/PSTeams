@@ -5,20 +5,8 @@ public sealed class TeamsMessageTarget : IProviderCapabilities {
     internal Uri TargetUri { get; set; } = null!;
     public string? DisplayName { get; internal set; }
     public TeamsWorkflowDestinationKind WorkflowDestination { get; internal set; }
-    public MessageCapabilities Capabilities =>
-        DeliveryMethod is TeamsDeliveryMethod.IncomingWebhook or TeamsDeliveryMethod.WorkflowWebhook
-            ? MessageCapabilities.Send
-            : MessageCapabilities.None;
-
-    public static TeamsMessageTarget ForIncomingWebhook(Uri uri, string? displayName = null) {
-        ValidateUri(uri);
-
-        return new TeamsMessageTarget {
-            DeliveryMethod = TeamsDeliveryMethod.IncomingWebhook,
-            TargetUri = uri,
-            DisplayName = displayName
-        };
-    }
+    public MessageCapabilities Capabilities => DeliveryMethod == TeamsDeliveryMethod.WorkflowWebhook
+        ? MessageCapabilities.Send : MessageCapabilities.None;
 
     public static TeamsMessageTarget ForWorkflowWebhook(
         Uri uri,

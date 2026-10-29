@@ -1,40 +1,26 @@
 ---
-title: "Compose an Adaptive Card"
-description: "Use PSTeams to compose a basic Adaptive Card payload."
+title: "Compose a notification card"
+description: "Build a Teams Workflow Adaptive Card with facts, incident ID, fallback text, and a report link."
 layout: docs
 ---
 
-This pattern is useful when a notification needs structure instead of one line of text.
-
-It comes from the source example at `Examples/Adaptive Card/AdaptiveCard-Native01.ps1`.
-
-## When to use this pattern
-
-- You need a structured message in Teams.
-- The payload should be authored in PowerShell.
-- Operators need facts or grouped information in one card.
-
-## Example
+Import the locally built MessageX module as shown on the [installation page](/projects/psteams/docs/install/). This example needs no endpoint. It produces the Workflow JSON payload for inspection.
 
 ```powershell
-Import-Module .\PSTeams.psd1 -Force
-
-New-AdaptiveCard {
-    New-AdaptiveTextBlock -Size 'Medium' -Weight Bolder -Text 'Backup summary' -Wrap
-    New-AdaptiveFactSet {
-        New-AdaptiveFact -Title 'Server' -Value 'Server01'
-        New-AdaptiveFact -Title 'Status' -Value 'Completed'
+$reportUrl = 'https://example.test/reports/inc-42'
+$card = New-TeamsAdaptiveCard -Body {
+    New-TeamsAdaptiveTextBlock -Text 'Monitoring alert'
+    New-TeamsAdaptiveTextBlock -Text 'The health probe failed for server\_name.'
+    New-TeamsAdaptiveFactSet -Facts {
+        New-TeamsAdaptiveFact -Title 'Incident ID' -Value 'inc-42'
+        New-TeamsAdaptiveFact -Title 'Severity' -Value 'Critical'
     }
-} -Uri $env:TEAMS_WEBHOOK_URL
+} -Actions {
+    New-TeamsAdaptiveOpenUrlAction -Title 'Open report' -Url $reportUrl
+} -FallbackText "Critical: Monitoring alert. Probe failed. Incident inc-42. $reportUrl"
+
+$message = New-TeamsMessage -AdaptiveCard $card -Summary 'Critical monitoring alert'
+$message | ConvertTo-TeamsJson | ConvertFrom-Json
 ```
 
-## What this demonstrates
-
-- building card structure with commands
-- grouping facts for operators
-- sending the payload to a webhook
-
-## Source
-
-- [AdaptiveCard-Native01.ps1](https://github.com/EvotecIT/PSTeams/blob/master/Examples/Adaptive%20Card/AdaptiveCard-Native01.ps1)
-
+The backslash in `server\_name` is intentional: Teams Markdown can treat an underscore as formatting. MessageX preserves authored text and does not escape every underscore automatically. `Action.OpenUrl` is the supported Workflow action for a report link; submit, toggle, and reply interactions need another verified transport.

@@ -21,7 +21,7 @@ Creates Discord embed footer metadata.
 
 ### EXAMPLE 1
 ```powershell
-New-DiscordFooter -IconUrl 'Value'
+New-DiscordFooter -Text 'Value'
 ```
 
 

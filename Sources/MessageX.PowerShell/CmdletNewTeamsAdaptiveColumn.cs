@@ -45,10 +45,6 @@ public sealed class CmdletNewTeamsAdaptiveColumn : PSCmdlet {
     public SwitchParameter Separator { get; set; }
 
     [Parameter(Mandatory = false)]
-    [ValidateSet("Action.Submit", "Action.OpenUrl", "Action.ToggleVisibility")]
-    public string? SelectAction { get; set; }
-
-    [Parameter(Mandatory = false)]
     public string? SelectActionId { get; set; }
 
     [Parameter(Mandatory = false)]
@@ -57,11 +53,8 @@ public sealed class CmdletNewTeamsAdaptiveColumn : PSCmdlet {
     [Parameter(Mandatory = false)]
     public string? SelectActionTitle { get; set; }
 
-    [Parameter(Mandatory = false)]
-    public string[]? SelectActionTargetElement { get; set; }
-
-    [Parameter(Mandatory = false)]
-    public TeamsAdaptiveCardElement[] Items { get; set; } = Array.Empty<TeamsAdaptiveCardElement>();
+    [Parameter(Mandatory = false, Position = 0)]
+    public ScriptBlock? Items { get; set; }
 
     protected override void ProcessRecord() {
         var column = new TeamsAdaptiveColumn {
@@ -75,18 +68,12 @@ public sealed class CmdletNewTeamsAdaptiveColumn : PSCmdlet {
             IsVisible = Hidden.IsPresent ? false : null,
             Separator = Separator.IsPresent ? true : null,
             SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
-                SelectAction,
                 SelectActionId,
                 SelectActionUrl,
-                SelectActionTitle,
-                SelectActionTargetElement)
+                SelectActionTitle)
         };
 
-        foreach (var item in Items) {
-            if (item is not null) {
-                column.Items.Add(item);
-            }
-        }
+        foreach (var item in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveCardElement>(Items)) column.Items.Add(item);
 
         WriteObject(column);
     }

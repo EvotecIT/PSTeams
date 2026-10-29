@@ -6,8 +6,8 @@ MessageX is a set of provider-native libraries connected by a small shared opera
 
 | Owner | Responsibility | Does not own |
 | --- | --- | --- |
-| `MessageX.Core` | Results, references, capabilities, errors, bounded data, HTTP policy | Provider payloads or routing |
-| `MessageX.Teams` | Webhook messages and Teams card models | Microsoft Graph administration |
+| `MessageX.Core` | Product notification shape, results, references, capabilities, errors, bounded data, HTTP policy | Provider payloads or routing |
+| `MessageX.Teams` | Workflow messages and Teams Adaptive Cards with URL actions | Microsoft Graph administration and connector delivery |
 | `MessageX.Slack` | Webhooks, Web API, Block Kit, files, interaction continuation | OAuth installation hosting or Socket Mode |
 | `MessageX.Discord` | Webhooks, bot REST, embeds, attachments, components, interaction continuation | Gateway sessions |
 | `MessageX.Hosting` | Routes, acknowledgements, dispatch, replay, retries, durable records | Provider authentication details |
@@ -66,7 +66,7 @@ Adaptive Cards, Slack Block Kit, and Discord components evolve independently. Sh
 
 ## Runtime rule
 
-The reusable provider and PowerShell libraries retain .NET Framework 4.7.2 compatibility for Windows PowerShell 5.1 while also targeting .NET 8 and .NET 10. ASP.NET Core and persistence packages target modern .NET only. New APIs must compile warning-free on every target declared by their owning project.
+The PowerShell module targets .NET Framework 4.7.2 for Windows PowerShell 5.1 and .NET 8 for PowerShell 7. Reusable provider libraries also target .NET 10 where their separate consumers need it. ASP.NET Core and persistence packages target modern .NET only. New APIs must compile warning-free on every target declared by their owning project.
 
 The `0.1.0` provider packages are not marked trim-safe or Native AOT compatible. Their provider JSON renderers currently use reflection-based `System.Text.Json` metadata. A source-generated serialization context and a runnable trimmed/AOT consumer are required before either capability can be advertised.
 

@@ -35,7 +35,7 @@ jobs:
             - name: Setup PowerShell modules
               shell: pwsh
               run: |
-                  Install-Module PSPublishModule -RequiredVersion 3.0.137 -Force -Scope CurrentUser -AllowClobber
+                  Install-Module PSPublishModule -RequiredVersion 3.0.170 -Force -Scope CurrentUser -AllowClobber
 
             - name: Refresh module manifest
               shell: pwsh

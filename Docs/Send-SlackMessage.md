@@ -31,7 +31,19 @@ Sends simple or typed messages through Slack incoming webhooks or the authentica
 
 ### EXAMPLE 1
 ```powershell
-Send-SlackMessage -Connection 'Value'
+Send-SlackMessage -Message 'Value' -Target 'Value'
+```
+
+
+### EXAMPLE 2
+```powershell
+Send-SlackMessage -ConversationText 'Value' -ConversationId 'Value'
+```
+
+
+### EXAMPLE 3
+```powershell
+Send-SlackMessage -WebhookText 'Value' -WebhookUri 'Value'
 ```
 
 

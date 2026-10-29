@@ -6,33 +6,22 @@ schema: 2.0.0
 ---
 # New-TeamsWebhookTarget
 ## SYNOPSIS
-Creates a send-only Teams incoming webhook or Power Automate Workflow target.
+Creates a send-only Teams Workflow webhook target.
 
 ## SYNTAX
-### IncomingWebhook (Default)
+### __AllParameterSets
 ```powershell
-New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [<CommonParameters>]
-```
-
-### WorkflowWebhook
-```powershell
-New-TeamsWebhookTarget [-Uri] <uri> -Workflow [-DisplayName <string>] [-Destination <TeamsWorkflowDestinationKind>] [<CommonParameters>]
+New-TeamsWebhookTarget [-Uri] <uri> [-DisplayName <string>] [-Destination <TeamsWorkflowDestinationKind>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Workflow destination metadata documents where the configured flow delivers messages. It does not add reply, update, delete, or conversation capabilities.
+Creates a send-only Teams Workflow webhook target.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsWebhookTarget -Uri $workflowUrl -Workflow -Destination Channel -DisplayName 'Release alerts'
-```
-
-
-### EXAMPLE 2
-```powershell
-New-TeamsWebhookTarget -Uri $incomingWebhookUrl -DisplayName 'Legacy alerts'
+New-TeamsWebhookTarget -Uri $workflowUrl -Destination Channel -DisplayName 'Release alerts'
 ```
 
 
@@ -43,7 +32,7 @@ Specifies a value for destination.
 
 ```yaml
 Type: TeamsWorkflowDestinationKind
-Parameter Sets: WorkflowWebhook
+Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values: Unknown, Channel, GroupChat, Chat
 
@@ -59,7 +48,7 @@ Specifies a value for display name.
 
 ```yaml
 Type: String
-Parameter Sets: IncomingWebhook, WorkflowWebhook
+Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
@@ -75,28 +64,12 @@ Specifies a value for uri.
 
 ```yaml
 Type: Uri
-Parameter Sets: IncomingWebhook, WorkflowWebhook
+Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: True
 Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Workflow
-Specifies the workflow switch.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: WorkflowWebhook
-Aliases: None
-Possible values:
-
-Required: True
-Position: named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

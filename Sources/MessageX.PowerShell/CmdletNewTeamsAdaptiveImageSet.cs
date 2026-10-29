@@ -6,8 +6,8 @@ namespace MessageX.PowerShell;
 [Cmdlet(VerbsCommon.New, "TeamsAdaptiveImageSet")]
 [OutputType(typeof(TeamsAdaptiveImageSet))]
 public sealed class CmdletNewTeamsAdaptiveImageSet : PSCmdlet {
-    [Parameter(Mandatory = true)]
-    public TeamsAdaptiveImage[] Images { get; set; } = Array.Empty<TeamsAdaptiveImage>();
+    [Parameter(Mandatory = true, Position = 0)]
+    public ScriptBlock Images { get; set; } = null!;
 
     [Parameter(Mandatory = false)]
     public string? ImageSize { get; set; }
@@ -17,11 +17,7 @@ public sealed class CmdletNewTeamsAdaptiveImageSet : PSCmdlet {
             ImageSize = ImageSize
         };
 
-        foreach (var image in Images ?? Array.Empty<TeamsAdaptiveImage>()) {
-            if (image is not null) {
-                imageSet.Images.Add(image);
-            }
-        }
+        foreach (var image in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveImage>(Images)) imageSet.Images.Add(image);
 
         WriteObject(imageSet);
     }

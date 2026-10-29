@@ -6,38 +6,38 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveActionSet
 ## SYNOPSIS
-New-TeamsAdaptiveActionSet [-Actions <TeamsAdaptiveAction[]>] [<CommonParameters>]
+New-TeamsAdaptiveActionSet [[-Actions] <scriptblock>] [<CommonParameters>]
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveActionSet [-Actions <TeamsAdaptiveAction[]>] [<CommonParameters>]
+New-TeamsAdaptiveActionSet [[-Actions] <scriptblock>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveActionSet [-Actions <TeamsAdaptiveAction[]>] [<CommonParameters>]
+New-TeamsAdaptiveActionSet [[-Actions] <scriptblock>] [<CommonParameters>]
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveActionSet -Actions @('Value')
+New-TeamsAdaptiveActionSet -Actions { }
 ```
 
 
 ## PARAMETERS
 
 ### -Actions
-Specifies one or more values for actions.
+Specifies a value for actions.
 
 ```yaml
-Type: TeamsAdaptiveAction[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: False
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

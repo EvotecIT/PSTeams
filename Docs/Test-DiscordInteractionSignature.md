@@ -23,7 +23,7 @@ reject duplicate signatures because an age window alone does not prevent replay.
 
 ### EXAMPLE 1
 ```powershell
-Test-DiscordInteractionSignature -Body @('Value')
+Test-DiscordInteractionSignature -PublicKey 'Value' -Signature 'Value' -Timestamp 'Value' -Body @('Value')
 ```
 
 

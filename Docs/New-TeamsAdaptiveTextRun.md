@@ -21,7 +21,7 @@ New-TeamsAdaptiveTextRun [-Text] <string> [-Color <string>] [-Subtle <Boolean>] 
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveTextRun -Color 'Value'
+New-TeamsAdaptiveTextRun -Text 'Value'
 ```
 
 

@@ -21,7 +21,7 @@ New-TeamsAdaptiveFact [-Title] <string> [-Value] <string> [<CommonParameters>]
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveFact -Title 'Value'
+New-TeamsAdaptiveFact -Title 'Value' -Value 'Value'
 ```
 
 

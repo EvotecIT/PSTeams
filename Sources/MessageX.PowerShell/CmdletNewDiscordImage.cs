@@ -4,7 +4,6 @@ namespace MessageX.PowerShell;
 
 /// <summary>Creates Discord embed image or thumbnail media.</summary>
 [Cmdlet(VerbsCommon.New, "DiscordImage")]
-[Alias("New-DiscordThumbnail")]
 [OutputType(typeof(DiscordEmbedMedia))]
 public sealed class CmdletNewDiscordImage : PSCmdlet {
     /// <summary>HTTPS or attachment media URI.</summary>
