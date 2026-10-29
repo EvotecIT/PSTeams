@@ -123,7 +123,7 @@ jobs:
     test-ubuntu:
         needs: refresh-psd1
         name: 'Ubuntu PowerShell 7'
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         timeout-minutes: 10
         steps:
             - name: Checkout code
@@ -140,13 +140,8 @@ jobs:
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            - name: Install PowerShell
-              run: |
-                  source /etc/os-release
-                  wget -q https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb
-                  sudo dpkg -i packages-microsoft-prod.deb
-                  sudo apt-get update
-                  sudo apt-get install -y powershell
+            - name: Verify PowerShell
+              run: pwsh --version
 
             - name: Install PowerShell modules
               shell: pwsh
