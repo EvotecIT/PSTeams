@@ -14,6 +14,6 @@ public sealed class TeamsAdaptiveContainer : TeamsAdaptiveCardElement {
     public string? VerticalContentAlignment { get; set; }
     public bool? IsVisible { get; set; }
     public TeamsAdaptiveBackgroundImage? BackgroundImage { get; set; }
-    public TeamsAdaptiveAction? SelectAction { get; set; }
+    public TeamsAdaptiveOpenUrlAction? SelectAction { get; set; }
     public List<TeamsAdaptiveCardElement> Items { get; } = new();
 }

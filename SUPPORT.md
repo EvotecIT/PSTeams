@@ -8,7 +8,7 @@
 | PowerShell | Supported PowerShell 7 runtimes on Windows, Linux, and macOS through modern binaries |
 | .NET | .NET Framework 4.7.2, .NET 8, and .NET 10 where declared by the package |
 | Trimming / Native AOT | Not supported in the `0.1.0` candidate; use the standard JIT runtime |
-| Teams notification | Power Automate / Teams Workflow URLs |
+| Teams notification | Power Automate / Teams Workflow URLs, send-only Adaptive Cards with `Action.OpenUrl` |
 | Teams application receive | Verified ASP.NET Core activity/card-action endpoint |
 | Slack notification | Official incoming webhook and bot Web API |
 | Slack receive | Signed HTTP Events API and Interactivity requests |
@@ -24,7 +24,7 @@ Native AOT toolchain smoke tests pass, but a provider-serialization consumer emi
 - Treat every webhook URL as a credential even when it looks like an ordinary URI.
 - Slack bot file upload requires `files:write`; message and interaction permissions depend on the operations enabled for the installation.
 - Discord bot permissions and intents are installation-specific. HTTP interactions do not require a Gateway connection.
-- Teams Workflow capabilities depend on how the flow was configured. The URL itself remains send-only.
+- Teams Workflow capabilities depend on how the flow was configured. The URL itself remains send-only; channel file upload, message replies, and interactive card submissions are unsupported in the first release.
 
 Use the least privilege that satisfies the selected feature. Keep credentials in a secret store or process environment and rotate any value that was disclosed in logs, scripts, issues, or commits.
 
@@ -51,4 +51,4 @@ Do not include raw response bodies unless they have been reviewed and redacted.
 
 ## Compatibility
 
-Provider identifiers and durable message references are opaque. Do not parse them in consumers. Public breaking changes may occur during `0.x` previews and will be documented. MessageX does not promise drop-in PSTeams or PSDiscord parameter compatibility. Existing builders may remain when they serve current composition contracts. Legacy Office 365 connector URLs are retired by Microsoft and are not a live supported transport.
+Provider identifiers and durable message references are opaque. Do not parse them in consumers. Public breaking changes may occur during `0.x` previews and will be documented. MessageX has no PSTeams or PSDiscord compatibility aliases or wrappers. Legacy Office 365 connector URLs are retired by Microsoft and are not a supported send transport.

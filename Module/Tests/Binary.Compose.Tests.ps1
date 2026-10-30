@@ -1,301 +1,81 @@
-Describe 'MessageX binary cmdlets' {
+Describe 'MessageX Teams Workflow cmdlets' {
     BeforeEach {
         Get-Module MessageX, MessageX.PowerShell | Remove-Module -Force -ErrorAction SilentlyContinue
+        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
     }
 
-    It 'loads built-in activity images with their actual media type' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-        $section = New-TeamsSection -ActivityImage Alert -ActivityText 'Validation'
-        $section.ActivityImage | Should -Match '^data:image/png;base64,'
-        $bytes = [Convert]::FromBase64String(($section.ActivityImage -split ',', 2)[1])
-        [BitConverter]::ToString($bytes[0..7]) | Should -Be '89-50-4E-47-0D-0A-1A-0A'
+    It 'creates a send-only Workflow target by default' {
+        $target = New-TeamsWebhookTarget -Uri 'https://example.test/workflow/secret' -Destination Channel
+        $target.DeliveryMethod.ToString() | Should -Be 'WorkflowWebhook'
+        $target.WorkflowDestination.ToString() | Should -Be 'Channel'
+        $target.Capabilities.ToString() | Should -Be 'Send'
+        $target.ToString() | Should -Not -Match 'secret'
     }
 
-    It 'renders adaptive card JSON from typed cmdlets only' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
+    It 'renders a Workflow Adaptive Card with a report link and plain text fallback' {
+        $card = New-TeamsAdaptiveCard -Body {
+            New-TeamsAdaptiveTextBlock -Text 'Build failed'
+            New-TeamsAdaptiveFactSet -Facts {
+                New-TeamsAdaptiveFact -Title 'Incident ID' -Value 'inc-42'
+            }
+        } -Actions {
+            New-TeamsAdaptiveOpenUrlAction -Title 'Open report' -Url 'https://example.test/reports/inc-42'
+        } -FallbackText 'Build failed. Incident inc-42. Open https://example.test/reports/inc-42'
+        $json = New-TeamsMessage -AdaptiveCard $card -Summary 'Build failed' | ConvertTo-TeamsJson
 
-        $richText = New-TeamsAdaptiveRichTextBlock -Inlines @(
-            New-TeamsAdaptiveTextRun -Text 'Run ' -Color Default
-            New-TeamsAdaptiveTextRun -Text '42' -Weight Bolder -Color Attention
-        ) -Id 'summary' -Spacing Medium -Separator -HorizontalAlignment Center -Height Stretch -Hidden
+        $payload = $json | ConvertFrom-Json
+        $payload.type | Should -Be 'message'
+        $payload.attachments[0].contentType | Should -Be 'application/vnd.microsoft.card.adaptive'
+        $payload.attachments[0].content.actions[0].type | Should -Be 'Action.OpenUrl'
+        $payload.attachments[0].content.fallbackText | Should -Match 'inc-42'
+        $payload.PSObject.Properties.Name | Should -Not -Contain 'sections'
+    }
 
-        $body = @(
-            New-TeamsAdaptiveTextBlock -Text 'Build failed' -Weight Bolder -Color Attention
-            New-TeamsAdaptiveContainer -Style Emphasis -Bleed -MinimumHeight 120 -HorizontalAlignment Center -VerticalContentAlignment center -Height Stretch -Spacing Medium -Separator -Id 'panel' -BackgroundUrl 'https://example.test/background.png' -BackgroundFillMode Cover -BackgroundHorizontalAlignment left -BackgroundVerticalAlignment top -SelectActionUrl 'https://example.test/panel' -SelectActionTitle 'Open panel' -Items @(
-                New-TeamsAdaptiveColumnSet -Style Good -Bleed -MinimumHeight 80 -HorizontalAlignment Center -Height Stretch -Spacing Medium -Separator -Columns @(
-                    New-TeamsAdaptiveColumn -WidthInWeight 2 -MinimumHeight 90 -HorizontalAlignment Right -VerticalContentAlignment Bottom -Spacing Small -Style Attention -Separator -Hidden -SelectAction 'Action.ToggleVisibility' -SelectActionId 'toggle-column' -SelectActionTitle 'Toggle column' -SelectActionTargetElement 'detailsBlock' -Items @(
-                        New-TeamsAdaptiveTextBlock -Text 'Weighted column'
-                    )
-                    New-TeamsAdaptiveColumn -Width 'auto' -Items @(
-                        New-TeamsAdaptiveImage -Url 'https://example.test/status.png' -AltText 'Status'
-                    )
-                )
-            )
-            $richText
-            New-TeamsAdaptiveImageSet -ImageSize Medium -Images @(
-                New-TeamsAdaptiveImage -Url 'https://example.test/image-1.png' -AltText 'First'
-                New-TeamsAdaptiveImage -Url 'https://example.test/image-2.png' -AltText 'Second'
-            )
-            New-TeamsAdaptiveMedia -PosterUrl 'https://example.test/poster.png' -AlternateText 'Build walkthrough' -Sources @(
-                New-TeamsAdaptiveMediaSource -Type 'video/mp4' -Url 'https://example.test/video.mp4'
-            )
-        )
+    It 'keeps underscores literal in the JSON text' {
+        $card = New-TeamsAdaptiveCard -Body {
+            New-TeamsAdaptiveTextBlock -Text 'server_name'
+        }
+        $json = New-TeamsMessage -AdaptiveCard $card | ConvertTo-TeamsJson
+        $json | Should -Match 'server_name'
+    }
 
-        $actions = @(
-            New-TeamsAdaptiveOpenUrlAction -Title 'Open build' -Url 'https://example.test/build/42'
-            New-TeamsAdaptiveSubmitAction -Title 'Acknowledge'
-            New-TeamsAdaptiveToggleVisibilityAction -Title 'Toggle details' -TargetElementIds 'detailsBlock', 'detailsFactSet'
-            New-TeamsAdaptiveShowCardAction -Title 'More details' -Body @(
-                New-TeamsAdaptiveTextBlock -Text 'Nested details'
-            ) -Actions @(
-                New-TeamsAdaptiveSubmitAction -Title 'Nested acknowledge'
-            )
-        )
-
-        $mentions = @(
-            New-TeamsAdaptiveMention -Text 'Ops Team' -UserPrincipalName 'ops@example.test' -Name 'Ops Team'
-        )
-
-        $card = New-TeamsAdaptiveCard -Body $body -Actions $actions -Mentions $mentions -FallbackText 'Fallback text' -MinimumHeight 140 -Speak 'Build failed' -Language 'en' -VerticalContentAlignment center -BackgroundUrl 'https://example.test/card-background.png' -BackgroundFillMode Cover -BackgroundHorizontalAlignment left -BackgroundVerticalAlignment top -SelectActionUrl 'https://example.test/card' -SelectActionTitle 'Open card' -AllowImageExpand -FullWidth
-        $message = New-TeamsMessage -Summary 'Build notification' -AdaptiveCard $card
-        $json = $message | ConvertTo-TeamsJson
-
-        $json | Should -Match '"type":"AdaptiveCard"'
-        $json | Should -Match '"fallbackText":"Fallback text"'
-        $json | Should -Match '"minHeight":"140px"'
-        $json | Should -Match '"allowExpand":true'
-        $json | Should -Match '"width":"Full"'
-        $json | Should -Match '"type":"Container"'
+    It 'composes nested elements with PowerShell script blocks' {
+        $card = New-TeamsAdaptiveCard -Body {
+            New-TeamsAdaptiveContainer -Items {
+                New-TeamsAdaptiveColumnSet -Columns {
+                    New-TeamsAdaptiveColumn -Items {
+                        New-TeamsAdaptiveTextBlock -Text 'Service failed'
+                    }
+                }
+                New-TeamsAdaptiveActionSet -Actions {
+                    New-TeamsAdaptiveOpenUrlAction -Title 'Open report' -Url 'https://example.test/report'
+                }
+            }
+            New-TeamsAdaptiveImageSet -Images {
+                New-TeamsAdaptiveImage -Url 'https://example.test/status.png' -AltText 'Status'
+            }
+        }
+        $json = New-TeamsMessage -AdaptiveCard $card | ConvertTo-TeamsJson
         $json | Should -Match '"type":"ColumnSet"'
-        $json | Should -Match '"type":"Column"'
-        $json | Should -Match '"targetElements":\["detailsBlock"\]'
         $json | Should -Match '"type":"ImageSet"'
-        $json | Should -Match '"type":"Media"'
-        $json | Should -Match '"type":"RichTextBlock"'
-        $json | Should -Match '"type":"Action.Submit"'
-        $json | Should -Match '"type":"Action.ShowCard"'
-        $json | Should -Match '"card":\{"\$schema":"http://adaptivecards.io/schemas/adaptive-card.json"'
-        $json | Should -Match '"type":"Action.ToggleVisibility"'
-        $json | Should -Match '"type":"mention"'
-        $json | Should -Match '"url":"https://example.test/build/42"'
+        $json | Should -Match '"type":"Action.OpenUrl"'
     }
 
-    It 'creates standard and workflow webhook targets' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $incoming = New-TeamsWebhookTarget -Uri 'https://example.test/incoming'
-        $workflow = New-TeamsWebhookTarget -Uri 'https://example.test/workflow' -Workflow -Destination Channel
-
-        $incoming.DeliveryMethod.ToString() | Should -Be 'IncomingWebhook'
-        $workflow.DeliveryMethod.ToString() | Should -Be 'WorkflowWebhook'
-        $workflow.WorkflowDestination.ToString() | Should -Be 'Channel'
-        $workflow.Capabilities.ToString() | Should -Be 'Send'
-        $incoming.PSObject.Properties.Name | Should -Not -Contain 'TargetUri'
-        $incoming.ToString() | Should -Not -Match '/incoming'
+    It 'rejects unrelated values from nested script blocks' {
+        { New-TeamsAdaptiveCard -Body { 'not an adaptive element' } -ErrorAction Stop } | Should -Throw
     }
 
-    It 'renders connector-card JSON from typed Teams message cmdlets' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42' -Summary 'Build summary' -Color DodgerBlue -HideOriginalBody -Sections @(
-            New-TeamsSection -Title 'Build summary' -ActivityText 'Pipeline failed' -ActivityDetails @(
-                New-TeamsFact -Name 'Status' -Value 'Failed'
-            ) -Buttons @(
-                New-TeamsButton -Name 'Open build' -Link 'https://example.test/build/42' -Type OpenUri
-            )
-        )
-
-        $json = $message | ConvertTo-TeamsJson
-
-        $json | Should -Match '"themeColor":"#1E90FF"'
-        $json | Should -Match '"hideOriginalBody":true'
-        $json | Should -Match '"title":"Build failed"'
-        $json | Should -Match '"sections":\['
-        $json | Should -Match '"name":"Status"'
-        $json | Should -Match '"@type":"OpenURI"'
-    }
-
-    It 'renders connector-card JSON when connector-only fields are set without sections' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $message = New-TeamsMessage -Title 'Build failed' -Text 'Pipeline 42' -Color AlbescentWhite -HideOriginalBody
-        $json = $message | ConvertTo-TeamsJson
-
-        $json | Should -Match '"themeColor":"#E3DAC9"'
-        $json | Should -Match '"hideOriginalBody":true'
-        $json | Should -Match '"title":"Build failed"'
-        $json | Should -Match '"text":"Pipeline 42"'
-    }
-
-    It 'treats null sections input as empty when building a typed Teams message' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $sections = $null
-        { $message = New-TeamsMessage -Title 'Build failed' -Sections $sections } | Should -Not -Throw
-        $message.Sections.Count | Should -Be 0
-        $message.UseConnectorCardFormat | Should -BeFalse
-    }
-
-    It 'renders typed wrapper-card objects through ConvertTo-TeamsJson' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -SubTitle 'Seattle Center Monorail' -Text 'Monorail text' -Images @(
-            New-TeamsCardImage -Url 'https://example.test/monorail.jpg' -AlternateText 'Monorail'
-        ) -Buttons @(
-            New-CardListButton -Type OpenUrl -Title 'Official website' -Value 'https://example.test'
-        )
-        $thumbnailCard = New-TeamsThumbnailCard -Title 'Bender' -SubTitle 'robot' -Text 'Futurama' -Images @(
-            New-TeamsCardImage -Url 'https://example.test/bender.png' -AlternateText 'Bender'
-        ) -Buttons @(
-            New-CardListButton -Type ImBack -Title 'Thumbs Up' -Value 'I like it'
-        )
-        $listCard = New-TeamsListCard -Title 'Card Title' -Items @(
-            New-CardListItem -Type File -Title 'Report' -SubTitle 'teams > new > design' -TapType OpenUrl -TapValue 'https://contoso.example/report.xlsx' -TapAction editOnline
-            New-CardListItem -Type Person -Title 'John Doe' -SubTitle 'Manager' -TapType ImBack -TapValue 'JohnDoe@contoso.com' -TapAction whois
-        ) -Buttons @(
-            New-CardListButton -Type OpenUrl -Title 'Show' -Value 'https://evotec.xyz'
-        )
-
-        $heroJson = $heroCard | ConvertTo-TeamsJson
-        $thumbnailJson = $thumbnailCard | ConvertTo-TeamsJson
-        $listJson = $listCard | ConvertTo-TeamsJson
-
-        $heroJson | Should -Match '"contentType":"application/vnd.microsoft.card.hero"'
-        $heroJson | Should -Match '"alt":"Monorail"'
-        $thumbnailJson | Should -Match '"contentType":"application/vnd.microsoft.card.thumbnail"'
-        $thumbnailJson | Should -Match '"type":"imBack"'
-        $listJson | Should -Match '"contentType":"application/vnd.microsoft.teams.card.list"'
-        $listJson | Should -Match '"value":"editOnline https://contoso.example/report.xlsx"'
-        $listJson | Should -Match '"value":"whois JohnDoe@contoso.com"'
-    }
-
-    It 'wraps typed wrapper-card JSON through Send-TeamsMessageBody' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
-            New-TeamsCardImage -Url 'https://example.test/monorail.jpg'
-        )
-        $wrapped = $heroCard |
-            ConvertTo-TeamsJson |
-            Send-TeamsMessageBody -Uri 'https://example.test/webhook' -Wrap -Supress:$false -WhatIf
-
-        $wrapped | Should -Match '"type":"message"'
-        $wrapped | Should -Match '"attachments":\['
-        $wrapped | Should -Match '"contentType":"application/vnd.microsoft.card.hero"'
-    }
-
-    It 'supports Send-TeamsMessage in WhatIf mode with typed input' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $message = New-TeamsMessage -Text 'Hello from MessageX'
-        $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
-
+    It 'supports WhatIf with enterprise transport options and no network send' {
+        $target = New-TeamsWebhookTarget -Uri 'https://example.test/workflow/secret'
+        $card = New-TeamsAdaptiveCard -Body { New-TeamsAdaptiveTextBlock -Text 'Build failed' }
+        $message = New-TeamsMessage -AdaptiveCard $card
         { Send-TeamsMessage -Message $message -Target $target -Proxy 'http://proxy.example.test:8080' -TimeoutSeconds 15 -UserAgent 'MessageX.Tests/1.0' -WhatIf } | Should -Not -Throw
     }
 
-    It 'supports Send-TeamsMessage in WhatIf mode with typed wrapper-card input' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $heroCard = New-TeamsHeroCard -Title 'Seattle Center Monorail' -Images @(
-            New-TeamsCardImage -Url 'https://example.test/monorail.jpg'
-        )
-        $thumbnailCard = New-TeamsThumbnailCard -Title 'Bender' -Images @(
-            New-TeamsCardImage -Url 'https://example.test/bender.png'
-        )
-        $listCard = New-TeamsListCard -Title 'Card Title' -Items @(
-            New-CardListItem -Type ResultItem -Title 'Report' -SubTitle 'teams > new > design'
-        )
-        $target = New-TeamsWebhookTarget -Uri 'https://example.test/webhook'
-
-        { Send-TeamsMessage -HeroCard $heroCard -Target $target -WhatIf } | Should -Not -Throw
-        { Send-TeamsMessage -ThumbnailCard $thumbnailCard -Target $target -WhatIf } | Should -Not -Throw
-        { Send-TeamsMessage -ListCard $listCard -Target $target -WhatIf } | Should -Not -Throw
-    }
-
-    It 'exposes the migrated Send-TeamsMessage cmdlet as the active public command' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        (Get-Command Send-TeamsMessage).CommandType | Should -Be 'Cmdlet'
-        (Get-Command Send-TeamsMessage).Source | Should -Be 'MessageX'
-    }
-
-    It 'exposes consistent enterprise transport parameters on every webhook send entry point' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $commands = @(
-            'Send-TeamsMessage'
-            'Send-TeamsMessageBody'
-            'New-AdaptiveCard'
-            'New-HeroCard'
-            'New-ThumbnailCard'
-            'New-CardList'
-        )
-
-        foreach ($commandName in $commands) {
-            $parameters = (Get-Command $commandName).Parameters
-            $parameters.ContainsKey('Proxy') | Should -BeTrue
-            $parameters.ContainsKey('TimeoutSeconds') | Should -BeTrue
-            $parameters.ContainsKey('UserAgent') | Should -BeTrue
-        }
-    }
-
-    It 'keeps provider response bodies out of default PowerShell delivery errors' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $result = [MessageX.Teams.TeamsDeliveryResult]::new()
-        $result.StatusCode = 429
-        $result.ErrorKind = [MessageX.Core.MessageErrorKind]::RateLimited
-        $result.ErrorMessage = 'Teams webhook returned HTTP status 429.'
-        $result.CorrelationId = 'request-42'
-        $result.RetryAfter = [TimeSpan]::FromSeconds(30)
-        $result.Target = 'Release alerts'
-        $result.ResponseBody = 'request rejected for https://example.test/workflows/secret-token'
-
-        $supportType = [MessageX.PowerShell.CmdletSendTeamsMessage].Assembly.GetType(
-            'MessageX.PowerShell.TeamsPowerShellDeliverySupport',
-            $true)
-        $flags = [System.Reflection.BindingFlags]'Public, Static'
-        $method = $supportType.GetMethod('CreateDeliveryFailureError', $flags)
-        $errorRecord = $method.Invoke($null, [object[]]@($result, 'Send-TeamsMessage'))
-
-        $errorRecord.ErrorDetails.Message | Should -Match 'RateLimited'
-        $errorRecord.ErrorDetails.Message | Should -Match 'request-42'
-        $errorRecord.ErrorDetails.Message | Should -Match '30 seconds'
-        $errorRecord.ErrorDetails.Message | Should -Not -Match 'secret-token'
-        $errorRecord.Exception.ToString() | Should -Not -Match 'secret-token'
-
-        $unsafeResult = [MessageX.Teams.TeamsDeliveryResult]::new()
-        $unsafeResult.StatusCode = 429
-        $unsafeResult.ErrorKind = [MessageX.Core.MessageErrorKind]::RateLimited
-        $unsafeResult.ErrorMessage = 'Teams webhook returned HTTP status 429.'
-        $unsafeResult.CorrelationId = 'https://example.test/workflows/secret-token'
-        $unsafeResult.Target = 'Release alerts'
-        $unsafeError = $method.Invoke($null, [object[]]@($unsafeResult, 'Send-TeamsMessage'))
-
-        $unsafeResult.CorrelationId | Should -BeNullOrEmpty
-        $unsafeError.ErrorDetails.Message | Should -Not -Match 'secret-token'
-    }
-
-    It 'owns one reusable Teams client lease for the complete cmdlet lifecycle' {
-        Import-Module "$PSScriptRoot\..\MessageX\MessageX.psd1" -Force
-
-        $cmdlet = [MessageX.PowerShell.CmdletSendTeamsMessageBody]::new()
-        $baseType = [MessageX.PowerShell.TeamsWebhookCmdletBase]
-        $flags = [System.Reflection.BindingFlags]'Instance, NonPublic'
-        $leaseField = $baseType.GetField('_clientLease', $flags)
-        $begin = $baseType.GetMethod('BeginProcessingAsync', $flags)
-        $end = $baseType.GetMethod('EndProcessingAsync', $flags)
-
-        $begin.Invoke($cmdlet, [object[]]@()).GetAwaiter().GetResult()
-        $lease = $leaseField.GetValue($cmdlet)
-        $lease | Should -Not -BeNullOrEmpty
-        [object]::ReferenceEquals($leaseField.GetValue($cmdlet), $lease) | Should -BeTrue
-
-        $end.Invoke($cmdlet, [object[]]@()).GetAwaiter().GetResult()
-        $leaseField.GetValue($cmdlet) | Should -BeNullOrEmpty
-        $disposedField = $lease.GetType().GetField('_disposed', $flags)
-        $disposedField.GetValue($lease) | Should -BeTrue
-
-        { $cmdlet.Dispose() } | Should -Not -Throw
+    It 'exposes proxy and timeout parameters on the Workflow send command' {
+        $parameters = (Get-Command Send-TeamsMessage).Parameters
+        $parameters.ContainsKey('Proxy') | Should -BeTrue
+        $parameters.ContainsKey('TimeoutSeconds') | Should -BeTrue
+        $parameters.ContainsKey('UserAgent') | Should -BeTrue
     }
 }

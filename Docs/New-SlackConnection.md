@@ -21,7 +21,7 @@ Creates an authenticated Slack bot connection without exposing its token.
 
 ### EXAMPLE 1
 ```powershell
-New-SlackConnection -ApiBaseUri 'Value'
+New-SlackConnection -BotToken (Read-Host -AsSecureString)
 ```
 
 

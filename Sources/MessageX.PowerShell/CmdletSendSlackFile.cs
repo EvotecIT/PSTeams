@@ -15,7 +15,6 @@ public sealed class CmdletSendSlackFile : MessageHttpCmdletBase {
 
     /// <summary>File path to upload.</summary>
     [Parameter(Mandatory = true, Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
-    [Alias("FullName")]
     public string Path { get; set; } = string.Empty;
 
     /// <summary>Authenticated Slack Web API connection with files:write permission.</summary>

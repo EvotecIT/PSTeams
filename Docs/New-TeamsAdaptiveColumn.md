@@ -6,16 +6,16 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveColumn
 ## SYNOPSIS
-New-TeamsAdaptiveColumn [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-Items <TeamsAdaptiveCardElement[]>] [<CommonParameters>]
+New-TeamsAdaptiveColumn [[-Items] <scriptblock>] [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [<CommonParameters>]
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveColumn [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-Items <TeamsAdaptiveCardElement[]>] [<CommonParameters>]
+New-TeamsAdaptiveColumn [[-Items] <scriptblock>] [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveColumn [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-Items <TeamsAdaptiveCardElement[]>] [<CommonParameters>]
+New-TeamsAdaptiveColumn [[-Items] <scriptblock>] [-Width <string>] [-WidthInWeight <int>] [-WidthInPixels <int>] [-Height <string>] [-MinimumHeight <int>] [-HorizontalAlignment <string>] [-VerticalContentAlignment <string>] [-Spacing <string>] [-Style <string>] [-Hidden] [-Separator] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [<CommonParameters>]
 
 ## EXAMPLES
 
@@ -76,16 +76,16 @@ Accept wildcard characters: False
 ```
 
 ### -Items
-Specifies one or more values for items.
+Specifies a value for items.
 
 ```yaml
-Type: TeamsAdaptiveCardElement[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: False
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -107,43 +107,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SelectAction
-Specifies a value for select action.
-
-```yaml
-Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -SelectActionId
 Specifies a value for select action id.
 
 ```yaml
 Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SelectActionTargetElement
-Specifies one or more values for select action target element.
-
-```yaml
-Type: String[]
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:

@@ -26,6 +26,7 @@ Describe 'Generated command documentation contract' {
         )
         $helpPath = Join-Path $PSScriptRoot '..\MessageX\en-US\MessageX-help.xml'
         [xml] $externalHelp = Get-Content -LiteralPath $helpPath -Raw
+        $script:ExternalHelp = $externalHelp
         $script:ExternalHelpCommands = @(
             $externalHelp.SelectNodes(
                 "/*[local-name()='helpItems']/*[local-name()='command']/*[local-name()='details']/*[local-name()='name']") |
@@ -56,5 +57,35 @@ Describe 'Generated command documentation contract' {
 
         $missingHelp | Should -BeNullOrEmpty
         $staleHelp | Should -BeNullOrEmpty
+    }
+
+    It 'shows the installed script-block builder contract in external help' {
+        $builderParameters = @{
+            'New-TeamsAdaptiveActionSet' = @('Actions')
+            'New-TeamsAdaptiveCard' = @('Actions', 'Body')
+            'New-TeamsAdaptiveColumn' = @('Items')
+            'New-TeamsAdaptiveColumnSet' = @('Columns')
+            'New-TeamsAdaptiveContainer' = @('Items')
+            'New-TeamsAdaptiveFactSet' = @('Facts')
+            'New-TeamsAdaptiveImageSet' = @('Images')
+        }
+
+        foreach ($commandName in $builderParameters.Keys) {
+            $command = Get-Command -Name $commandName -Module MessageX
+            $helpCommand = $script:ExternalHelp.SelectSingleNode(
+                "/*[local-name()='helpItems']/*[local-name()='command'][*[local-name()='details']/*[local-name()='name' and text()='$commandName']]")
+            $helpCommand | Should -Not -BeNullOrEmpty
+
+            foreach ($parameterName in $builderParameters[$commandName]) {
+                $command.Parameters[$parameterName].ParameterType.Name | Should -Be 'ScriptBlock'
+                $helpParameter = $helpCommand.SelectSingleNode(
+                    "*[local-name()='parameters']/*[local-name()='parameter'][*[local-name()='name' and text()='$parameterName']]")
+                $helpParameter | Should -Not -BeNullOrEmpty
+                $helpParameter.SelectSingleNode("*[local-name()='type']/*[local-name()='name']").InnerText |
+                    Should -Be 'ScriptBlock'
+            }
+        }
+
+        (Get-Help New-TeamsAdaptiveCard -Examples | Out-String) | Should -Match 'New-TeamsAdaptiveCard -Body \{'
     }
 }

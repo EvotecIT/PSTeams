@@ -10,11 +10,10 @@ public sealed class TeamsAdaptiveCard {
     public string? Language { get; set; }
     public string? VerticalContentAlignment { get; set; }
     public TeamsAdaptiveBackgroundImage? BackgroundImage { get; set; }
-    public TeamsAdaptiveAction? SelectAction { get; set; }
-    public TeamsAdaptiveRefresh? Refresh { get; set; }
+    public TeamsAdaptiveOpenUrlAction? SelectAction { get; set; }
     public bool? AllowImageExpand { get; set; }
     public bool FullWidth { get; set; }
     public List<TeamsAdaptiveCardElement> Body { get; } = new();
-    public List<TeamsAdaptiveAction> Actions { get; } = new();
+    public List<TeamsAdaptiveOpenUrlAction> Actions { get; } = new();
     public List<TeamsAdaptiveMention> Mentions { get; } = new();
 }

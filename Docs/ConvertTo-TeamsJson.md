@@ -6,16 +6,16 @@ schema: 2.0.0
 ---
 # ConvertTo-TeamsJson
 ## SYNOPSIS
-ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
+Renders a Teams Workflow message as JSON without sending it.
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
+ConvertTo-TeamsJson [-InputObject] <TeamsMessageRequest> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-ConvertTo-TeamsJson [-InputObject] <Object> [<CommonParameters>]
+Renders a Teams Workflow message as JSON without sending it.
 
 ## EXAMPLES
 
@@ -31,7 +31,7 @@ ConvertTo-TeamsJson -InputObject 'Value'
 Specifies a value for input object.
 
 ```yaml
-Type: Object
+Type: TeamsMessageRequest
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
@@ -48,7 +48,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-- `System.Object`
+- `MessageX.Teams.TeamsMessageRequest`
 
 ## OUTPUTS
 

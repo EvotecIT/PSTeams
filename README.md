@@ -16,8 +16,8 @@ Do not use `Install-Module PSTeams` as proof that the MessageX code is installed
 
 MessageX keeps one reusable C# owner for each capability and leaves PowerShell, ASP.NET Core, and product integrations as thin surfaces:
 
-- `MessageX.Core` owns delivery results, durable references, capability flags, errors, bounded provider data, and shared HTTP behavior.
-- `MessageX.Teams` owns Teams webhook payloads, Adaptive Cards, webhook-safe actions, and typed future bot-transport models.
+- `MessageX.Core` owns the product notification data contract, delivery results, durable references, capability flags, errors, bounded provider data, and shared HTTP behavior.
+- `MessageX.Teams` owns Teams Workflow payloads and Adaptive Cards with URL actions.
 - `MessageX.Slack` owns Slack incoming webhooks, Web API messaging, Block Kit, file upload, and transient interaction responses.
 - `MessageX.Discord` owns Discord webhooks, bot REST messaging, embeds, attachments, components, and transient interaction responses.
 - `MessageX.Hosting` owns provider-neutral routing, acknowledgement deadlines, deduplication, queues, retries, and durable dispatch contracts.
@@ -32,9 +32,9 @@ Provider-native rich content stays provider-native. MessageX does not flatten Ad
 | Capability | Teams | Slack | Discord |
 | --- | --- | --- | --- |
 | Notification send | Workflow webhook | Incoming webhook and bot Web API | Incoming webhook and bot REST |
-| Rich content | Adaptive Cards, webhook-safe actions, legacy wrapper cards | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
+| Rich content | Adaptive Cards with `Action.OpenUrl` | Sections, headers, context, actions, buttons, modal inputs | Embeds, attachments, buttons, selects, modal inputs |
 | Message lifecycle | Workflow URLs remain send-only | Reply, update, delete, reactions | Reply, read, update, delete, reactions |
-| File delivery | Images and provider card media | Current external upload workflow | Multipart attachments |
+| File delivery | Card images and media links; no channel file upload | Current external upload workflow | Multipart attachments |
 | Verified HTTP receive | Teams app activities and card actions | Events API, commands, actions, views | Commands, components, autocomplete, modals |
 | Interaction continuation | Verified app activity receipt; bot-owned outbound actions are deferred | Transient response URL and `views.open` | Follow-up, edit, and delete within token lifetime |
 | Durable hosting | Shared queue, replay, retry, dead-letter, health, DbaClientX adapter | Shared | Shared |
@@ -51,7 +51,6 @@ Credentials should come from environment variables, a secret store, or `SecureSt
 ```powershell
 $target = New-TeamsWebhookTarget `
     -Uri $Env:MESSAGEX_TEAMS_WORKFLOW_URL `
-    -Workflow `
     -Destination Channel `
     -DisplayName 'Release alerts'
 
@@ -59,15 +58,15 @@ $openBuild = New-TeamsAdaptiveOpenUrlAction `
     -Title 'Open build' `
     -Url 'https://example.com/build/42'
 
-$card = New-TeamsAdaptiveCard -Version '1.2' -Body @(
-    New-TeamsAdaptiveTextBlock -Text 'Build 42 is ready' -Weight Bolder
-) -Actions $openBuild
+$card = New-TeamsAdaptiveCard -Version '1.2' -Body {
+    New-TeamsAdaptiveTextBlock -Text 'Build 42 is ready'
+} -Actions { $openBuild } -FallbackText 'Build 42 is ready. Open https://example.com/build/42'
 
 $message = New-TeamsMessage -Summary 'Build ready' -AdaptiveCard $card
 Send-TeamsMessage -Message $message -Target $target -PassThru
 ```
 
-Workflow URLs are send-only capabilities. They do not grant conversation reads, replies, updates, deletes, or inbound events. `Action.Execute` and Adaptive Card refresh require a bot-owned outbound transport, so current Workflow and incoming-webhook targets reject those contracts before sending.
+Workflow URLs are send-only capabilities. They do not grant conversation reads, replies, updates, deletes, file upload, or inbound events. Adaptive Card actions in this route are `Action.OpenUrl` only. The shared product notification contract carries severity, title, explanation, facts, incident ID, report URL, and plain-text fallback; provider rendering will be completed with the card design in the next wave.
 
 ### Slack Block Kit and file upload
 

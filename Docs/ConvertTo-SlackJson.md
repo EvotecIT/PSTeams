@@ -21,7 +21,7 @@ Serializes a typed Slack message using the exact provider payload contract.
 
 ### EXAMPLE 1
 ```powershell
-ConvertTo-SlackJson -Message 'Value'
+ConvertTo-SlackJson -Message 'Value' -Target 'Value'
 ```
 
 

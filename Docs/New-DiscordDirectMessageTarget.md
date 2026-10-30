@@ -21,7 +21,7 @@ Creates a Discord bot direct-message target.
 
 ### EXAMPLE 1
 ```powershell
-New-DiscordDirectMessageTarget -DisplayName 'Name'
+New-DiscordDirectMessageTarget -UserId 'Value'
 ```
 
 

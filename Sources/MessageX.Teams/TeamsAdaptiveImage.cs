@@ -15,5 +15,5 @@ public sealed class TeamsAdaptiveImage : TeamsAdaptiveCardElement {
     public string? BackgroundColor { get; set; }
     public bool? Separator { get; set; }
     public bool? IsVisible { get; set; }
-    public TeamsAdaptiveAction? SelectAction { get; set; }
+    public TeamsAdaptiveOpenUrlAction? SelectAction { get; set; }
 }

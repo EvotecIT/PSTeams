@@ -6,36 +6,7 @@ public static class WebhookMessageRenderer {
             throw new ArgumentNullException(nameof(request));
         }
 
-        if (request.AdaptiveCard is not null) {
-            return RenderAdaptiveCardMessage(request);
-        }
-
-        if (request.UseConnectorCardFormat) {
-            return RenderConnectorCardMessage(request);
-        }
-
-        var payload = new Dictionary<string, object?> {
-            ["summary"] = EmptyToNull(request.EffectiveSummary),
-            ["title"] = EmptyToNull(request.Title),
-            ["text"] = EmptyToNull(request.Text)
-        };
-
-        return TeamsJsonSerializer.Serialize(payload);
-    }
-
-    private static string RenderConnectorCardMessage(TeamsMessageRequest request) {
-        var payload = new Dictionary<string, object?> {
-            ["themeColor"] = EmptyToNull(request.ThemeColor),
-            ["title"] = EmptyToNull(request.Title),
-            ["hideOriginalBody"] = request.HideOriginalBody ? true : null,
-            ["summary"] = EmptyToNull(request.EffectiveSummary),
-            ["text"] = EmptyToNull(request.Text),
-            ["sections"] = request.Sections.Count == 0
-                ? null
-                : request.Sections.Select(RenderConnectorSection).ToArray()
-        };
-
-        return TeamsJsonSerializer.Serialize(payload);
+        return RenderAdaptiveCardMessage(request);
     }
 
     private static string RenderAdaptiveCardMessage(TeamsMessageRequest request) {
@@ -46,7 +17,7 @@ public static class WebhookMessageRenderer {
                 new Dictionary<string, object?> {
                     ["contentType"] = "application/vnd.microsoft.card.adaptive",
                     ["contentUrl"] = null,
-                    ["content"] = RenderAdaptiveCard(request.AdaptiveCard!)
+                    ["content"] = RenderAdaptiveCard(request.AdaptiveCard ?? CreateSimpleCard(request))
                 }
             }
         };
@@ -54,8 +25,22 @@ public static class WebhookMessageRenderer {
         return TeamsJsonSerializer.Serialize(payload);
     }
 
+    private static TeamsAdaptiveCard CreateSimpleCard(TeamsMessageRequest request) {
+        var card = new TeamsAdaptiveCard { FallbackText = request.Text ?? request.Title };
+        if (!string.IsNullOrWhiteSpace(request.Title)) {
+            card.Body.Add(new TeamsAdaptiveTextBlock { Text = request.Title!, Wrap = true });
+        }
+        if (!string.IsNullOrWhiteSpace(request.Text)) {
+            card.Body.Add(new TeamsAdaptiveTextBlock { Text = request.Text!, Wrap = true });
+        }
+        if (card.Body.Count == 0) {
+            throw new ArgumentException("A Teams message requires an Adaptive Card, title, or text.", nameof(request));
+        }
+        return card;
+    }
+
     internal static Dictionary<string, object?> RenderAdaptiveCard(TeamsAdaptiveCard card) {
-        TeamsAdaptiveCardValidation.Validate(card, allowUniversalActions: false);
+        TeamsAdaptiveCardValidation.Validate(card);
         Dictionary<string, object?>? msTeams = null;
         if (card.AllowImageExpand is not null || card.FullWidth || card.Mentions.Count > 0) {
             msTeams = new Dictionary<string, object?>();
@@ -81,9 +66,8 @@ public static class WebhookMessageRenderer {
             ["speak"] = EmptyToNull(card.Speak),
             ["lang"] = EmptyToNull(card.Language),
             ["verticalContentAlignment"] = EmptyToNull(card.VerticalContentAlignment),
-            ["backgroundImage"] = TeamsLegacyAdaptiveNormalizer.Normalize(card.BackgroundImage),
+            ["backgroundImage"] = RenderBackgroundImage(card.BackgroundImage),
             ["selectAction"] = card.SelectAction is null ? null : RenderAdaptiveAction(card.SelectAction),
-            ["refresh"] = card.Refresh is null ? null : RenderAdaptiveRefresh(card.Refresh),
             ["body"] = card.Body.Select(RenderAdaptiveElement).ToArray(),
             ["actions"] = card.Actions.Count == 0 ? null : card.Actions.Select(RenderAdaptiveAction).ToArray(),
             ["msteams"] = msTeams
@@ -100,107 +84,6 @@ public static class WebhookMessageRenderer {
                 ["id"] = mention.Mentioned.Id,
                 ["name"] = EmptyToNull(mention.Mentioned.Name)
             }
-        };
-    }
-
-    private static Dictionary<string, object?> RenderConnectorSection(TeamsMessageSection section) {
-        var text = section.Text;
-        if (section.HeroImages.Count > 0) {
-            var fragments = new List<string>(section.HeroImages);
-            if (!string.IsNullOrWhiteSpace(text)) {
-                fragments.Add(text!);
-            }
-
-            text = string.Join(" ", fragments);
-        }
-
-        return new Dictionary<string, object?> {
-            ["title"] = EmptyToNull(section.Title),
-            ["activityTitle"] = EmptyToNull(section.ActivityTitle),
-            ["activitySubtitle"] = EmptyToNull(section.ActivitySubtitle),
-            ["activityImage"] = EmptyToNull(section.ActivityImage),
-            ["activityText"] = EmptyToNull(section.ActivityText),
-            ["text"] = EmptyToNull(text),
-            ["startGroup"] = section.StartGroup ? true : null,
-            ["facts"] = section.Facts.Count == 0
-                ? null
-                : section.Facts.Select(fact => new Dictionary<string, object?> {
-                    ["name"] = EmptyToNull(fact.Name),
-                    ["value"] = EmptyToNull(fact.Value)
-                }).ToArray(),
-            ["potentialAction"] = section.Buttons.Count == 0
-                ? null
-                : section.Buttons.Select(RenderConnectorButton).ToArray(),
-            ["images"] = section.Images.Count == 0
-                ? null
-                : section.Images.Select(image => new Dictionary<string, object?> {
-                    ["image"] = EmptyToNull(image)
-                }).ToArray()
-        };
-    }
-
-    private static Dictionary<string, object?> RenderConnectorButton(TeamsMessageButton button) {
-        return button.ButtonType switch {
-            TeamsMessageButtonType.ViewAction => new Dictionary<string, object?> {
-                ["@context"] = "http://schema.org",
-                ["@type"] = "ViewAction",
-                ["name"] = EmptyToNull(button.Name),
-                ["target"] = string.IsNullOrWhiteSpace(button.Link) ? null : new[] { button.Link }
-            },
-            TeamsMessageButtonType.TextInput => new Dictionary<string, object?> {
-                ["@type"] = "ActionCard",
-                ["Name"] = EmptyToNull(button.Name),
-                ["Inputs"] = new[] {
-                    new Dictionary<string, object?> {
-                        ["@type"] = "TextInput",
-                        ["id"] = "Comment",
-                        ["isMultiLine"] = true,
-                        ["title"] = "Enter Your Text Input Here"
-                    }
-                },
-                ["actions"] = new[] {
-                    new Dictionary<string, object?> {
-                        ["@type"] = "HttpPOST",
-                        ["Name"] = "OK",
-                        ["target"] = EmptyToNull(button.Link)
-                    }
-                }
-            },
-            TeamsMessageButtonType.DateInput => new Dictionary<string, object?> {
-                ["@type"] = "ActionCard",
-                ["Name"] = EmptyToNull(button.Name),
-                ["Inputs"] = new[] {
-                    new Dictionary<string, object?> {
-                        ["@type"] = "DateInput",
-                        ["id"] = "dueDate"
-                    }
-                },
-                ["actions"] = new[] {
-                    new Dictionary<string, object?> {
-                        ["@type"] = "HttpPOST",
-                        ["Name"] = "OK",
-                        ["target"] = EmptyToNull(button.Link)
-                    }
-                }
-            },
-            TeamsMessageButtonType.HttpPost => new Dictionary<string, object?> {
-                ["name"] = EmptyToNull(button.Name),
-                ["@type"] = "HttpPOST",
-                ["Target"] = EmptyToNull(button.Link)
-            },
-            TeamsMessageButtonType.OpenUri => new Dictionary<string, object?> {
-                ["name"] = EmptyToNull(button.Name),
-                ["@type"] = "OpenURI",
-                ["Targets"] = string.IsNullOrWhiteSpace(button.Link)
-                    ? null
-                    : new[] {
-                        new Dictionary<string, object?> {
-                            ["os"] = "default",
-                            ["uri"] = button.Link
-                        }
-                    }
-            },
-            _ => throw new NotSupportedException($"Connector action '{button.ButtonType}' is not supported by the webhook renderer yet.")
         };
     }
 
@@ -329,7 +212,7 @@ public static class WebhookMessageRenderer {
                 ["minHeight"] = EmptyToNull(container.MinimumHeight),
                 ["separator"] = container.Separator,
                 ["isVisible"] = container.IsVisible,
-                ["backgroundImage"] = TeamsLegacyAdaptiveNormalizer.Normalize(container.BackgroundImage),
+                ["backgroundImage"] = RenderBackgroundImage(container.BackgroundImage),
                 ["selectAction"] = container.SelectAction is null ? null : RenderAdaptiveAction(container.SelectAction),
                 ["items"] = container.Items.Select(RenderAdaptiveElement).ToArray()
             };
@@ -376,66 +259,20 @@ public static class WebhookMessageRenderer {
         throw new NotSupportedException($"Adaptive element '{element.GetType().Name}' is not supported by the webhook renderer yet.");
     }
 
-    private static Dictionary<string, object?> RenderAdaptiveAction(TeamsAdaptiveAction action) {
-        if (action is TeamsAdaptiveExecuteAction executeAction) {
-            return new Dictionary<string, object?> {
-                ["type"] = executeAction.Type,
-                ["id"] = EmptyToNull(executeAction.Id),
-                ["title"] = EmptyToNull(executeAction.Title),
-                ["verb"] = executeAction.Verb,
-                ["data"] = executeAction.Data,
-                ["associatedInputs"] = executeAction.AssociatedInputs == TeamsAdaptiveAssociatedInputs.None
-                    ? "none"
-                    : "auto",
-                ["fallback"] = executeAction.Fallback is null
-                    ? null
-                    : RenderAdaptiveAction(executeAction.Fallback)
-            };
-        }
-
-        if (action is TeamsAdaptiveOpenUrlAction openUrlAction) {
-            return new Dictionary<string, object?> {
-                ["type"] = openUrlAction.Type,
-                ["id"] = EmptyToNull(openUrlAction.Id),
-                ["title"] = EmptyToNull(openUrlAction.Title),
-                ["url"] = openUrlAction.Url
-            };
-        }
-
-        if (action is TeamsAdaptiveToggleVisibilityAction toggleVisibilityAction) {
-            return new Dictionary<string, object?> {
-                ["type"] = toggleVisibilityAction.Type,
-                ["id"] = EmptyToNull(toggleVisibilityAction.Id),
-                ["title"] = EmptyToNull(toggleVisibilityAction.Title),
-                ["targetElements"] = toggleVisibilityAction.TargetElements.ToArray()
-            };
-        }
-
-        if (action is TeamsAdaptiveSubmitAction submitAction) {
-            return new Dictionary<string, object?> {
-                ["type"] = submitAction.Type,
-                ["id"] = EmptyToNull(submitAction.Id),
-                ["title"] = EmptyToNull(submitAction.Title),
-                ["data"] = submitAction.Data
-            };
-        }
-
-        if (action is TeamsAdaptiveShowCardAction showCardAction) {
-            return new Dictionary<string, object?> {
-                ["type"] = showCardAction.Type,
-                ["id"] = EmptyToNull(showCardAction.Id),
-                ["title"] = EmptyToNull(showCardAction.Title),
-                ["card"] = TeamsLegacyAdaptiveNormalizer.Normalize(showCardAction.Card)
-            };
-        }
-
-        throw new NotSupportedException($"Adaptive action '{action.GetType().Name}' is not supported by the webhook renderer yet.");
-    }
-
-    private static Dictionary<string, object?> RenderAdaptiveRefresh(TeamsAdaptiveRefresh refresh) => new() {
-        ["action"] = RenderAdaptiveAction(refresh.Action),
-        ["userIds"] = refresh.UserIds.Count == 0 ? null : refresh.UserIds.ToArray()
+    private static Dictionary<string, object?> RenderAdaptiveAction(TeamsAdaptiveOpenUrlAction action) => new() {
+        ["type"] = action.Type,
+        ["id"] = EmptyToNull(action.Id),
+        ["title"] = EmptyToNull(action.Title),
+        ["url"] = action.Url
     };
+
+    private static Dictionary<string, object?>? RenderBackgroundImage(TeamsAdaptiveBackgroundImage? image) =>
+        image is null ? null : new Dictionary<string, object?> {
+            ["url"] = EmptyToNull(image.Url),
+            ["fillMode"] = EmptyToNull(image.FillMode),
+            ["horizontalAlignment"] = EmptyToNull(image.HorizontalAlignment),
+            ["verticalAlignment"] = EmptyToNull(image.VerticalAlignment)
+        };
 
     private static string? EmptyToNull(string? value) {
         return string.IsNullOrWhiteSpace(value) ? null : value;

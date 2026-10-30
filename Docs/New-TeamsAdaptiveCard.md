@@ -6,32 +6,32 @@ schema: 2.0.0
 ---
 # New-TeamsAdaptiveCard
 ## SYNOPSIS
-New-TeamsAdaptiveCard [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-Refresh <TeamsAdaptiveRefresh>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
+Composes a Teams Workflow Adaptive Card from nested PowerShell commands.
 
 ## SYNTAX
 ### __AllParameterSets
 ```powershell
-New-TeamsAdaptiveCard [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-Refresh <TeamsAdaptiveRefresh>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
+New-TeamsAdaptiveCard [[-Body] <scriptblock>] [-Actions <scriptblock>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-New-TeamsAdaptiveCard [-Body <TeamsAdaptiveCardElement[]>] [-Actions <TeamsAdaptiveAction[]>] [-Mentions <TeamsAdaptiveMention[]>] [-Version <string>] [-Refresh <TeamsAdaptiveRefresh>] [-FallbackText <string>] [-MinimumHeight <int>] [-Speak <string>] [-Language <string>] [-VerticalContentAlignment <string>] [-BackgroundUrl <string>] [-BackgroundFillMode <string>] [-BackgroundHorizontalAlignment <string>] [-BackgroundVerticalAlignment <string>] [-SelectAction <string>] [-SelectActionId <string>] [-SelectActionUrl <string>] [-SelectActionTitle <string>] [-SelectActionTargetElement <string[]>] [-FullWidth] [-AllowImageExpand] [<CommonParameters>]
+Composes a Teams Workflow Adaptive Card from nested PowerShell commands.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveCard -Actions @('Value')
+New-TeamsAdaptiveCard -Body { New-TeamsAdaptiveTextBlock -Text 'Build failed' } -Actions { New-TeamsAdaptiveOpenUrlAction -Title 'Open report' -Url 'https://example.test/report' } -FallbackText 'Build failed. Open https://example.test/report'
 ```
 
 
 ## PARAMETERS
 
 ### -Actions
-Specifies one or more values for actions.
+Specifies a value for actions.
 
 ```yaml
-Type: TeamsAdaptiveAction[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
@@ -124,16 +124,16 @@ Accept wildcard characters: False
 ```
 
 ### -Body
-Specifies one or more values for body.
+Specifies a value for body.
 
 ```yaml
-Type: TeamsAdaptiveCardElement[]
+Type: ScriptBlock
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:
 
 Required: False
-Position: named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -219,59 +219,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Refresh
-Specifies a value for refresh.
-
-```yaml
-Type: TeamsAdaptiveRefresh
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SelectAction
-Specifies a value for select action.
-
-```yaml
-Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values: Action.Submit, Action.OpenUrl, Action.ToggleVisibility
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -SelectActionId
 Specifies a value for select action id.
 
 ```yaml
 Type: String
-Parameter Sets: __AllParameterSets
-Aliases: None
-Possible values:
-
-Required: False
-Position: named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SelectActionTargetElement
-Specifies one or more values for select action target element.
-
-```yaml
-Type: String[]
 Parameter Sets: __AllParameterSets
 Aliases: None
 Possible values:

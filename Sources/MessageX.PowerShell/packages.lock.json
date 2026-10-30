@@ -139,42 +139,6 @@
         }
       }
     },
-    "net10.0": {
-      "PowerShellStandard.Library": {
-        "type": "Direct",
-        "requested": "[5.1.1, )",
-        "resolved": "5.1.1",
-        "contentHash": "e31xJjG+Kjbv6YF3Yq6D4Dl3or8v7LrNF41k3CXrWozW6hR1zcOe5KYuZJaGSiAgLnwP8wcW+I3+IWEzMPZKXQ=="
-      },
-      "messagex.core": {
-        "type": "Project"
-      },
-      "messagex.discord": {
-        "type": "Project",
-        "dependencies": {
-          "BouncyCastle.Cryptography": "[2.7.0, )",
-          "MessageX.Core": "[0.1.0, )"
-        }
-      },
-      "messagex.slack": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
-      },
-      "messagex.teams": {
-        "type": "Project",
-        "dependencies": {
-          "MessageX.Core": "[0.1.0, )"
-        }
-      },
-      "BouncyCastle.Cryptography": {
-        "type": "CentralTransitive",
-        "requested": "[2.7.0, )",
-        "resolved": "2.7.0",
-        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
-      }
-    },
     "net8.0": {
       "PowerShellStandard.Library": {
         "type": "Direct",

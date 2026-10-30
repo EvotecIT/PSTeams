@@ -113,7 +113,7 @@ File path to upload.
 ```yaml
 Type: String
 Parameter Sets: __AllParameterSets
-Aliases: FullName
+Aliases: None
 Possible values:
 
 Required: True

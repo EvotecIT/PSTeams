@@ -35,6 +35,18 @@ New-SlackSection -Accessory 'Value'
 ```
 
 
+### EXAMPLE 2
+```powershell
+New-SlackSection -PlainText 'Value'
+```
+
+
+### EXAMPLE 3
+```powershell
+New-SlackSection -TextObject 'Value'
+```
+
+
 ## PARAMETERS
 
 ### -Accessory

@@ -38,7 +38,7 @@ Build-Module -ModuleName 'MessageX' -Path 'Module' -SkipInstall {
         NETProjectName             = 'MessageX.PowerShell'
         NETBinaryModule            = 'MessageX.PowerShell.dll'
         NETConfiguration           = 'Release'
-        NETFramework               = 'net472', 'net8.0', 'net10.0'
+        NETFramework               = 'net472', 'net8.0'
         NETDevelopmentBinaries     = $true
         NETDevelopmentBinariesMode = 'Environment'
         NETDevelopmentSourceBootstrapperMode = 'ReplaceSingleFile'

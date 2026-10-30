@@ -30,6 +30,12 @@ New-DiscordAttachment -Path 'C:\Path'
 ```
 
 
+### EXAMPLE 2
+```powershell
+New-DiscordAttachment -Bytes @('Value') -FileName 'Name'
+```
+
+
 ## PARAMETERS
 
 ### -Bytes

@@ -21,7 +21,7 @@ New-TeamsAdaptiveMediaSource [-Type] <string> [-Url] <string> [<CommonParameters
 
 ### EXAMPLE 1
 ```powershell
-New-TeamsAdaptiveMediaSource -Type 'Value'
+New-TeamsAdaptiveMediaSource -Type 'Value' -Url 'Value'
 ```
 
 

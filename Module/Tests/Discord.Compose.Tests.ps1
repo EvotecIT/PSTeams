@@ -6,8 +6,8 @@ Describe 'MessageX Discord PowerShell surface' {
 
     It 'builds safe provider-native embeds and JSON' {
         $message = New-DiscordMessage -Content 'Build <@123456789012345678> failed' -Embeds @(
-            New-DiscordSection -Title 'Build failed' -Description 'Pipeline 42' -Color 0xCC3300 -Fields @(
-                New-DiscordFact -Name 'Environment' -Value 'Production' -Inline
+            New-DiscordEmbed -Title 'Build failed' -Description 'Pipeline 42' -Color 0xCC3300 -Fields @(
+                New-DiscordField -Name 'Environment' -Value 'Production' -Inline
             ) -Footer (New-DiscordFooter -Text 'MessageX')
         )
         $target = New-DiscordChannelTarget -ChannelId '223456789012345678' -GuildId '323456789012345678'
@@ -20,22 +20,22 @@ Describe 'MessageX Discord PowerShell surface' {
     }
 
     It 'rejects completely empty embeds before delivery' {
-        $message = New-DiscordMessage -Embeds (New-DiscordSection)
+        $message = New-DiscordMessage -Embeds (New-DiscordEmbed)
         $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
 
         { $message | ConvertTo-DiscordJson -Target $target } | Should -Throw
     }
 
-    It 'preserves legacy PSDiscord builder names as aliases' {
-        (Get-Command New-DiscordEmbed).CommandType | Should -Be 'Alias'
-        (Get-Command New-DiscordField).CommandType | Should -Be 'Alias'
-        (Get-Command New-DiscordThumbnail).CommandType | Should -Be 'Alias'
+    It 'uses direct Discord builders without compatibility aliases' {
+        (Get-Command New-DiscordEmbed).CommandType | Should -Be 'Cmdlet'
+        (Get-Command New-DiscordField).CommandType | Should -Be 'Cmdlet'
+        (Get-Command New-DiscordThumbnail -ErrorAction SilentlyContinue) | Should -BeNullOrEmpty
     }
 
     It 'keeps spoiler filenames and attachment URLs aligned' {
         $attachment = New-DiscordAttachment -Bytes ([byte[]](1, 2, 3)) -FileName 'report.png' -Spoiler
         $message = New-DiscordMessage -Attachments $attachment -Embeds @(
-            New-DiscordSection -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
+            New-DiscordEmbed -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
         )
         $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
         $payload = $message | ConvertTo-DiscordJson -Target $target | ConvertFrom-Json
@@ -51,7 +51,7 @@ Describe 'MessageX Discord PowerShell surface' {
             $visible = New-DiscordAttachment -Bytes ([byte[]](2)) -FileName 'report.png'
             $attachments = if ($spoilerFirst) { @($spoiler, $visible) } else { @($visible, $spoiler) }
             $message = New-DiscordMessage -Attachments $attachments -Embeds @(
-                New-DiscordSection -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
+                New-DiscordEmbed -Title 'Report' -Image (New-DiscordImage -Url 'attachment://report.png')
             )
             $target = New-DiscordChannelTarget -ChannelId '223456789012345678'
             $payload = $message | ConvertTo-DiscordJson -Target $target | ConvertFrom-Json
@@ -167,13 +167,13 @@ Describe 'MessageX Discord PowerShell surface' {
             Should -Throw -ErrorId 'DiscordConnectionRequired,MessageX.PowerShell.CmdletSendDiscordMessage'
     }
 
-    It 'exports each Discord command and alias from MessageX' {
+    It 'exports each Discord command from MessageX' {
         $commands = @(
             'Add-DiscordReaction', 'ConvertTo-DiscordJson', 'Get-DiscordMessage',
             'New-DiscordAllowedMentions', 'New-DiscordAttachment',
             'New-DiscordAuthor', 'New-DiscordChannelTarget', 'New-DiscordConnection',
-            'New-DiscordDirectMessageTarget', 'New-DiscordFact', 'New-DiscordFooter',
-            'New-DiscordImage', 'New-DiscordMessage', 'New-DiscordSection',
+            'New-DiscordDirectMessageTarget', 'New-DiscordField', 'New-DiscordFooter',
+            'New-DiscordImage', 'New-DiscordMessage', 'New-DiscordEmbed',
             'New-DiscordThreadTarget', 'New-DiscordWebhookTarget', 'Remove-DiscordMessage',
             'Remove-DiscordReaction', 'Send-DiscordMessage', 'Test-DiscordInteractionSignature',
             'Update-DiscordMessage'

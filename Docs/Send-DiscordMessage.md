@@ -41,7 +41,19 @@ Sends simple or typed messages through Discord incoming webhooks or authenticate
 
 ### EXAMPLE 1
 ```powershell
-Send-DiscordMessage -AllowedMentions 'Value'
+Send-DiscordMessage -Message 'Value' -Target 'Value'
+```
+
+
+### EXAMPLE 2
+```powershell
+Send-DiscordMessage -Text 'Value' -ChannelId 'Value'
+```
+
+
+### EXAMPLE 3
+```powershell
+Send-DiscordMessage -Text 'Value' -UserId 'Value'
 ```
 
 

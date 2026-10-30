@@ -12,6 +12,6 @@ public sealed class TeamsAdaptiveColumn : TeamsAdaptiveCardElement {
     public string? Style { get; set; }
     public bool? IsVisible { get; set; }
     public bool? Separator { get; set; }
-    public TeamsAdaptiveAction? SelectAction { get; set; }
+    public TeamsAdaptiveOpenUrlAction? SelectAction { get; set; }
     public List<TeamsAdaptiveCardElement> Items { get; } = new();
 }

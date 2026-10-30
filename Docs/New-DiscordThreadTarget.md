@@ -21,7 +21,7 @@ Creates a Discord bot thread-channel target.
 
 ### EXAMPLE 1
 ```powershell
-New-DiscordThreadTarget -DisplayName 'Name'
+New-DiscordThreadTarget -ThreadId 'Value'
 ```
 
 

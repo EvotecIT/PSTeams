@@ -1,13 +1,13 @@
 ---
-title: "PSTeams Docs"
-description: "Curated documentation workspace for PSTeams."
+title: "MessageX Docs"
+description: "Installation and Workflow-first guidance for MessageX."
 layout: docs
 ---
 
-PSTeams sends Microsoft Teams webhook notifications and card payloads from PowerShell.
+MessageX sends Teams Workflow, Slack, and Discord notifications. The current candidate is not published to PowerShell Gallery.
 
 ## Start here
 
-- [Installation](./install/)
-- [Project overview](./overview/)
-- [Back to project overview](/projects/psteams/)
+- [Build and import the preview](./install/)
+- [Provider and notification overview](./overview/)
+- [Runnable examples](/projects/psteams/examples/)

@@ -6,8 +6,8 @@ namespace MessageX.PowerShell;
 [Cmdlet(VerbsCommon.New, "TeamsAdaptiveContainer")]
 [OutputType(typeof(TeamsAdaptiveContainer))]
 public sealed class CmdletNewTeamsAdaptiveContainer : PSCmdlet {
-    [Parameter(Mandatory = false)]
-    public TeamsAdaptiveCardElement[] Items { get; set; } = Array.Empty<TeamsAdaptiveCardElement>();
+    [Parameter(Mandatory = false, Position = 0)]
+    public ScriptBlock? Items { get; set; }
 
     [Parameter(Mandatory = false)]
     [ValidateSet("None", "Small", "Default", "Medium", "Large", "ExtraLarge", "Padding")]
@@ -60,10 +60,6 @@ public sealed class CmdletNewTeamsAdaptiveContainer : PSCmdlet {
     public string? BackgroundVerticalAlignment { get; set; }
 
     [Parameter(Mandatory = false)]
-    [ValidateSet("Action.Submit", "Action.OpenUrl", "Action.ToggleVisibility")]
-    public string? SelectAction { get; set; }
-
-    [Parameter(Mandatory = false)]
     public string? SelectActionId { get; set; }
 
     [Parameter(Mandatory = false)]
@@ -71,9 +67,6 @@ public sealed class CmdletNewTeamsAdaptiveContainer : PSCmdlet {
 
     [Parameter(Mandatory = false)]
     public string? SelectActionTitle { get; set; }
-
-    [Parameter(Mandatory = false)]
-    public string[]? SelectActionTargetElement { get; set; }
 
     protected override void ProcessRecord() {
         var container = new TeamsAdaptiveContainer {
@@ -93,18 +86,12 @@ public sealed class CmdletNewTeamsAdaptiveContainer : PSCmdlet {
                 BackgroundHorizontalAlignment,
                 BackgroundVerticalAlignment),
             SelectAction = TeamsAdaptiveActionSupport.CreateSelectAction(
-                SelectAction,
                 SelectActionId,
                 SelectActionUrl,
-                SelectActionTitle,
-                SelectActionTargetElement)
+                SelectActionTitle)
         };
 
-        foreach (var item in Items) {
-            if (item is not null) {
-                container.Items.Add(item);
-            }
-        }
+        foreach (var item in TeamsAdaptiveScriptBlock.Evaluate<TeamsAdaptiveCardElement>(Items)) container.Items.Add(item);
 
         WriteObject(container);
     }

@@ -21,7 +21,7 @@ Creates a fixed-destination Slack incoming-webhook target.
 
 ### EXAMPLE 1
 ```powershell
-New-SlackWebhookTarget -DisplayName 'Name'
+New-SlackWebhookTarget -Uri 'Value'
 ```
 
 
